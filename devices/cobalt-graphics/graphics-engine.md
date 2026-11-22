@@ -8,7 +8,7 @@ quoted as a symbol. Grades: see the overview.
 
 **Short answer to "FIFO or DMA".** The engine fetches commands by DMA from packet buffers in main memory. The host
 builds packets in memory (the memory is the same SDRAM the processors use), links them, and tells the engine which
-context to run through one control register; completion and stalls come back as two interrupt causes. There is no
+packet position to run from through one control register; completion and stalls come back as two interrupt causes. There is no
 register FIFO that the host pushes words into. Inferred (driver behaviour). The header-word count field and the chaining packet are now known ([below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)); the opcode set is only partly known (the constant headers are [listed below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)).
 
 ## Register window at `0xc8000000` (`0x19000` bytes)
@@ -19,16 +19,16 @@ at the display back end's ID. Accesses seen are 32-bit. Offsets are from the bas
 | Offset | Seen as | What software does | Grade |
 |---|---|---|---|
 | `0x00000` to `0x07fff` | nothing | the miniport never touches this range in the routines read | unknown |
-| `0x08000` to `0x0bfff` | 2048 entries of 8 bytes | `CoInitHw`, the tile and texture allocators and `CoBuildTlbPacket` write the low dword of an entry with a 24-bit value (`x & 0xffffff`); entry `i` is at `0x8000 + 8*i`. Entries not in use are filled with the value of the first | inferred (access and reading) (a translation table from page numbers to memory pages) |
-| `0x0c000` to `0x0c1ff` | 64 entries of 8 bytes | at pool setup every entry gets the physical base of the context packet pool (`+4` of the pool descriptor). One entry per context; `0xc010` (context 2) is also rewritten with `(x & 0x1fffff) \| 0x4000000` while building texture-table packets | inferred (access and reading) (per-context base pointers) |
-| `0x10000` | control and status | write: `mode \| (context << 12) \| 0x800` selects the context to run (`pCoContextSwitch`, the retrace and event paths). `CoInitHw` writes `0xfffff040`. Read: bits `[31:12]` are the context the engine is running; software shifts right 12 to get it and treats 0 as "none" | inferred |
-| `0x10008` | doorbell | write `0x400` to restart the engine's scheduler after queuing work | inferred |
-| `0x10018` | interrupt cause | read, mask `0x60000000`, write 0 to acknowledge, then re-read until the cause bits drop. Bit 31 is also polled by `pCoWaitForEvent`: wait for it set, then write `0x7fffffff` | inferred |
+| `0x08000` to `0x0bfff` | 2048 entries of 8 bytes | the translation table. `CoInitHw`, the tile and texture allocators and `CoBuildTlbPacket` write the low dword of an entry with a 24-bit value (`x & 0xffffff`); entry `i` is at `0x8000 + 8*i`. `CoInitHw` loads the packet pool's pages into the first entries; `CobaltStartIO` loads the global buffer from entry 32 and sets every later entry up to `0x7ff` to the first pool page, so entries not in use hold the value of the first. A packet node is therefore named by a position in the pool, not by a physical address | inferred (access and reading) (a translation table from 4 KB page numbers to memory pages) |
+| `0x0c000` to `0x0c1ff` | 64 entries of 8 bytes | buffer descriptors: entry `k` describes the buffer whose descriptor id is `k`, the id the colour, depth and texture format words carry; each is the vendor's `CoTlbDescReg` ([packet-set.md](packet-set.md#texture-table-packets-class-11)). `CoInitHw` writes entry 0, the packet pool's descriptor, and `CobaltStartIO` writes entry 2 as `(descriptor & 0x1fffff) \| 0x4000000` (slot 32) when it maps the global buffer; every other entry is loaded by class `11` packets at position `0x1800 + k`. An earlier reading, "every entry gets the physical base of the context packet pool", is withdrawn: only entry 0 is written at start-up, and with a descriptor, not a base | inferred (access and reading) |
+| `0x10000` | start and position | write: `idle_count \| (position << 12) \| 0x800`, where the idle count is the adapter field the vendor names `pktIdleCount` (set to 2 once, in `CoInitHw`, and never changed) and the position is a node position in 32-byte units from the pool base (`pCoContextSwitch@0x169ce`..`0x169d6`, the event routine at `@0x1813c`); `CoInitHw` writes `0xfffff040` (position `0xfffff`, bit 6, bit 11 clear). Read: bits `[31:12]` are the node position the engine is at; the stop-event routine shifts right 12, tests it with `CoIsUserPktOffset` (a position outside the node's two context-switch page ranges) and, when it reads 0, uses the chain register `0x185c0` instead. An earlier reading made this field a context number; it is a packet position (the saved value is the rendering node's `savedPktOffset`, `+0x108`) | inferred |
+| `0x10008` | doorbell | write `0x400` after work is appended to the running node or a suspended context is resumed, when the scheduler is in its second mode and the running node has no pending chunks (`CoSetChunk@0x190e3`, `CoSuspendRNode@0x18e0c`, `CoProcessTimeoutEvent@0x182f8`) | inferred |
+| `0x10018` | interrupt cause | `CoInterruptHandler` reads it (zero is "not mine"), masks the value with `0x60000000`, writes 0 and re-reads until the masked bits differ from what it read. `pCoContextSwitch@0x16951` polls bit 31 until it reads set and then writes `0x7fffffff` (only when another context was running when the switch began). `CoInitHw` writes 0. `pCoWaitForEvent` does not touch it, as an earlier version said: it waits on a serial number stored by the stop event | inferred |
 | `0x10020` | interrupt enable | `CoInitHw` writes `0x60000000` (both causes on) | inferred |
 | `0x18138`, `0x18140` | read | read into the packet being built after a header word `0x84e44040`, which is the scissor box packet the OpenGL driver writes ([packet-set.md](packet-set.md)): the two registers are the scissor minimum and maximum corner, saved and restored across a context switch. The earlier reading as two instrument counters is withdrawn | inferred (header `A` = `0x427` maps to this offset; the miniport and the ICD agree on the packet) |
-| `0x185c0`, `0x185c8` | read | on a stop interrupt, read to find where the engine stopped: two 12-bit values combine into a position that is then converted to an offset in the context's packet buffer (low 20 bits). These are the two registers the chain packet `0x97000040` writes (next node, this node) | inferred |
-| `0x185d0` | write | the current-context packet pointer (written when the current context changes or is freed). The OpenGL driver writes 0 to it with packet `0x97400020` before it frees the pages of a texture that is bound | inferred |
-| `0x18800` | write | a per-context value read from the context record at `+0x500` | unknown |
+| `0x185c0`, `0x185c8` | read | on a stop interrupt: `((R185c0 & 0xfff) << 12 \| (R185c8 & 0xfff))` is a 24-bit sequence number and `R185c8 >> 12` the node position; if bit 23 of the sequence is set the driver keeps its low 20 bits in the rendering node's `serialOnRemove`, otherwise it reads dword 3 of the node at that position (the sequence number the ICD stored there) and keeps its low 20 bits; a zero node position only counts a stop (`CoProcessCobaltEvent@0x17fbd`..`0x18027`). These are the two registers the chain packet `0x97000040` writes (next node, this node); `pCoContextSwitch@0x169bc` writes 0 to `0x185c8` when no context was running | inferred |
+| `0x185d0` | read, write | the current-texture id: the third word of the long chain packet `0x97000060` carries the rendering node's `currentTexId` (`pCoContextSwitch@0x167c3`), a stop of an OpenGL node (`gfxType` 1) reads it back into that field (`@0x17fd2`), `CoInitHw` and the bind scheduler write it, and the OpenGL driver writes 0 with packet `0x97400020` before it frees the pages of the texture that is bound. An earlier name for it was the current-context packet pointer | inferred |
+| `0x18800` | write | the outgoing context's dump offset (the rendering node's `cxswDumpOffset`, `+0x500`, a position in the context-switch packet page), written when another context is started while one was running (`pCoContextSwitch@0x16666`), before the poll of bit 31 of `0x10018`. What the engine stores there is unknown | inferred (access), unknown (meaning) |
 | `0x19000` end | | | |
 
 Reset values are unknown for all of them. The retrace and engine handlers are the only paths that read status, and both
@@ -41,12 +41,20 @@ The display back end also uses `0x10000`, `0x10018` and `0x10020` in its own blo
 ## Interrupts
 
 - **Pin 25 (the "RE" pin): the engine.** `CoInterruptHandler` reads `+0x10018` and returns "not mine" when it reads zero.
-  Otherwise it clears the register, waits for the clear to take, and queues an event carrying the cause bits for a
-  deferred routine (`CoDPC`, `CoProcessCobaltEvent`). The event processor tests cause `0x40000000` first: if the current
-  context was running it flags the context, then reads the running context from `0x10000` (falling back to `0x185c0`
-  when that reads zero), and recovers the stop position from `0x185c0` and `0x185c8` to resume from. Cause `0x20000000`
-  also queues an event but does not take that path. Inferred (driver behaviour) for the use; what each cause means in hardware
-  terms is inferred (bit 30 a stop that needs a restart, bit 29 a completion), not published.
+  Otherwise it masks the value with `0x60000000`, writes 0, waits for the masked bits to change, and queues an event carrying
+  those bits for a deferred routine (`CoDPC`, `CoProcessCobaltEvent`, read in full). The event routine takes the node the
+  engine was running. On cause `0x40000000` it sets bit 5 of the node's status (unless the node's own flag word `+0x104` has
+  bit 1) and, when the current queue is 1, decrements the node's chunk count. It reads the position from `0x10000` (or
+  `0x185c0`) and asks `CoIsUserPktOffset` whether it lies outside the node's two context-switch page ranges. A position inside
+  them is a stop in the state-restore packets: the routine writes `0x10000` back with the same position, restarting the
+  engine, and goes on to schedule. A user position is saved as the node's `savedPktOffset`, the sequence number is recovered
+  from the chain registers ([the register table](#register-window-at-0xc8000000-0x19000-bytes)), and the waiters are woken:
+  either cause wakes the waiter of kind 4 and, when the node has no pending chunks, the first of the kinds `0x10`, `0x20` and
+  `0x40` its wait word names (each also sets one bit of the node status); cause `0x40000000` also wakes kind 8. The routine
+  ends by asking the scheduler for the next ready node and starting it with `pCoContextSwitch` until one starts. So both
+  causes are "the engine stopped"; what tells them apart in hardware terms is unknown, and only the first is tied to a stop
+  position. The link word's `intr` and `sync` bits (bits 1 and 2 of a node's link word, the vendor's `CoPktDescType`) are
+  what would ask for an interrupt: inferred from the names. Inferred (driver behaviour).
 - **Pin 24 (the "AS" pin): vertical retrace.** `CoVRetraceHandler` reads the 32-bit register at `0xca000000` and writes
   back its complement. If bit 1 of the value read was set it increments a frame counter and, in the stereo case, reads
   the display back end's `vt_f2rf_lock` and sets bit 6 of its `vt_flags`. It then queues a retrace event, which the
@@ -96,6 +104,27 @@ engine never needs the host's cache.
   swaps. Registry values `IdleOnOpenGL`, `IdleOnGDI`, `IdleOnGDIwithOGL`, `IdleOnD3D` and `SchedulerMode` tune it. None of
   this is hardware, but it shows what the hardware cannot do: there is no hardware context queue, only one running
   context at a time, selected by `+0x10000`.
+
+**Starting a node: `pCoContextSwitch@0x16610`. Established (read in full); the engine's side is inferred.**
+The routine takes the adapter and the incoming rendering node.
+
+1. The node in hardware (`inHwRNode`, `+0xe4`) is the outgoing one, unless it is a GDI node (`gfxType` 4). When there is an
+   outgoing node that is not the incoming one, its `cxswDumpOffset` goes to `0x18800`.
+2. The incoming node's window parameters are written as a packet in its context-switch page: `CoBuildWinparamsPacket` for an
+   OpenGL node, `CoBuildGdiWinparamsPacket` for a GDI node, `CoBuildWinparamsPacketForPxfer` for a pixel-transfer node (flag
+   bits `0x28`), and, when the window's incarnation changed, the record's texture window offsets (`texWinoffsetS`,
+   `texWinoffsetT`) are stored into the saved packet image.
+3. When there was an outgoing node, a long chain packet `0x97000060` is built at the incoming node's slot of the packet
+   pool with payload (resume position, 0, `currentTexId`); the first dword is filled in once the position is known.
+4. The translation-table and descriptor packets (`CoBuildTlbPacket`) and the link words (`(next position << 12) | (length
+   << 3) | 1`) of the pages are written.
+5. After an outgoing node, the routine waits for bit 31 of `0x10018` and writes `0x7fffffff`; with none it writes 0 to
+   `0x185c8`.
+6. It starts the engine with `0x10000` = `pktIdleCount | (position << 12) | 0x800`, marks the node's saved position with
+   the sentinel `0xbabeface`, clears the adapter's pending flag and, when the incoming node is the resource manager's (`grmRN`, `+0xec`), runs the
+   drop it had deferred. Which position it writes depends on whether a state restore was built: the
+   node's saved position (`+0x108`), the context-switch dump offset less one, or an offset in the node's own
+   context-switch page.
 
 ## How the OpenGL driver builds and submits packets (`sgcoicd.dll` 5.2.4)
 
