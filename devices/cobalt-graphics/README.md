@@ -10,6 +10,7 @@ emulator brief. The registers and the software that drives them are in three com
 - [graphics-engine.md](graphics-engine.md): the rendering engine's window, the packet queue in main memory, interrupts.
 - [nt-software.md](nt-software.md): what the Windows NT miniport, display driver and OpenGL driver do, and the Linux
   frame buffer driver.
+- [board-data.md](board-data.md): what SGI's graphics white paper and a real machine's registry export settle.
 
 The system side is covered by other pages: [the platform](https://github.com/jamesbraid/chips/blob/main/platforms/visws/README.md), [the Cobalt system ASIC](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md)
 (processor interface, interrupt controller, timer) and [Lithium](https://github.com/jamesbraid/chips/blob/main/devices/lithium/README.md) (PCI bridges, audio). This one stops
@@ -43,6 +44,8 @@ The repository's rules use three ratings ([AGENTS.md](../../AGENTS.md)). Until t
 | Windows 2000 RTM `sgibvid.dll`, `sglfb.sys`, `sglfb.dll` | shipped binaries (the Windows 2000 CD) | the display back end as the OS's own drivers program it; the "Arsenic" naming |
 | Linux `drivers/video/sgivwfb.c`, `include/video/sgivw.h`, `arch/x86/kernel/visws_quirks.c`, `arch/x86/include/asm/visws/cobalt.h` (Linux history tree, 2.6.x era) | public driver | display back end registers, memory reservation |
 | Usenet posts in comp.sys.sgi.admin (2003 to 2004) | public posts | history, absence of Linux 3D support |
+| "The Silicon Graphics 320 and Silicon Graphics 540 Visual Workstation Graphics Subsystem", white paper J10043, 1999 | published document | features and peak rates of the engine, memory pool, formats ([board-data.md](board-data.md)) |
+| `HKEY_LOCAL_MACHINE\HARDWARE` export of a running 320 | published output from a real machine | firmware and chip revisions, resource claims, memory ranges ([board-data.md](board-data.md)) |
 
 The NT driver package is on the Internet Archive as item `sgi_320_540_drivers` (file `SGICoGraphics524nt4.exe`). It is
 a self-extracting InstallShield archive; its `data1.cab` holds the files above. SGI Support Folio, the original host,
@@ -89,7 +92,7 @@ vendor's own and are cited here by name.
 | `0xc8000000`, `0x19000` bytes | Rendering engine register window | `sgcomp.sys` `CobaltInitialize` maps exactly this length | software expectation |
 | `0xca000000`, 4 bytes | Vertical-retrace interrupt register, read and then rewritten with its complement in the retrace handler. Mapped only if the display back end's ID register reads `0x666` | `sgcomp.sys` `CoVRetraceHandler` | software expectation |
 | `0xc0000020`, 4 bytes | Mapped on the same condition; its value is copied into a command packet by `CobaltStartIO` and nothing else reads it. Purpose unknown | `sgcomp.sys` | unknown |
-| `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes | `sgivwfb.h`, `sgcomp.sys` | established (base), software expectation (extent) |
+| `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes | `sgivwfb.h`, `sgcomp.sys`, a real machine's resource list ([board-data.md](board-data.md)) | established (base), observed (the claim, on a Windows 2000 or later install) |
 | Top of RAM, 8 MB default | Linux frame buffer. NT takes its own bank list from the loader | `visws_quirks.c`, `sgcomp.sys` | software expectation |
 
 Interrupt pins on the Cobalt controller (numbering from Linux `cobalt.h`): 16 and 17 video out, 18 and 19 video in, 22

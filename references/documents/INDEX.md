@@ -9,6 +9,11 @@ Public documents this workspace reads, by title and public URL only. Nothing her
 - "SGI Chip Set Powers NT Workstations", Microprocessor Report, 15 February 1999: bandwidth split, fill and triangle rates, unified memory rationale.
 - "SGI reinvents NT workstations", Design News, 1999: three-ASIC structure, static memory split.
 
+## Graphics and board data
+
+- "The Silicon Graphics 320 and Silicon Graphics 540 Visual Workstation Graphics Subsystem", Silicon Graphics white paper, form J10043 (2351 6/99), five pages: https://sgi320.wordpress.com/wp-content/uploads/2013/01/320_gfx_subsystem.pdf
+- "Contents of the HKLM\HARDWARE registry key", a registry export of a running SGI 320, linked from the ReactOS wiki page "SGI 320/540": https://pastebin.com/raw/dnE1xn5q and https://reactos.org/wiki/SGI_320/540
+
 ## Software
 
 - SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0: https://archive.org/details/sgi_320_540_drivers (file `SGICoGraphics524nt4.exe`).
