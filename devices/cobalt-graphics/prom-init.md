@@ -17,7 +17,7 @@ model; a register value that the firmware writes is what the firmware writes, no
 ## When it runs
 
 `1.0006@0xf3e9b0` (1.1005: `0x1131702`) is the display start-up. It reads the firmware environment variable `console`: a value
-starting with `g` or `G` selects the graphics console and runs the full sequence below; anything else only stops the display
+starting with `g` or `G` (`1.1005@0x1131525`; the console-selection routine `0x1113ca1` is in [the PROM boot path](https://github.com/jamesbraid/chips/blob/main/software/visws/boot-path.md#console-selection-main-module): a serial console needs a lowercase `d`, an unset or any other value, including `D`, still gets `video()` but with the display frozen; the empty-flash default is `g`) selects the graphics console and runs the full sequence below; anything else only stops the display
 (below) and writes `+0x10000 = 0x80000000`, which freezes the timing counter (the `FREEZE` bit of `vt_xy`).
 Every path first writes `ctrlstat` (`+0x000`) = `0x20000000`.
 
