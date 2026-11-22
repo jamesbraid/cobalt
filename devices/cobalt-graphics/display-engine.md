@@ -20,7 +20,7 @@ any register: neither driver reads one before writing, and both only ever see a 
 |---|---|---|---|---|
 | `0x000` | ctrlstat | chip ID in `[3:0]` (read by Linux as a constant field), `SENSE_N` `[4]`, `PCLKSEL` `[29:28]`. NT writes `0x30000000` as the last step of every mode set; Linux writes `0x20000000` before programming and `0x30000000` afterwards if bit 25 reads set. Linux treats `PCLKSEL` below 2 as "not scanning out from the internal dot clock". Meaning of bit 25 unknown | L, N | inferred |
 | `0x004` | dotclock | PLL: `M` `[7:0]`, `N` `[13:8]`, `P` `[15:14]`, `RUN` `[20]`. Both drivers write `M-1` and `N-1`. Output is 27 MHz times `M` over `N`, divided by 2 to the `P`; reproduces the clock column of 26 of the 27 NT table rows to within 1.4 percent (see below) | L, N | inferred (fields), inferred (formula) |
-| `0x008` | i2c | CRT I2C lines (DDC). NT's `CoDDC_GetEDID` reads an EDID over it. Bit 0 SDA, bit 1 SCL, 1 pulls the line low (see below) | L, N | established (NT) |
+| `0x008` | i2c | CRT I2C lines (DDC). NT's `CoDDC_GetEDID` reads an EDID over it, or over `i2cfp` when a flat panel answered the probe. Bit 0 SDA, bit 1 SCL, 1 pulls the line low (see below) | L, N | established (NT) |
 | `0x00c` | sysclk | system clock PLL. Neither driver touches it | L (name only) | unknown |
 | `0x010` | i2cfp | flat-panel I2C lines, bit-banged. See below | L, N | inferred |
 | `0x014` | id | NT refuses to attach unless it reads `0x666` | N | inferred |
