@@ -66,8 +66,8 @@ The display back end also uses `0x10000`, `0x10018` and `0x10020` in its own blo
   may have side effects. It then queues a
   retrace event, or counts one more when one is already queued, which the deferred routine uses to run the swaps and queued
   work that were waiting for retrace. Established (the routine read in full in the typed decompile); the hardware's reading is inferred. The
-  write-back of the complement is the driver clearing set bits, so the register is write-one-to-clear or latching;
-  which, is unknown.
+  write-back of the complement clears the bits that were set only if a written 0 clears, so the register is
+  write-0-to-clear (inferred); the Cobalt timer status bit is cleared the same way ([chips](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/registers.md), `cpu_stat`).
 
 Both pins are on the Cobalt interrupt controller at `0xc4000000` ([the controller's registers and acknowledge sequence](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md#interrupt-controller-the-cobalt-apic),
 [the line assignments](https://github.com/jamesbraid/chips/blob/main/platforms/visws/interrupts.md#cobalt-lines-established-from-the-header) and [how the HAL delivers them](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md#interrupt-delivery-in-the-hal)
