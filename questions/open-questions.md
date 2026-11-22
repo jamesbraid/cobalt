@@ -40,11 +40,12 @@ Status: **unknown** for everything below. What is established and what software 
   back end is inferred to be Arsenic (NT's `as` routine prefix and `ArsenicPixelFormats`). Unconfirmed: which chip
   decodes `0xd0000000`, `0xca000000` and `0xc0000020`, and what the link between Cobalt and Arsenic carries. Route:
   a board photograph with chip markings, the PROM's device tables, or a boot log naming the resources.
-- **Reset values.** For every register. Neither driver reads one before writing. Route: the PROM's initialisation of
-  the display (the PROM image and the SGI "Software Support Kit" if held), or a hardware read, which needs the
-  repository owner's approval and a read-only plan.
+- **Reset values.** For every register. Neither driver reads one before writing, and the PROM reads only
+  the revision nibble of `+0x000`, the ID and `bist` before it writes ([prom-init.md](../devices/cobalt-graphics/prom-init.md)). Route: a hardware read, which needs the repository owner's approval and a read-only plan.
 - **Cursor, gamma and video capture.** The `0x70000` cursor block, the `0x60000` and `0x68000` gamma maps and
-  the `0x80000` capture words are named by Linux and untouched by Linux and by the NT miniport routines read. Where NT
+  the `0x80000` capture words are named by Linux and untouched by Linux and by the NT miniport routines read (the PROM
+  writes an identity gamma, a cursor glyph left disabled, and read-back tests the capture words; see
+  [prom-init.md](../devices/cobalt-graphics/prom-init.md)). Where NT
   puts gamma and how the 2D cursor is drawn is unresolved. Route: the display driver `sgcodd.dll` (it may draw the
   cursor itself and send gamma as engine packets) and the Windows 2000 driver.
 - **PLL and clock.** The `sysclk` register (`+0x0c`), the purpose of the one-second PLL restart in NT's mode set, and
@@ -52,6 +53,3 @@ Status: **unknown** for everything below. What is established and what software 
 - **Pixel order.** Whether 32-bit pixels are red-first in memory (Linux) or red in the top byte of the word (NT's
   `ArsenicPixelFormats`), and what the config bit `LENDIAN` does. Route: a Linux boot of the real hardware, or the
   pixel-format table's users in `sgcodd.dll`.
-- **Memory banks.** How the firmware chooses and passes the graphics memory split ("profile") and the bank list NT reads
-  from `SGICtrl\Memory`. A real machine's registry shows 56 MiB of "reserved" ranges at the start of 32 MiB blocks in
-  two 256 MiB banks ([board-data.md](../devices/cobalt-graphics/board-data.md)); whether that is the graphics memory is not shown. Route: the PROM and the NT loader on a system disk.
