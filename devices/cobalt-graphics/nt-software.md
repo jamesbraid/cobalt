@@ -33,8 +33,11 @@ back. If the answer is not success it prints "cobalt: Not an SGI HAL" and does n
 machines is SGI's, and answers a query no stock HAL answers. What it returns is read in the HAL: three cache-flush
 routine pointers and the cache-operation-invalidate flag ([nt-hal.md](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md#the-sgi-specific-hal-interface)). Established for the HAL's side, inferred for the driver's use.
 
-`CobaltFindAdapter` then claims `0xd0000000` to `0xd008001f` with `IoAssignResources`, reads the chip revision at
-`0xc2000008` (accepted if the high nibble is `0xa` and the low nibble is neither 0 nor 8), and stores it. The revision
+`CobaltFindAdapter` (which runs only for system I/O bus number 0) then reads the chip revision at
+`0xc2000008` (accepted if the high nibble is `0xa` and the low nibble is neither 0 nor 8) and stores it, and, when `PsGetVersion` reports a
+major version above 4 (Windows 2000 and later, not NT 4.0), claims `0xd0000000` to `0xd008001f` with `IoAssignResources`. It reads the
+revision through a four-byte mapping of `0xc2000008`; the Cobalt CPU block that holds it is described in
+[the Cobalt page](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md#cpu-block-revision-and-system-timer-established) of the chips repository. The revision
 names the chip set as "Cobalt Graphics ChipSet A0" to "AF" in the registry's `HardwareInformation.ChipType`. The
 adapter string is "Cobalt Graphics", the DAC "Cobalt Graphics Backend". Inferred (driver behaviour).
 
@@ -48,9 +51,15 @@ sets up the tile and packet pools; connects both interrupts; and finally program
 The driver does not size memory itself. It reads, from the control key `SGICtrl\Memory` under the system's `Control`
 tree, the values `NumberOfBanks` and `BankSize00` to `BankSize31` and `BankAddr00` to `BankAddr31` (up to 32 banks). If
 fewer than two are present it prints "GRAPHICS: no preallocated memory" through the HAL's display routine and bug-checks
-(`0x5a`). So the loader, or the firmware through it, must hand NT a list of graphics banks by address and size; the
-graphics memory is carved out of RAM ahead of the OS, as it is for Linux. The extent is a static split, as the trade
-press says. How the firmware picks the split (a "profile") and where it keeps it is unknown. Inferred (driver behaviour).
+(`0x5a`). The list is not the loader's own: the HAL builds it from the loader block's graphics-memory descriptors (type `0x16`) and
+publishes it under `SGICtrl\Memory` (`HalpSpliceGfxMemory` and `HalpAddGbeDisplayToRegistry`, read in
+[the boot path](https://github.com/jamesbraid/chips/blob/main/software/visws/boot-path.md) and [the HAL page](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md#boot-display-and-graphics-memory) of the chips repository,
+which also give the 4 MiB alignment rule and the "You need an updated PROM!" fallback). The graphics memory is
+carved out of RAM ahead of the OS, as it is for Linux. The extent is a static split, as the trade
+press says. The profile the user picks is kept in the HAL's environment variable `cogfxmem`: video IOCTL `0x232094`
+(`VIDEO_SET_MEMUSE`, a bank count of at most 12 and a byte count per bank) turns the byte counts into 4 KB page counts, formats
+`count,pages,pages,...` and calls `HalSetEnvironmentVariable("cogfxmem", ...)`, logging an error when that fails. Established (the routine read in the typed decompile);
+how the firmware turns the variable into the graphics descriptors at the next boot is the firmware's, and is not read here. Inferred (driver behaviour).
 
 ### What is programmed where
 

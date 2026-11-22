@@ -16,7 +16,7 @@ emulator brief. The registers and the software that drives them are in three com
 - [board-data.md](board-data.md): what SGI's graphics white paper and a real machine's registry export settle.
 - The OpenGL driver itself, its symbols and its run-time code generators: [nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md).
 
-The system side is covered by other pages: [the platform](https://github.com/jamesbraid/chips/blob/main/platforms/visws/README.md), [the Cobalt system ASIC](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md)
+The system side is covered by pages in the [chips repository](https://github.com/jamesbraid/chips): [the platform](https://github.com/jamesbraid/chips/blob/main/platforms/visws/README.md), [the Cobalt system ASIC](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md)
 (processor interface, interrupt controller, timer) and [Lithium](https://github.com/jamesbraid/chips/blob/main/devices/lithium/README.md) (PCI bridges, audio). This one stops
 at the graphics blocks and says where it leans on them.
 
@@ -97,8 +97,8 @@ Support Folio, the original host, is gone. The driver symbols ship in the packag
 
 | Physical range | What | Source | Grade |
 |---|---|---|---|
-| `0xc2000000` | Cobalt CPU block. Register `+0x08` is the revision (high nibble `0xa`). NT refuses the part if the low nibble is 0 or 8 and names it "Cobalt Graphics ChipSet A0" to "AF" from the low nibble. Also holds the timer (Linux) | `sgcomp.sys` `CobaltFindAdapter`, Linux `cobalt.h` | inferred (revision), established (timer block exists) |
-| `0xc4000000` | Cobalt interrupt controller ("APIC" in Linux). Graphics pins below | Linux `cobalt.h` | established |
+| `0xc2000000` | Cobalt CPU block. Register `+0x08` is the revision (high nibble `0xa`). NT refuses the part if the low nibble is 0 or 8 and names it "Cobalt Graphics ChipSet A0" to "AF" from the low nibble. Also holds the timer (Linux). Described in [the Cobalt page](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md#cpu-block-revision-and-system-timer-established) | `sgcomp.sys` `CobaltFindAdapter`, Linux `cobalt.h` | inferred (revision), established (timer block exists) |
+| `0xc4000000` | Cobalt interrupt controller ("APIC" in Linux). Graphics pins below; registers and line assignments in [the Cobalt page](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md#interrupt-controller-the-cobalt-apic) and [the interrupt routing page](https://github.com/jamesbraid/chips/blob/main/platforms/visws/interrupts.md) | Linux `cobalt.h` | established |
 | `0xc8000000`, `0x19000` bytes | Rendering engine register window | `sgcomp.sys` `CobaltInitialize` maps exactly this length | inferred |
 | `0xca000000`, 4 bytes | Vertical-retrace interrupt register, read and then rewritten with its complement in the retrace handler. Mapped only if the display back end's ID register reads `0x666` | `sgcomp.sys` `CoVRetraceHandler` | inferred |
 | `0xc0000020`, 4 bytes | Mapped on the same condition. The mapped kernel address (`FlushKvAddr`) is returned to the display driver in word 15 of the global-information reply of `CobaltStartIO`, and the display driver stores it as `ulFlushAddr` in its shared device record; no routine read by name uses it afterwards. Purpose unknown | `sgcomp.sys`, `sgcodd.dll` | unknown |

@@ -66,9 +66,12 @@ The display back end also uses `0x10000`, `0x10018` and `0x10020` in its own blo
   write-back of the complement is the driver clearing set bits, so the register is write-one-to-clear or latching;
   which, is unknown.
 
-Both pins are on the Cobalt interrupt controller at `0xc4000000`. The miniport asks the HAL for the vector of internal
-level 25 and of level 24 (`HalGetInterruptVector`), then connects the engine handler to the first and the retrace
-handler to the second with `IoConnectInterrupt`. Inferred (driver behaviour).
+Both pins are on the Cobalt interrupt controller at `0xc4000000` ([the controller's registers and acknowledge sequence](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md#interrupt-controller-the-cobalt-apic),
+[the line assignments](https://github.com/jamesbraid/chips/blob/main/platforms/visws/interrupts.md#cobalt-lines-established-from-the-header) and [how the HAL delivers them](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md#interrupt-delivery-in-the-hal)
+are in the chips repository; the miniport itself never touches the controller). The miniport asks the HAL for the vector of internal
+level 25 and of level 24 (`HalGetInterruptVector` with interface type 0, bus 0, level and vector both `0x19` and `0x18`), then connects the engine handler to the first and the retrace
+handler to the second with `IoConnectInterrupt`: both are latched (interrupt mode 1), not shared, share one spin lock (`isrSpinLock`), take the larger of the
+two request levels as the synchronise level, and save no floating-point state. Established (the call read in the typed decompile).
 
 ## Command interface in main memory
 
