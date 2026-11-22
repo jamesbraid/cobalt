@@ -36,7 +36,31 @@ SGCODD.DLL
 SGCOMP.SYS
 ```
 
-The Windows 2000 packs carry their own, different builds of the three drivers. The header scan of the packet set
-([packet-set.md](../devices/cobalt-graphics/packet-set.md#coverage)) covers both packs and the April 1999 builds.
-The April 1999 OpenGL driver is inside an InstallShield 3 archive on disc 2 that neither 7z nor unshield opens; only its
-`.dbg` file was seen.
+From the same disc set, disc 2: the top-level `data1.cab` is an InstallShield 5 cabinet (`unshield x data1.cab` opens it; 7z does not) that holds the April 1999 OpenGL driver and the same two display files in the language-specific directory:
+
+```files
+Open GL\sgcoicd.dll
+Language Specfic - ENU\system32\sgcodd.dll
+Language Specfic - ENU\system32\drivers\sgcomp.sys
+```
+
+Loose on the same disc, the matching symbol files (`Symbols\cpl\sgcoicd.dbg`, `Symbols\dll\sgcodd.dbg`, `Symbols\sys\sgcomp.dbg`). These three carry a CodeView table of public names and no COFF symbol table, unlike the 5.2.4 `.dbg` files.
+
+## Files read, with SHA-256 prefixes
+
+| Product and file | Size | SHA-256 (first 16 digits) |
+|---|---:|---|
+| 5.2.4 NT 4.0 `sgcoicd.dll` (file version 1.1.5.24) | 1,069,328 | `ca772f62c1a1553c` |
+| 5.2.4 NT 4.0 `sgcodd.dll` | 299,696 | `aa932e96561ec739` |
+| 5.2.4 NT 4.0 `sgcomp.sys` | 62,992 | `872607c081b0d1ca` |
+| 5.2.4 NT 4.0 `sgcoicd.dbg` (COFF symbols) / `sgcoicd.pdb` (PDB 2.00) | 365,904 / 4,293,632 | `ac0ca0770ecfe8c9` / `2364380191a47bda` |
+| 5.2.4 NT 4.0 `sgcodd.pdb`, `sgcomp.pdb` | 795,648, 410,624 | `273bfeaa4386db44`, `982839e30ea220c5` |
+| 5.2.4 Windows 2000 `sgcoicd.dll` (file version 1.1.5.24) | 1,120,336 | `ee1b8202d9399af2` |
+| 5.2.4 Windows 2000 `sgcodd.dll`, `sgcomp.sys` | 339,040, 65,808 | `24b07c7e6a69e7ac`, `d472cb91bae2ecdf` |
+| 5.2.4 Windows 2000 `sgcoicd.pdb` (PDB 2.00) | 4,400,128 | `268d1132ef9df236` |
+| April 1999 `sgcoicd.dll` (file version 1.1.4.0, built 1999-04-27) | 1,245,456 | `8fc6a926fb699014` |
+| April 1999 `sgcodd.dll` (file version 4.1.1) | 334,704 | `0a6be6e30120dc74` |
+| April 1999 `sgcomp.sys` | 65,296 | `77ca10cf9b13b93a` |
+| April 1999 `sgcoicd.dbg` | 304,936 | `e79955dafd9f5d17` |
+
+The Windows 2000 pack's `.dbg` files hold frame-pointer data and a reference to the `.pdb` only. The NT 4.0 pack ships a `.pdb` for every driver as well; the NT 4.0 and Windows 2000 `sgcoicd.pdb` files declare the same engine register types and the same context layout (the OpenGL driver page says how they were read).

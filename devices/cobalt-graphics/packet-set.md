@@ -271,7 +271,8 @@ the class `11` table loads (miniport only). Not emitted by the ICD but by the mi
 `0x98250160`, `0x9845b020`, `0x9865c020`, class `11`. The display driver adds `0x91ca1020` and uses 22 of the other
 headers; the miniport uses 15. The count is of distinct header values from the tables above that occur as an immediate
 operand in a linear disassembly sweep of `.text`, with payload constants such as `0x3f000000` left out. The same scan of the Windows 2000 display driver and miniport, and of the April 1999
-builds, found the same headers and no others.
+builds, found the same headers and no others. The April 1999 OpenGL driver has 50 of the 52 base values (no `0x97400020`, no
+`0x99ce00a0`), and no header outside the set ([nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md#the-april-1999-build)).
 
 **Withdrawn.** The earlier page listed `0x9400014f` as a span header written by `__glStoreSpanARGB8`. The bytes occur
 once in the image, at `sgcoicd.dll@0x690f2681`, in the export address table (they straddle two of its 15 entries), not

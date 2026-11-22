@@ -176,9 +176,9 @@ but has DISPATCHCHUNK and SERIALIZE, and every code from `0x4c` up is shifted by
 | `0x51` | PIXELDMA | `0x70` / `0x10` | `0x63` | FREE_PACKET_BUFFER | `0x18` |
 | `0x52` | CACHEOP | `0x24` | | | |
 
-Codes `0x45`, `0x48`, `0x4a`, `0x4b`, `0x5b`, `0x5d` and `0x5e` fall to the default, which returns 0 (not supported). The 1999 ICD (`sgcoicd.dll`, 1,245,456 bytes,
-Recovery CD-2 v1.1) was not read at its call sites, so which code each of its routines sends in that build is expected from the table and
-not checked. The two builds therefore must not be mixed: an ICD and display driver of one build share one numbering. A
+Codes `0x45`, `0x48`, `0x4a`, `0x4b`, `0x5b`, `0x5d` and `0x5e` fall to the default, which returns 0 (not supported). The 1999 ICD (`sgcoicd.dll`, 1,245,456 bytes, disc 2 of the OEM set) was read at all 31 of its call sites: the code and input
+size at each agree with this table, except two sites in `__glCoCreateTexLevel` that send code `0x64`, which the table does not
+have ([the 1999 build](../../software/windows/nt-opengl-icd.md#the-april-1999-build)). The two builds therefore must not be mixed: an ICD and display driver of one build share one numbering. A
 model that implements only the miniport's video IOCTLs is unaffected, since the miniport never sees these codes.
 
 **Packet buffers. Established.** `InitCoPktBuffer` (`0x690186f2`) links a ring of nodes (a 40-byte descriptor each, count and size from the

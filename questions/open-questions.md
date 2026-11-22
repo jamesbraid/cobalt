@@ -18,9 +18,7 @@ Status: **unknown** for everything below. What is established and what software 
   constant header and its routine), the display driver and miniport (the packet builders read in disassembly, 2D routines
   and their mode words), the Windows 2000 packs, the April 1999 display driver and miniport, SGI's graphics white paper
   (features only), a registry export (identity only).
-  Next: the April 1999 OpenGL driver (inside an InstallShield 3 archive on disc 2 of the NT 4.0 OEM set, which neither 7z
-  nor unshield opens), the Windows 2000 program-database files for symbol names in the Windows 2000 ICD, and the display
-  driver's DirectDraw and video routines (`DdBlt`, `CoYUVBlt_S2S`).
+  The April 1999 OpenGL driver is read too: same headers minus two, no others.
 - **Host setup versus engine setup.** Answered for the driver's side
   ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md#who-does-what)): transform is the engine's only
   when the clip-volume hint is `GL_FASTEST`, the user enables it or a variable forces it, and the primitive is not drawn by
