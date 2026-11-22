@@ -65,3 +65,36 @@ Status: **unknown** for everything below. What is established and what software 
     `sglfb.dll`'s surface setup read for 32 bits per pixel, a width of 640 and the pitch it reports.
   - The write semantics of the register at `0xca000000` (write-0-to-clear is inferred from the complement write) and what its other
     bits are. Settles it: the Cobalt interrupt code in the Windows 2000 HAL for pin 24, or a chip description.
+
+## 2D, blit and video: what the shipped software does not settle
+
+Routes tried for all of these: the NT 4.0 5.2.4 display driver and miniport read in the typed decompile with every immediate
+checked in the disassembly, the Windows 2000 5.2.4 display driver by header immediates, the digital media pack's video
+driver. Written up in [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-video.md).
+
+- **Engine side of every 2D word.** What the engine does with the descriptor, byte mask and columns of the rectangle clear when
+  the window origin is non-zero; with primitive type 6 (`vFillRectSpans`); with the direction bits of a copy; with the
+  third-of-pixel field of the styled-line repeat word; with mode-word bits 26, 5 and 4 of the pixel-transfer window packet. Settles it: a model
+  that chooses and documents a value, or a published description of the engine.
+- **Which way a model should treat mask bit 27 clipping.** The copy, stretch and transfer routines send a valid mask of 0 and
+  draw exact rectangles, so clipping by the valid mask is exercised only by the solid and stipple fills, and then
+  redundantly. Settles it: nothing in the shipped drivers depends on it.
+- **The map of the CPU window.** The display driver writes the screen with a row pitch of `0x2000` bytes; the miniport routine that
+  builds that mapping (video IOCTL `0x230458` and the display driver's `ulScreenBase`) was not read for the way it lays 64 KiB tiles
+  into 8 KiB rows. Next: read `CobaltStartIO` and the map-memory path with this in mind.
+- **Video input and output.** Four windows (`0xf8000000` to `0xfb000000`, `0x80` bytes mapped each, plus an 8-byte block each and
+  one at `0xff001200`) are driven by `sgilivid.sys` (digital media pack 5.2.2, NT 4.0 and Windows 2000 builds). The register
+  layout, the DMA descriptor format, the 10-bit field table at `.data` `0x135e0`, the interrupt pins and the video formats were not
+  decoded; `viddiag.exe` and `sgivcp.cpl` use the same windows through the driver. Settles it: reading `sgilivid.sys` entry points and
+  its IOCTL table in Ghidra.
+- **Texture type codes.** Codes 0, 2, 4, 8, 14 and 15 are seen in 2D; the OpenGL driver's `coSetTexParam` and
+  `__glCoSetXferParam` hold the full table of GL formats to type codes (the minification filter codes 0 to 5 in bits 31:29 and
+  the magnification bit 28 were read there: nearest 0, linear 1, mipmap forms 2 to 5). Next: the 3D step.
+- **Windows 2000 display driver 2D routines.** The 2D header immediates occur 5 to 10 percent more often in the Windows 2000 build
+  (draw-buffer sets 38 against 35, flush markers 100 against 89, window parameters 125 against 116); the routines were not
+  matched one by one, so whether the extra sites are new operations is unknown. Next: export the build with the vendor's
+  function names of the NT 4.0 program database mapped by constants.
+- **Trapezoid and path fills, glyph fast paths.** `vSolidTrapezoid`, `vStipTrapezoid`, `vPatTrapezoid`, `bFillSetup`, `bFastFill`,
+  `DrvFillPath`, `vTextOutFW_P2C` to `P5C` and `vXferDMA_*` were summarised by their packet sequence and not read in full.
+- **Alpha blend in 2D.** `ulAlphaBlend`, its mode and value are tested by the copy routines but no routine read sets them; whether any
+  DirectDraw or GDI path ever turns blending on is unknown.

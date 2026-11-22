@@ -8,6 +8,7 @@ emulator brief. The registers and the software that drives them are in three com
 - [display-engine.md](display-engine.md): the display back end (timing, frame buffer scan-out, palette, gamma, cursor,
   I2C) and the mode table.
 - [graphics-engine.md](graphics-engine.md): the rendering engine's window, the packet queue in main memory, interrupts.
+- [2d-blit-video.md](2d-blit-video.md): the 2D, copy, colour expansion, colour key, logic-operation table, DirectDraw and video paths of the NT 4.0 display driver, with what is bit-exact.
 - [nt-software.md](nt-software.md): what the Windows NT miniport, display driver and OpenGL driver do, and the Linux
   frame buffer driver.
 - [packet-set.md](packet-set.md): the header words the OpenGL driver puts in the packet stream, one row each, with the

@@ -79,6 +79,9 @@ the fields ([packet-set.md](../../devices/cobalt-graphics/packet-set.md#the-vend
 types 14 and 15 are the engine's codes for `YUY2` and `UYVY` is inferred, from the two FOURCC codes that select them; so is
 the final stretch.
 
+The 2D, blit and host-transfer routines are read in [2d-blit-video.md](../../devices/cobalt-graphics/2d-blit-video.md): packet
+sequences per operation, the logic-operation table, the colour key, the descriptor ids and the DirectDraw capabilities.
+
 ## The 2D mode words and the constant colour
 
 The display driver's mode-word payloads that are immediates are `0x1000000` (a logic-operation word, the base of
@@ -87,7 +90,7 @@ The display driver's mode-word payloads that are immediates are `0x1000000` (a l
 `vTexRealize@0x171ef`), `0x4c0000` (the glyph blit) and `0x1c0000` (the YUV blit); the other stores load the word from a
 register built from device state. In the thirteen mode-word
 stores that write the header as an immediate and the immediates within sixty instructions of them (the value `0x20008000`
-that recurs in the transfer routines is a primitive mode word, a point, not a draw mode word):
+that recurs in the transfer routines is a primitive mode word, a line segment (type 1, width 1; `0x8000` alone is the point word), not a draw mode word):
 
 - bit 28 (the vendor's depth offset) never occurs: 2D has no polygon offset;
 - bit 19 occurs only with bit 18, in the copy, bitmap, glyph and YUV paths;
@@ -100,4 +103,4 @@ three statements cover the immediates and that routine, not every computed word.
 `bPutGlyphInCache`. At the stipple and transfer sites the second colour goes to `0x18e84020` right after the set-up, and the mode word has bit 15 and bit 14 or 13. The colour is the brush's or translation's first colour, expanded
 for pixel-format code 4 (RGBA5551) to red in 31:27, green in 23:19 and blue in 15:11. With bit 15 named as the opaque-stipple
 enable by the vendor's mode type, the register is read as the colour of the pixels the pattern or the 1-bit source leaves
-clear. The glyph-cache site (`bPutGlyphInCache@0x2da2a`) sends `0x18e84020` with 0 first and `0x91ca1020` with `0xff` after it, and does not obviously fit the cleared-pixel inference. Inferred (the sites read; the pairing of the two colours with the pattern's set and clear bits is not).
+clear. The glyph-cache site (`bPutGlyphInCache@0x2da2a`) sends `0x18e84020` with 0 first and `0x91ca1020` with `0xff` after it, and fits it once the later steps are read: the cache holds colour 0 for set pixels and `0xff` for clear ones, and `DrvTextOut` alpha-tests the cache against `0xff` ([2d-blit-video.md](../../devices/cobalt-graphics/2d-blit-video.md#text)). Inferred (the sites read; the pairing of the two colours with the pattern's set and clear bits is not).
