@@ -1,0 +1,15 @@
+[project]
+license = "BSD-3-Clause"
+name = "cobalt"
+
+[gen]
+rust_crate = "cobalt-defs"
+
+[checks]
+address_bits = 32
+max_reg_offset = 0xffffffff
+
+[allowlists]
+leak = "tools/config/leak-allow.txt"
+source_names = "tools/config/source-names-allow.txt"
+copy = "tools/config/copy-check-allow.txt"
