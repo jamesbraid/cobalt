@@ -8,32 +8,39 @@ does is **established** (the routine read in disassembly); what the engine does 
 ## DdBlt and the YUV blit
 
 `DdBlt@0x1f6ce` is the DirectDraw blit entry. It first calls `ddrvalUpdateFlipStatus@0x1e514`, which compares the flip
-target the driver last asked for (`ppdev+0x60c`) with the live copy of the display back end's frame control word
-(`+0x30008`) and answers `DDERR_WASSTILLDRAWING` (`0x8876021c`) until they agree. It then branches on the blit flags and
-the surfaces:
+target the driver last asked for (the device's `flipRecord.ulNextHwCtrl`, the 4-byte answer of the flip IOCTL) with the live
+copy of the display back end's frame control word (`frm_inhwctrl`, `+0x30008`) and answers `DDERR_WASSTILLDRAWING`
+(`0x8876021c`) until they agree. It then branches on the blit flags and the surfaces:
 
 - the colour-fill flag (`0x400`) goes to `CoRectFill@0x1f25a`;
-- a source surface whose pixel format carries the FOURCC flag (surface `+0x28` bit 2) goes to `CoYUVBlt_S2S@0x1e54a` (called at `0x1f7f3`) when the
-  destination's flag word has bit 14 set, and otherwise returns `DDERR_INVALIDPARAMS` (`0x80070057`);
+- a source surface whose pixel format carries the FOURCC flag (`ddpfSurface.dwFlags` bit 2, `DDPF_FOURCC`) goes to
+  `CoYUVBlt_S2S@0x1e54a` (called at `0x1f7f3`) when the destination's `ddsCaps.dwCaps` has `0x4000` (video memory) set, and
+  otherwise returns `DDERR_INVALIDPARAMS` (`0x80070057`);
 - other surfaces go to the 2D copy and stretch routines (`vCopyBlt@0x12e30`, `EngStretchBlt` fall-backs).
 
 None of the other video routines (`DdFlip`, `DdLock`, `DdMapMemory`, `DdCanCreateSurface`, `DdCreateSurface`,
 `DdDestroySurface`, `DdGetBltStatus`, `DdGetFlipStatus`, `DdWaitForVerticalBlank`, `DdGetScanLine`) stores a packet header:
 `DdFlip@0x1fc54` is the video IOCTL `0x232080` (12 bytes in, 4 out) and records the flip target for the check above;
 `DdGetScanLine@0x1fe8c` and `VBLANK_IS_ACTIVE@0x1fe54`, which `DdWaitForVerticalBlank@0x1fde6` polls, read the **display
-back end's** live scanline (`vt_xy` bits 23:12) and compare it with a 48-line window that starts at the mode's vertical blank
-start less a device offset (`ppdev+0xd4`). The `0x10000` they read is that block's, not the engine's. Established.
+back end's** live scanline (`vt_xy` bits 23:12) and compare it with a 48-line window that starts at the screen height
+(`cyScreen`, which equals the mode's vertical blank start in every row of the mode table) less `ulVBlankFudge`, a field of the
+device record the two display-driver instances share (`+0xd4` there, not in the per-surface device). The `0x10000` they read is
+that block's, not the engine's. Established.
 
-`CoYUVBlt_S2S@0x1e54a` converts a packed YUV surface to RGB on the engine. It takes only the FOURCC codes `YUY2`
-(`0x32595559`) and `UYVY` (`0x59565955`); any other code ends the routine with a failure result. `DdBlt` passes it the
-destination rectangle, the source rectangle and the source surface. The routine does the work only when the source
-rectangle is the whole source surface (its width and height equal the surface's `+0x1c` and `+0x18`) and the destination
-is larger than the source in at least one axis; otherwise it returns failure (`0x80004005`) without a packet. It then
-allocates a scratch rectangle the size of the source in the off-screen heap (`pohAllocate@0x24c24`) and builds packets with
+`CoYUVBlt_S2S@0x1e54a` converts a packed YUV surface to RGB on the engine. `DdBlt` passes it the destination rectangle,
+the source rectangle and the source surface. It first calls the device's two floating-point state hooks (`pEngineFPSave`
+with a 0x24-byte buffer, and `pEngineFPRestore` on the way out); if either hook is missing or the save returns zero it
+returns failure (`0x80004005`) without a packet. It takes only the FOURCC codes `YUY2` (`0x32595559`) and `UYVY`
+(`0x59565955`); any other code ends the routine with `0x887601fe`. There are two paths. The scratch-rectangle path below is
+taken only when the source rectangle is the whole source surface (its width and height equal the surface's `wWidth` and
+`wHeight`), the destination is larger than the source in at least one axis, and the off-screen heap gives it a scratch
+rectangle the size of the source (`pohAllocate@0x24c24`); every other case takes the direct path, described after the
+numbered steps. An earlier version of this page said the routine returned failure in those cases and built no packet;
+that was a misreading, the routine builds packets on both paths. The scratch-rectangle path builds packets with
 `pulGetPacket@0x27748` and `vDispatchPacket@0x2786c`:
 
-1. A flush marker, the draw-buffer descriptor `0x91aa0020` (only if `ppdev+0x6bc` differs from the copy cached at
-   `dev+0x90`), the mode word `0x80003020` with payload **`0x1c0000`** (bits 20, 19 and 18: colour matrix, pixel transfer,
+1. A flush marker, the draw-buffer descriptor `0x91aa0020` (only if the device's `ulGdiColorFormat`, `+0x6bc`, differs from the copy cached
+   in the shared device record, `ulColorFormat` at `+0x90`), the mode word `0x80003020` with payload **`0x1c0000`** (bits 20, 19 and 18: colour matrix, pixel transfer,
    texture), the four-word texture packet `0x93cc0080` with word 1 `0x72100000` for `YUY2` or `0x7a100000` for `UYVY` and
    three zero words, the texture-environment packet `0x91ea2040` (`0x62000000`, 0), the texture window offsets `0x04230040`
    (`0.5`, `0.5`) and the colour matrix `0x944c42c0`: twenty floats copied from the table `CoMatrixYUV2RGB@0x33d24`, then 0 and
@@ -43,15 +50,29 @@ allocates a scratch rectangle the size of the source in the off-screen heap (`po
    (`0x18a33068`, four dwords each) for the scratch rectangle, whose coordinates come from an integer-to-float table at
    `0x3423c`. The packet ends with a flush marker, the descriptor again if it changed, and the mode word **`0xc0000`**
    (texture and pixel transfer, colour matrix off), then a texture packet whose word 1 is the draw buffer's own format word
-   (`ppdev+0x6bc`) with `0x30000000` in the next word, and the environment packet.
-3. Later packets (the routine dispatches more than three) repeat the pattern with the texture window offsets 0, the strip mode
-   word, port A vertices whose coordinates are built in floating point from the rectangles' corners, and, after another
-   window-parameter packet, a second strip: the packets this routine writes between the colour-matrix pass and the final
-   stretch were not followed to the end.
+   (`ulGdiColorFormat`) with `0x30000000` in the next word, and the environment packet.
+3. The third packet repeats the window parameters, the texture window offsets (0, 0) and the strip mode word, then sends the
+   scratch rectangle's pixels to the destination as port A vertices whose coordinates are floating point, in bands that
+   end on the next 32-line boundary of the screen (128-line from row 256 down) and are cut into columns `ulTilePix` pixels
+   wide, starting a new packet after 43 band edges. The last packet ends with a flush marker, is dispatched with the
+   last-packet argument and the scratch rectangle is freed (`pohFree`). Read in the typed decompile; the band arithmetic
+   was not checked against the hardware's tile size, which is unknown.
 
 So the conversion is a textured rectangle with the colour matrix on, drawn into the scratch rectangle; the second mode
 word and texture packet read the screen's own format as a texture, which fits a final stretch from the scratch rectangle
-to the destination. Read as the vendor names
+to the destination.
+
+**The direct path** builds the same first packet (mode word `0x1c0000`, the texture format `0x72100000` or `0x7a100000`, the
+environment, the colour matrix) and then a window-parameter packet with texture window offsets of `0x3a83126f` for both
+(a float of about 0.001). If the destination is at least 1024 by 768 it draws one horizontal strip per source row, each
+inside a scissor-style clip rectangle built from the destination rectangle through the device's `SmaskInfo` record (valid
+mask `0x08000000`, two corner words), with a primitive mode word `(ratio | 0x4000) << 15` where `ratio` is the destination
+height over the source height rounded up, and a new packet after about 97 strips; a smaller destination is a single
+primitive mode word `0xa0000000` and four port A vertices. Each ends with a flush marker. Established as what the routine
+writes (typed decompile and the disassembly at the two entry branches); the engine's reading of the clip rectangle and the
+ratio field is inferred.
+
+Read as the vendor names
 the fields ([packet-set.md](../../devices/cobalt-graphics/packet-set.md#the-vendors-register-word-types)), `0x72100000` and
 `0x7a100000` are a texture format of type 14 and 15, depth 1 (16 bits) and descriptor id 2. Descriptor 2 is the entry
 `CobaltStartIO` fills with the global buffer, where video-memory surfaces are mapped. Established as what is written; that
