@@ -165,7 +165,7 @@ opens; an earlier note that no tool opened it had the wrong archive in mind.
   variants); the Windows 2000 build gives the same 57. The 1999 build gives 56. It has no `0x97400020` (the texture-id
   reset), no `0x99ce00a0` as an immediate (the rectangle clear is built by arithmetic, see Clears below) and no `0x04a40000`, and it sends the vertex port `0x18c33068`, which 5.2.4 does not
   (a texture-coordinate mask on a port known already). A second pass over the decompiled C of both builds (the literals in the typed
-  decompile) agrees on all of these differences. No header outside the known 52 plus `0x91ca1020` occurs as an
+  decompile) agrees on the other differences; it shows `0x9e7200a0` as an immediate in the clear routine only because the decompiler folds the subtraction of `0x618dff60`. No header outside the known 52 plus `0x91ca1020` occurs as an
   immediate in `.text`. The 25 dwords in 5.2.4 and 43 in 1999 whose top 20 bits match a known address and register but
   whose value is not in the set are not immediates (they straddle instruction bytes or sit in data). The scan this round
   also matches the exact header values byte by byte over `.text`, because the linear sweep had lost the viewport header
@@ -175,8 +175,9 @@ opens; an earlier note that no tool opened it had the wrong archive in mind.
   among `0x18e84020`, `0x936ae020`, `0x938af040`, `0x98804000`, `0x80003020`, `0x18002020` and the vertex port
   `0x18c33060`, plus the lighting mode word `0x05260020` (`@0x69050413`, `@0x6905093a`) and the draw flags `0x00210020` (`@0x69050657`, `@0x690508ef`). It
   does call the static routine at `0x69050cb0` (no public name; the 5.2.4 `coClearBuffers`), which builds the rectangle clear: the header is
-  `(fastClear == 0 ? 0 : 0x04a40000) + 0x99ce00a0`, computed here as `0x9e7200a0` less `0xfb5c0000` when the byte is clear, so the scan finds
-  `0x9e7200a0` as an immediate and no `0x99ce00a0`; the same routine queues a kernel clear (escape `0x50`, input `0x70`) when its mode flag is set. The
+  `(fastClear == 0 ? 0xfb5c0000 : 0) - 0x618dff60`, which is `0x99ce00a0` when the byte at context `+0x311ec` is clear and `0x9e7200a0` otherwise
+  (`sbb`, `and eax,0xfb5c0000`, `sub eax,0x618dff60` at `0x69050e52` to `0x69050e60`; `0x618dff60` is the negation of `0x9e7200a0`). The image holds the
+  two immediates `0xfb5c0000` and `0x618dff60` and neither header as a raw dword, so a search for the headers finds neither. The same routine queues a kernel clear (escape `0x50`, input `0x70`) when its mode flag is set. The
   earlier statement that a 1999 clear is always a drawn rectangle, and that the engine's rectangle clear was for the miniport's own clears only, is withdrawn.
   Established (both routines read).
 - **Texture-id reset.** Without `0x97400020` the 1999 `__glCoCreateTexLevel@0x690219a0` has no texture-id reset before it frees a

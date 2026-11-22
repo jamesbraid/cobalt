@@ -36,7 +36,7 @@ routine pointers and the cache-operation-invalidate flag ([nt-hal.md](https://gi
 `CobaltFindAdapter` (which runs only for system I/O bus number 0) then reads the chip revision at
 `0xc2000008` (accepted if the high nibble is `0xa` and the low nibble is neither 0 nor 8) and stores it, and, when `PsGetVersion` reports a
 major version above 4 (Windows 2000 and later, not NT 4.0), claims `0xd0000000` to `0xd008001f` with `IoAssignResources`. It reads the
-revision through a four-byte mapping of `0xc2000008`; the Cobalt CPU block that holds it is described in
+revision through an eight-byte mapping of `0xc2000008` (`push 8` before `MmMapIoSpace`); the Cobalt CPU block that holds it is described in
 [the Cobalt page](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md#cpu-block-revision-and-system-timer-established) of the chips repository. The revision
 names the chip set as "Cobalt Graphics ChipSet A0" to "AF" in the registry's `HardwareInformation.ChipType`. The
 adapter string is "Cobalt Graphics", the DAC "Cobalt Graphics Backend". Inferred (driver behaviour).

@@ -20,7 +20,7 @@ bytes of three live words (`+0x30008`, `+0x20004` and `+0x40002`, the last being
 
 | Need | Registers and what the NT driver does | Known | Source |
 |---|---|---|---|
-| Identify the part | `id` (`+0x14`) must read `0x666` (low 16 bits); anything else and the driver does not attach | established (the check), inferred (what the chip is) | `CobaltInitialize`; both Windows 2000 drivers |
+| Identify the part | `id` (`+0x14`) must read `0x666`; the SGI miniport compares the whole dword (`cmp dword [eax+0x14],0x666` at `sgcomp.sys@0x1196f`), the Windows 2000 CD drivers only the low 16 bits; anything else and the driver does not attach | established (the check), inferred (what the chip is) | `CobaltInitialize`; both Windows 2000 drivers ([page](../../software/windows/w2k-display-drivers.md)) |
 | Mode set, order | stop the interrupt, normal, overlay and DID fetches; dot clock sequence; the timing window words; `config`; the tile and frame size words; `ctrlstat` = `0x30000000` last | established (the order the NT driver writes), inferred (hardware effect) | `asSetConfigAndTiming`, [display-engine.md](display-engine.md#video-timing-block-0x10000) |
 | Pixel clock | `dotclock` (`+0x04`): `((N-1) << 8) \| (P << 14) \| (M-1)`, then `RUN` (bit 20) after 40 ms; 27 MHz times `M/N` divided by `2^P` fits 26 of the 27 table rows to 1.4 percent. No lock bit is read. The one-second restart dance is reproduced, its purpose unknown | established (writes), inferred (formula) | `asSetConfigAndTiming`; table `cobaltVTimings` |
 | Timing | `vt_xymax`, `vt_vsync`, `vt_hsync`, `vt_vblank`, `vt_hblank`, `vt_hpixen`, `vt_vpixen`, `vt_hcmap`, `vt_vcmap`, `did_start_xy`, `crs_start_xy`, `vc_start_xy`, `fp_*`, `vt_f2rf_lock`, from the 27-row mode record | established (every field written), inferred (field meanings from the O2's display back end) | `asSetConfigAndTiming`, [mode table](display-engine.md#mode-table) |
@@ -59,7 +59,7 @@ for cache coherence, a frame-buffer-only driver does not call them (inferred).
 | Interrupt acknowledge | the driver does no end-of-interrupt write to the controller; its handlers clear only their own source (below). The controller's acknowledge sequence is the HAL's | `CoInterruptHandler`, `CoVRetraceHandler` |
 | Mapped ranges | `MmMapIoSpace` (uncached) of `0xd0000000` `0x80020`; `0xc8000000` `0x19000` (engine); `0xca000000` 4; `0xc0000020` 4 (both only after the ID check); `0xc2000008` 8 (revision, mapped and released in `CobaltFindAdapter`) | `CobaltInitialize`, `CobaltFindAdapter` |
 | Resource claim | `IoAssignResources` for `0xd0000000` to `0xd008001f`, only when `PsGetVersion` reports a major version above 4 | `CobaltFindAdapter` |
-| Revision check | high nibble `0xa`, low nibble neither 0 nor 8; the revision read at `0xc2000008` is read once, in `CobaltFindAdapter`, before anything else; no routine reads it after an interrupt handler | `CobaltFindAdapter` |
+| Revision check | high nibble `0xa`, low nibble neither 0 nor 8; the register is read once, in `CobaltFindAdapter`, and the copy kept at `+0x1180` of the device extension is read in `CobaltInitialize` (`0x11f5c`) to build the `HardwareInformation.ChipType` string; no routine reads the register after an interrupt handler | `CobaltFindAdapter` |
 | Memory | the registry key `SGICtrl\Memory` under `Control`: `NumberOfBanks`, `BankAddr00`..`31`, `BankSize00`..`31`; fewer than two banks and the driver prints "GRAPHICS: no preallocated memory" and bug-checks (`0x5a`). The HAL writes them ([the HAL's side](https://github.com/jamesbraid/chips/blob/main/software/visws/boot-path.md)). A Windows 2000 `sglfb` needs only `GraphicsMemory` and `GraphicsMemorySize` | `pCoBankLoadBanks`; [w2k-display-drivers.md](../../software/windows/w2k-display-drivers.md) |
 | Persisting the memory profile | `HalSetEnvironmentVariable("cogfxmem", "count,pages,...")` from a private IOCTL (`0x232094`) | `CobaltStartIO` |
 | Aperture and physical memory | the pool and surfaces are mapped with `MmMapIoSpace` at `0x80000000`, `0x82000000`, `0x85000000`, `0x87000000` (16 MB each), and the miniport opens `\Device\PhysicalMemory` with `ZwOpenSection` and `ZwMapViewOfSection` to map packet buffers into the calling process | `pCoInitializePacketPool`, `pCoMapPktMem` |
@@ -75,7 +75,7 @@ dispatch in `CobaltStartIO`); the names of the stock codes are inferred from the
 
 **The display driver.** `sgcodd.dll` is a GDI display driver (45 imports from `WIN32K.SYS` in the Windows 2000 build: the
 Eng* surface, bitmap, palette, clip and driver-object calls, and `EngSaveFloatingPointState` and
-`EngRestoreFloatingPointState`, which the NT 4.0 build replaces by `EngFindImageProcAddress`). It talks to the miniport with
+`EngRestoreFloatingPointState`, plus `EngAlphaBlend`, `EngGradientFill` and `EngModifySurface`, which the NT 4.0 build replaces by `EngFindImageProcAddress`). It talks to the miniport with
 `EngDeviceIoControl`. A frame-buffer-only driver replaces it; the Windows 2000 `sglfb` pair is Microsoft's and draws in software.
 
 ## 3. Would the Windows 2000 builds load on Windows XP (32-bit) unchanged?
@@ -104,7 +104,7 @@ Inferred at best: nothing here was tried. What the binaries say.
 
 ## 4. Hot paths
 
-All accesses are 32-bit and uncached; the miniport never uses a write barrier or a read-back other than those listed. An
+All accesses are 32-bit and uncached; the miniport uses no write barrier, and its only read-backs are those listed (including the discarded `+0x1001c` load and the second `vt_flags` write in the retrace handler). An
 emulator that sequences these correctly passes the NT drivers' loops.
 
 | Path | Accesses, in order | Notes |
@@ -113,7 +113,7 @@ emulator that sequences these correctly passes the NT drivers' loops.
 | Doorbell | `0x10008` = `0x400` after work is appended or a node is resumed | three routines, conditions in [graphics-engine.md](graphics-engine.md) |
 | Engine interrupt (pin 25) | read `0x10018` (zero means not ours, counted as spurious); mask with `0x60000000`; write `0`; re-read `0x10018` until its masked bits differ from the value read; queue a deferred routine | the one read-after-write: the clear must be visible before the handler returns |
 | Stop-event deferred routine | read `0x10000` (position in bits 31:12), or `0x185c0` when that reads 0; read `0x185c0`, `0x185c8` and, for an OpenGL node, `0x185d0`; for a stop inside a state-restore page rewrite `0x10000` with the same position | `CoProcessCobaltEvent` |
-| Retrace interrupt (pin 24) | read the dword at `0xca000000`; write its complement; if bit 1 was set count a frame; in stereo also read-modify-write `vt_flags` | no re-read |
+| Retrace interrupt (pin 24) | read the dword at `0xca000000`; write its complement; if bit 1 was set count a frame; in stereo also a discarded load of `vt_f2rf_lock` (`+0x1001c`), then a read-modify-write of `vt_flags` and, when `bFreeRun` is set, a second write of `vt_flags` with bit 6 cleared | no re-read of `0xca000000`; the discarded `+0x1001c` load may have side effects |
 | Enable and park | `CoInitHw`: `0x10000` = `0xfffff040`, `0x10018` = 0, `0x10020` = `0x60000000`; `asStopIntr`: `vt_intr01` and `vt_intr23` = `0xffffff` | |
 | Scan line poll | read `vt_xy`, bits 23:12 | `VBLANK_IS_ACTIVE` |
 | Flip | write `frm_control`; poll `frm_inhwctrl` against the value written | |
