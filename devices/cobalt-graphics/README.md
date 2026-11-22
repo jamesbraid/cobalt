@@ -19,6 +19,8 @@ emulator brief. The registers and the software that drives them are in three com
 - [../../software/windows/opengl-expectations.md](../../software/windows/opengl-expectations.md): what the OpenGL driver reports and
   expects of the engine: strings, extensions, limits, switches.
 - [board-data.md](board-data.md): what SGI's graphics white paper and a real machine's registry export settle.
+- [family-comparison.md](family-comparison.md): how the engine and Arsenic compare with the O2's CRIME and GBE and the other SGI graphics
+  families, and what a model of those can be reused for.
 - The OpenGL driver itself, its symbols and its run-time code generators: [nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md).
 - [framebuffer-driver-floor.md](framebuffer-driver-floor.md): the smallest set of registers and of HAL and driver-model facts a
   frame-buffer-only driver needs, how well each is known, and the drivers' hot paths.
