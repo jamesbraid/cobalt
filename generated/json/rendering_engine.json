@@ -1,7 +1,7 @@
 {
  "license": "BSD-3-Clause",
  "generator": "defs-gen 2",
- "input_sha256": "381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2",
+ "input_sha256": "fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22",
  "schema": "defs-flat/1",
  "source": "devices/rendering-engine/registers.toml",
  "profile": "public",
@@ -1330,6 +1330,537 @@
   {
    "unit": "rendering_engine",
    "kind": "constant",
+   "name": "BLEND_CONSTANT_ALPHA",
+   "value": 10,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_CONSTANT_COLOR",
+   "value": 8,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_DST_ALPHA",
+   "value": 6,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ONE",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ONE_MINUS_CONSTANT_ALPHA",
+   "value": 11,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ONE_MINUS_CONSTANT_COLOR",
+   "value": 9,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ONE_MINUS_DST_ALPHA",
+   "value": 7,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ONE_MINUS_OTHER_COLOR",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ONE_MINUS_SRC_ALPHA",
+   "value": 5,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_OP_ADD",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_OP_MAX",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_OP_MIN",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_OP_REVERSE_SUBTRACT",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_OP_SUBTRACT",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_OTHER_COLOR",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_SRC_ALPHA",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_SRC_ALPHA_SATURATE",
+   "value": 12,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "BLEND_ZERO",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_ALWAYS",
+   "value": 7,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_EQUAL",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_GEQUAL",
+   "value": 6,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_GREATER",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_LEQUAL",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_LESS",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_NEVER",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "CMP_NOTEQUAL",
+   "value": 5,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "FILTER_LINEAR",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "FILTER_LINEAR_MIP_LINEAR",
+   "value": 5,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "FILTER_LINEAR_MIP_NEAREST",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "FILTER_NEAREST",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "FILTER_NEAREST_MIP_LINEAR",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "FILTER_NEAREST_MIP_NEAREST",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "STENCIL_DECR",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "STENCIL_INCR",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "STENCIL_INVERT",
+   "value": 5,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "STENCIL_KEEP",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "STENCIL_REPLACE",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "STENCIL_ZERO",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXCLASS_ALPHA",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXCLASS_INTENSITY",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXCLASS_LUMINANCE",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXCLASS_LUMINANCE_ALPHA",
+   "value": 5,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXCLASS_RGB",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXCLASS_RGBA",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXENV_ADD",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXENV_BLEND",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXENV_DECAL",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXENV_MODULATE",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXENV_REPLACE",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_ALPHA_OR_INTENSITY8",
+   "value": 8,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_INDEX8",
+   "value": 0,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_LUMINANCE8",
+   "value": 6,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_LUMINANCE_ALPHA8",
+   "value": 7,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_RGB5A1",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_RGBA4",
+   "value": 3,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_RGBA8",
+   "value": 4,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_RGBA8_ALT",
+   "value": 5,
+   "count": 1,
+   "grade": "unknown",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_YUV_A",
+   "value": 14,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "TEXTYPE_YUV_B",
+   "value": 15,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
    "name": "WINDOW_PHYS",
    "value": 3355443200,
    "count": 1,
@@ -1341,6 +1872,33 @@
    "kind": "constant",
    "name": "WINDOW_SIZE",
    "value": 102400,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "WRAP_CLAMP",
+   "value": 1,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "WRAP_CLAMP_TO_EDGE",
+   "value": 2,
+   "count": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "constant",
+   "name": "WRAP_REPEAT",
+   "value": 0,
    "count": 1,
    "grade": "inferred",
    "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"

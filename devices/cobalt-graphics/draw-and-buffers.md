@@ -238,6 +238,109 @@ and fog colour are per-state registers; their layouts are in [packet-set.md](pac
   [packet-set.md](packet-set.md#window-parameter-packets): a valid mask, five clip rectangles and the window origin.
 - Face culling is a field in the mode word; frustum clipping is on the host (`__glDrawVertexes_*`).
 
+## Function and operand encodings
+
+Every word below is the payload the named setter writes, read whole in disassembly (`sgcoicd.dll` 5.2.4): **established**
+for what is written. What the hardware does with each code is **inferred**: the codes sit in the fields the vendor's types
+declare and the GL meaning is the driver's. Bit positions are in [packet-set.md](packet-set.md#the-vendors-register-word-types).
+
+**Comparison functions** (alpha test `__glCoPassAlphaFunc@0x6902c696`, depth test `__glCoPassDepthTest@0x6902ce58`,
+stencil `__glCoPassStencil@0x69023ece`): the GL enum minus `0x200`, so 0 never, 1 less, 2 equal, 3 less or equal,
+4 greater, 5 not equal, 6 greater or equal, 7 always. The alpha test sets bit 31 of its first word as an always-set
+enable and holds the function in 27:25 and the reference in the second word's low byte (the float reference times 255,
+plus 0.5, truncated); the depth function is in 31:29 of its word; the stencil function is in 19:16.
+
+**Blend** (`__glCoPassBlend@0x6902c780`; first word destination 31:28, source 27:24, equation 23:20):
+
+| Equation | Code |
+|---|---:|
+| `GL_FUNC_ADD_EXT` (`0x8006`) | 0 |
+| `GL_MIN_EXT` (`0x8007`) | 1 |
+| `GL_MAX_EXT` (`0x8008`) | 2 |
+| `GL_FUNC_SUBTRACT_EXT` (`0x800a`) | 3 |
+| `GL_FUNC_REVERSE_SUBTRACT_EXT` (`0x800b`) | 4 |
+
+`GL_LOGIC_OP` as the equation (`0xbf1`) sends no blend packet; the logic-operation path is used. An equation outside this
+list leaves the field as the routine's uninitialised local, so the value is not defined.
+
+| Factor | Source code | Destination code |
+|---|---:|---:|
+| `GL_ZERO` | 0 | 0 |
+| `GL_ONE` | 1 | 1 |
+| `GL_DST_COLOR` | 2 | not allowed |
+| `GL_SRC_COLOR` | not allowed | 2 |
+| `GL_ONE_MINUS_DST_COLOR` | 3 | not allowed |
+| `GL_ONE_MINUS_SRC_COLOR` | not allowed | 3 |
+| `GL_SRC_ALPHA` | 4 | 4 |
+| `GL_ONE_MINUS_SRC_ALPHA` | 5 | 5 |
+| `GL_DST_ALPHA` | 6 if the buffer has alpha, else 1 | 6 if the buffer has alpha, else 1 |
+| `GL_ONE_MINUS_DST_ALPHA` | 7 if the buffer has alpha, else 0 | 7 if the buffer has alpha, else 0 |
+| `GL_SRC_ALPHA_SATURATE` | 12 if the buffer has alpha, else 0 | not allowed |
+| `GL_CONSTANT_COLOR_EXT` (`0x8001`) | 8 | 8 |
+| `GL_ONE_MINUS_CONSTANT_COLOR_EXT` | 9 | 9 |
+| `GL_CONSTANT_ALPHA_EXT` | 10 | 10 |
+| `GL_ONE_MINUS_CONSTANT_ALPHA_EXT` | 11 | 11 |
+
+So the codes 2 and 3 name "the other operand's colour": the destination colour in the source field and the source colour
+in the destination field. "The buffer has alpha" is the context's alpha bit count above zero. The second word is the
+constant colour packed red in 31:24, green 23:16, blue 15:8, alpha 7:0, each the float times 255 plus 0.5 truncated. The
+blend is sent when the pixel-pipe mode word's blend bit is set; an RGBA context only (a colour-index context sends none).
+
+**Logic operation** (`__glCoPassLogicOp@0x6902cafa`): the GL enum minus `0x1500` in 31:28 (clear 0, and 1, and-reverse 2,
+copy 3, and-inverted 4, noop 5, xor 6, or 7, nor 8, equiv 9, invert 10, or-reverse 11, copy-inverted 12, or-inverted 13,
+nand 14, set 15); an enum outside the sixteen sends 0. The ROP2 table the display driver uses is in
+[2d-blit-video.md](2d-blit-video.md).
+
+**Stencil operations** (31:28 pass, 27:24 depth fail, 23:20 stencil fail): 0 `GL_KEEP`, 1 `GL_ZERO`, 2 `GL_REPLACE`,
+3 `GL_INCR`, 4 `GL_DECR`, 5 `GL_INVERT`; an unknown enum gives 0. The first word then has the function in 19:16, the
+read mask in 15:8 and the reference in 7:0; the second word's low byte is the write mask.
+
+**Depth test word** (`0x936ae020`): the function in 31:29; bits 28:27 are the occlusion-count control the instruments
+extension drives, 11 to start (initialise and enable), 01 while counting, 00 otherwise; the context field that holds the
+state is `gc+0x2e1c4`. The remaining bits are zero. The depth-write enable and the depth-test enable are in the pixel-pipe
+mode word (bits 30 and 29), not here.
+
+**Fog colour** (`__glCoPassFog@0x6902cc3e`): the three colour floats times 255 plus 0.5, red in 31:24, green 23:16, blue
+15:8; not sent in a colour-index context.
+
+**Cull and face orientation** (`__glCoPassCullFace@0x69024320`, `__glCoPassFrontFace@0x69024378`): when face culling
+is enabled the primitive mode word's bits 14:13 get 01 for `GL_FRONT`, 10 for `GL_BACK` and 11 for
+`GL_FRONT_AND_BACK` (so bit 13 culls front faces and bit 14 culls back faces); with culling off both are cleared. Bit 12
+is set for `GL_CCW` (`0x901`) and cleared for `GL_CW` (`0x900`).
+
+**Polygon offset** (`__glCoPassPolygonOffset@0x69024398`): word 1 is the GL factor as a float, word 2 is the units times
+the depth buffer's minimum resolution (`gc+0x4244`).
+
+## Viewport and coordinate conventions
+
+What the driver sends for the viewport (`__glCoSetViewMatrix@0x69018dfa`, `UpdateViewport@0x690198ee`, both read in full)
+fixes the coordinate space it expects. Established as what is written; the engine's reading is inferred.
+
+- The six words of `0x0362a0c0` are x scale, y scale, z scale, x offset, y offset, z offset. The x scale is half the
+  viewport width, the y scale is the negative of half the height (the engine's y runs down the screen: the driver flips it
+  against the window height), the z scale and offset come from `glDepthRange` as
+  `(far - near) * 0.49999997` (`0x3effffff`, so a window z never reaches 1.0 exactly) and, read from the second store only, `(far + near) * 0.49999997` (`__glCoUpdateDepthRange@0x6902cee2`, called from `___glcoim_DepthRange@0x6902cf7e`), with the
+  two swapped when a depth-reversal byte in the context is set.
+- The x offset is the viewport's left edge plus half its width, plus the context's float x adjustment, less `0.492`; the
+  y offset is the window height less (the viewport's bottom edge plus half its height), plus the float y adjustment, less
+  `0.508`. The two constants are at `0x69002680` (0.492) and `0x6900267c` (0.508): the half-pixel of OpenGL's pixel
+  centres, split asymmetrically by 1/128 pixel. The float adjustments (`gc+0x2558`, `gc+0x255c`) are read here and no
+  routine of the driver writes them, so they hold zero unless the context allocator fills them (not seen). The driver's
+  `subpixelBits` is 6, so the engine is expected to take window coordinates with 1/64 pixel resolution; that the 1/128 pixel
+  bias exists to settle ties in the engine's fill rule is inferred, and the fill rule itself is unknown.
+- The context's integer viewport adjustments (-1024 on each axis) are not in the packet. They enter a range test
+  (`0x69019a6c`) that decides whether the viewport lies inside the guard-band rectangle the host clipper assumes. The
+  miniport adds 1024 to the window origin it sends in `0x9845b020` ([packet-set.md](packet-set.md#window-parameter-packets)),
+  and how the engine combines that bias with vertex coordinates is unknown.
+- Clip volume: guard-band factors come from the viewport and the viewport maximum of 2048 by 2048
+  ([opengl-expectations.md](../../software/windows/opengl-expectations.md#limits)).
+- The rasterisation rules proper (coverage, top-left or other fill convention, pixel centre, rounding of the fixed-point
+  position, interpolation precision, the perspective correction of texture coordinates) are **unknown**: no shipped
+  routine depends on them, and the host path that draws a fill itself (`__glCoFillAntiAliasTriangle`, the stipple and
+  two-sided fills) sends window coordinates to the same vertex port the engine rasterises from.
+  [questions/open-questions.md](../../questions/open-questions.md#texture-and-pixel-pipeline-what-the-shipped-software-does-not-settle)
+  records what a model must choose.
+
 ## Clears
 
 Two ways. A clear that needs the depth or stencil operations is drawn: `__glCoClearBuffers` sets the depth function
@@ -271,13 +374,15 @@ full memory bandwidth" are agreement, not the meaning.
   matrix for color space conversion, scale/bias, and component swizzling". The four context fields packed into the two
   parameter packets are not decoded. The routines are `__glCoLinearToTileXfer`,
   `__glCoTileToLinearXfer`, `__glCoTileToTileXfer`, `coProcess*` and `coLoadLinearTlb`.
-- **Texture images are stored by the CPU.** `coStoreTexImage` and its helpers copy texels into texture memory pages
-  from the host with ordinary stores (UMA), after `coAllocTextureTiles` asked the miniport for the pages. The only
-  engine packet it can add is `0x9ed380e0` (`coVhdlTexImage`), and that is sent only when a global that defaults to 0
-  is set (`coUpdateCommonTile`, `coStoreTexImage`), so it is a debugging or simulation hook: its name says VHDL, and
-  its payload is three caller words, a pixel count, the width and the corner pair. Read in full. The white paper's
-  "memory management hardware for allocation of graphics buffers in system memory" and the miniport's translation
-  table are the allocation side.
+- **Texture images** reach texture memory by one of three routes, set out in [textures.md](textures.md#how-texels-get-into-texture-memory):
+  by default through the engine (the vendor's `dmaXferTextures` is 1: a pixel-transfer packet sequence draws a linear host
+  image into the tiled level, and the context's colour matrix converts channel order and depth), otherwise through ordinary
+  CPU stores into the pages (UMA) after `coAllocTextureTiles` asked the miniport for them, and, only when a global that
+  defaults to 0 is set (`vhdlLoadTextures`), through the packet `0x9ed380e0` (`coVhdlTexImage`), whose name says VHDL: a
+  simulation hook with three caller words, a pixel count, the width and the corner pair. Read in full. An earlier version of
+  this page said the images are stored by the CPU and the engine packet is a hook only; the first half was wrong (the
+  transfer route is the default). The white paper's "memory management hardware for allocation of graphics buffers in
+  system memory" and the miniport's translation table are the allocation side.
 - **Texture level lifecycle.** `__glCoCreateTexLevel` computes the level's size (`coComputeTexLevelSize`), asks for
   pages, and, if the texture is currently bound, writes `0x97400020` with payload 0 before freeing the old pages.
 - **Binding.** `coCreateTexBindPkt` asks the miniport (escape `0x57`, `CREATE_TEXTLBPKT`) for a prebuilt packet that
@@ -287,7 +392,8 @@ full memory bandwidth" are agreement, not the meaning.
   and stores the position words of the texture packet, so the texture packet runs between two ICD nodes. A bind is
   therefore made of chain packets, not of a register write from the ICD. The order of the jump into the packet and the
   return is not decoded. Texture addressing, filtering and wrap modes are not packets of their own in anything
-  read: the texture parameters go in the two packets `coSetTexParam` writes, `0x91ea2040` and `0x93cc0080`. The vendor's
+  read: the texture parameters go in the two packets `coSetTexParam` writes, `0x91ea2040` and `0x93cc0080`, whose fields are all
+  decoded in [textures.md](textures.md). The vendor's
   types for them are the texture environment and the texture-generator parameters (format, filters, wraps, map size,
   level of detail and border colour: [packet-set.md](packet-set.md#the-vendors-register-word-types)); this page calls
   them "transfer parameters" because the pixel-transfer routines load the same two packets.

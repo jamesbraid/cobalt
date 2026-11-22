@@ -14,6 +14,10 @@ emulator brief. The registers and the software that drives them are in three com
 - [packet-set.md](packet-set.md): the header words the OpenGL driver puts in the packet stream, one row each, with the
   address-field reading and the engine-register class.
 - [draw-and-buffers.md](draw-and-buffers.md): how those packets draw, clear, set buffers and bind textures.
+- [textures.md](textures.md): the texture packets decoded: the pixel-format type codes, filters, wraps, level of detail,
+  environment, the GL-format-to-storage table, tile geometry and the upload routes.
+- [../../software/windows/opengl-expectations.md](../../software/windows/opengl-expectations.md): what the OpenGL driver reports and
+  expects of the engine: strings, extensions, limits, switches.
 - [board-data.md](board-data.md): what SGI's graphics white paper and a real machine's registry export settle.
 - The OpenGL driver itself, its symbols and its run-time code generators: [nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md).
 - [framebuffer-driver-floor.md](framebuffer-driver-floor.md): the smallest set of registers and of HAL and driver-model facts a

@@ -8,4 +8,5 @@
 |---|---|---|
 | [nt-display-driver-video.md](windows/nt-display-driver-video.md) | The NT 4.0 display driver's video and 2D routines | What the display driver `sgcodd.dll` 5.2.4 (NT 4.0 pack, 299,696 bytes, the files list has its hash) does in its... |
 | [nt-opengl-icd.md](windows/nt-opengl-icd.md) | The NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4 | How the OpenGL installable client driver (ICD) is built, how its symbols were applied, and where its packet emitters... |
+| [opengl-expectations.md](windows/opengl-expectations.md) | What the OpenGL driver expects of the engine | The facts an x64 or other OpenGL path must satisfy to stand in for the Cobalt rendering engine: the identity strings... |
 | [w2k-display-drivers.md](windows/w2k-display-drivers.md) | Windows 2000 display drivers for the Visual Workstation: sgibvid, sglfb | The two SGI-specific video files on the Windows 2000 CD: the boot video driver `sgibvid.dll` and the "Cobalt... |

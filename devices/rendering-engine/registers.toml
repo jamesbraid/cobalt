@@ -359,3 +359,74 @@ y = { bits = [31, 16], grade = "inferred" }
 [constants]
 WINDOW_PHYS = { value = 0xc8000000, grade = "inferred" }
 WINDOW_SIZE = { value = 0x19000, grade = "inferred" }
+
+# Codes the OpenGL driver writes into the words above; the GL meaning is the driver's, the hardware's reading is inferred.
+# Texture and colour-buffer type codes (tex_type, with buf_depth).
+TEXTYPE_INDEX8 = { value = 0, grade = "inferred", doc = "8-bit colour index, depth 0; display driver colour format word 0" }
+TEXTYPE_RGB5A1 = { value = 2, grade = "inferred", doc = "16 bits, 5-5-5-1, depth 1" }
+TEXTYPE_RGBA4 = { value = 3, grade = "inferred", doc = "16 bits, 4-4-4-4, depth 1" }
+TEXTYPE_RGBA8 = { value = 4, grade = "inferred", doc = "32 bits, 8 per component, depth 2" }
+TEXTYPE_RGBA8_ALT = { value = 5, grade = "unknown", doc = "32 bits, depth 2, written for host transfer sources; how it differs from type 4 is unknown" }
+TEXTYPE_LUMINANCE8 = { value = 6, grade = "inferred", doc = "8-bit luminance, depth 0" }
+TEXTYPE_LUMINANCE_ALPHA8 = { value = 7, grade = "inferred", doc = "16 bits, luminance and alpha, depth 1" }
+TEXTYPE_ALPHA_OR_INTENSITY8 = { value = 8, grade = "inferred", doc = "8-bit alpha or intensity, depth 0" }
+TEXTYPE_YUV_A = { value = 14, grade = "inferred", doc = "YUV 4:2:2 form, depth 1; the display driver's YUV blit" }
+TEXTYPE_YUV_B = { value = 15, grade = "inferred", doc = "the other YUV 4:2:2 form, depth 1" }
+# Mode word: min_filter, mag_filter, wrap_s, wrap_t.
+FILTER_NEAREST = { value = 0, grade = "inferred", doc = "min_filter and mag_filter" }
+FILTER_LINEAR = { value = 1, grade = "inferred", doc = "min_filter and mag_filter" }
+FILTER_NEAREST_MIP_NEAREST = { value = 2, grade = "inferred", doc = "min_filter only" }
+FILTER_LINEAR_MIP_NEAREST = { value = 3, grade = "inferred", doc = "min_filter only" }
+FILTER_NEAREST_MIP_LINEAR = { value = 4, grade = "inferred", doc = "min_filter only" }
+FILTER_LINEAR_MIP_LINEAR = { value = 5, grade = "inferred", doc = "min_filter only" }
+WRAP_REPEAT = { value = 0, grade = "inferred" }
+WRAP_CLAMP = { value = 1, grade = "inferred", doc = "uses the border colour" }
+WRAP_CLAMP_TO_EDGE = { value = 2, grade = "inferred" }
+# Texture environment: func, and type (the base-format class of the level).
+TEXENV_MODULATE = { value = 0, grade = "inferred" }
+TEXENV_DECAL = { value = 1, grade = "inferred" }
+TEXENV_BLEND = { value = 2, grade = "inferred" }
+TEXENV_REPLACE = { value = 3, grade = "inferred" }
+TEXENV_ADD = { value = 4, grade = "inferred" }
+TEXCLASS_RGB = { value = 0, grade = "inferred" }
+TEXCLASS_RGBA = { value = 1, grade = "inferred" }
+TEXCLASS_LUMINANCE = { value = 2, grade = "inferred" }
+TEXCLASS_ALPHA = { value = 3, grade = "inferred" }
+TEXCLASS_INTENSITY = { value = 4, grade = "inferred" }
+TEXCLASS_LUMINANCE_ALPHA = { value = 5, grade = "inferred" }
+# Blend equation (op).
+BLEND_OP_ADD = { value = 0, grade = "inferred" }
+BLEND_OP_MIN = { value = 1, grade = "inferred" }
+BLEND_OP_MAX = { value = 2, grade = "inferred" }
+BLEND_OP_SUBTRACT = { value = 3, grade = "inferred" }
+BLEND_OP_REVERSE_SUBTRACT = { value = 4, grade = "inferred" }
+# Blend factors (src_func and dst_func share the codes; 2 and 3 name the other operand's colour).
+BLEND_ZERO = { value = 0, grade = "inferred" }
+BLEND_ONE = { value = 1, grade = "inferred" }
+BLEND_OTHER_COLOR = { value = 2, grade = "inferred", doc = "destination colour in src_func, source colour in dst_func" }
+BLEND_ONE_MINUS_OTHER_COLOR = { value = 3, grade = "inferred" }
+BLEND_SRC_ALPHA = { value = 4, grade = "inferred" }
+BLEND_ONE_MINUS_SRC_ALPHA = { value = 5, grade = "inferred" }
+BLEND_DST_ALPHA = { value = 6, grade = "inferred", doc = "the driver sends 1 instead when the buffer has no alpha" }
+BLEND_ONE_MINUS_DST_ALPHA = { value = 7, grade = "inferred", doc = "the driver sends 0 instead when the buffer has no alpha" }
+BLEND_CONSTANT_COLOR = { value = 8, grade = "inferred" }
+BLEND_ONE_MINUS_CONSTANT_COLOR = { value = 9, grade = "inferred" }
+BLEND_CONSTANT_ALPHA = { value = 10, grade = "inferred" }
+BLEND_ONE_MINUS_CONSTANT_ALPHA = { value = 11, grade = "inferred" }
+BLEND_SRC_ALPHA_SATURATE = { value = 12, grade = "inferred", doc = "src_func only" }
+# Comparison functions (alpha test func, depth test func, stencil func): the GL enum minus 0x200.
+CMP_NEVER = { value = 0, grade = "inferred" }
+CMP_LESS = { value = 1, grade = "inferred" }
+CMP_EQUAL = { value = 2, grade = "inferred" }
+CMP_LEQUAL = { value = 3, grade = "inferred" }
+CMP_GREATER = { value = 4, grade = "inferred" }
+CMP_NOTEQUAL = { value = 5, grade = "inferred" }
+CMP_GEQUAL = { value = 6, grade = "inferred" }
+CMP_ALWAYS = { value = 7, grade = "inferred" }
+# Stencil operations (sfail, dpfail, dppass).
+STENCIL_KEEP = { value = 0, grade = "inferred" }
+STENCIL_ZERO = { value = 1, grade = "inferred" }
+STENCIL_REPLACE = { value = 2, grade = "inferred" }
+STENCIL_INCR = { value = 3, grade = "inferred" }
+STENCIL_DECR = { value = 4, grade = "inferred" }
+STENCIL_INVERT = { value = 5, grade = "inferred" }

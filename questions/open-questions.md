@@ -87,9 +87,9 @@ driver. Written up in [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-vide
   layout, the DMA descriptor format, the 10-bit field table at `.data` `0x135e0`, the interrupt pins and the video formats were not
   decoded; `viddiag.exe` and `sgivcp.cpl` reach the hardware through `sgidmedia.dll` or `sgival.dll`, not directly. Settles it: reading `sgilivid.sys` entry points and
   its IOCTL table in Ghidra.
-- **Texture type codes.** Codes 0, 2, 4, 8, 14 and 15 are seen in 2D; the OpenGL driver's `coSetTexParam` and
-  `__glCoSetXferParam` hold the full table of GL formats to type codes (the minification filter codes 0 to 5 in bits 31:29 and
-  the magnification bit 28 were read there: nearest 0, linear 1, mipmap forms 2 to 5). Next: the 3D step.
+- **Texture type codes.** Answered for what the drivers write: the full table of GL formats to type codes, the filter, wrap
+  and level-of-detail codes and the environment word are in [textures.md](../devices/cobalt-graphics/textures.md); what is left
+  is under [the texture and pixel pipeline](#texture-and-pixel-pipeline-what-the-shipped-software-does-not-settle).
 - **Windows 2000 display driver 2D routines.** The 2D header immediates occur 5 to 10 percent more often in the Windows 2000 build
   (draw-buffer sets 38 against 35, flush markers 100 against 89, window parameters 125 against 116); the routines were not
   matched one by one, so whether the extra sites are new operations is unknown. Next: export the build with the vendor's
@@ -98,3 +98,35 @@ driver. Written up in [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-vide
   `DrvFillPath`, `vTextOutFW_P2C` to `P5C` and `vXferDMA_*` were summarised by their packet sequence and not read in full.
 - **Alpha blend in 2D.** `ulAlphaBlend`, its mode and value are tested by the copy routines but no routine read sets them; whether any
   DirectDraw or GDI path ever turns blending on is unknown.
+
+## Texture and pixel pipeline: what the shipped software does not settle
+
+Routes tried for all of these: the NT 4.0 5.2.4 OpenGL driver read in disassembly (texture, blend, depth, stencil, viewport,
+context-creation and transfer routines), its program-database types, the Windows 2000 5.2.4 OpenGL driver by string and
+table search, the display driver's YUV and fill paths, the white paper (features only). Written up in
+[textures.md](../devices/cobalt-graphics/textures.md), [draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md)
+and [opengl-expectations.md](../software/windows/opengl-expectations.md). A model chooses a value for each and documents it.
+
+- **Texel order inside a tile.** The descriptor gives tile row length, rows per tile and tiles per row; the driver's CPU store
+  routines were not followed to the address arithmetic, so the order inside a tile and the order of tiles are a reading of
+  the descriptor, not a read of code. Next: `coStoreTexImage@0x690207ca` with the span store routines
+  (`__glCoStoreTexImage`, `0x6903b060`, `0x6903e7f8`) and the tile fields of the texture machine record.
+- **Channel order of the 32-bit types 4 and 5**, and the unused codes 1 and 11 to 13. The colour-buffer words say red is in
+  the top byte for type 4; type 5 is written for host sources and its difference is not shown. Next: the converters
+  `0x6903afa2`, `0x6903e7f8`, `0x6903e944`, `0x6903eac8` and the colour-matrix loader `coSetColorMatrixRegisters`.
+- **Sampling arithmetic.** Filter precision, the rounding of level selection, the effect of `lodFracSize`, how a border is
+  filtered, and perspective correction. No shipped routine depends on them.
+- **Rasterisation rules.** Coverage, fill convention, rounding of the 1/64 pixel position, attribute interpolation precision,
+  line and point rules. The 0.492 and 0.508 viewport constants hint at a tie-break but do not state it.
+- **Blend, dither and write-mask arithmetic.** Rounding of the blend products, the dither pattern, behaviour of the 4-bit
+  colour formats under blend. Nothing in the driver depends on them beyond the codes.
+- **Depth.** The 16-bit depth is described by SGI's white paper as floating point and the 24-bit as fixed point; the format
+  field (`CoSzFormatReg`) has a type bit and a two-bit depth and the driver does not say which representation each is. The
+  `equal_range` field of the depth word is never set. Whether stencil shares the 32-bit word with 24-bit depth is not shown.
+- **The occlusion count.** `GL_SGIX_depth_pass_instrument` drives bits 28:27 of the depth-test word; where the count is
+  written and how `glReadInstrumentsSGIX` collects it were not followed (`0x6904366a`, `0x6904371a`, `0x69043798`).
+- **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
+- **The display driver's pixel-format list** (escape `0x5d`, output `0x30` bytes) and the colour and depth sizes it offers an
+  OpenGL context. Next: the display driver's pixel-format describe routine.
+- **Windows 2000 OpenGL driver.** Only its extension string, version string and format table were compared; its routines
+  carry no vendor names and were not matched one by one with the NT 4.0 ones.

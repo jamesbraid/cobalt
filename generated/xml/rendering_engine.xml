@@ -2,7 +2,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2 -->
+<!-- input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 -->
 <genxml unit="rendering_engine" prefix="RENG" block="RENG" title="Rendering engine register window" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database">
   <doc>The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is "r" for that reason). Nothing here is a reset value, and no register is read before it is written.</doc>
   <struct name="TLB_ENTRY" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets" register="yes" offset="0x8000" access="w" count="2048" stride="8" reset="unknown">
@@ -205,6 +205,68 @@
     <field name="en_tex_xform" start="29" size="1" type="uint" grade="inferred"/>
     <field name="en_clip_check" start="28" size="1" type="uint" grade="inferred"/>
   </struct>
+  <constant name="BLEND_CONSTANT_ALPHA" value="0xa" grade="inferred"/>
+  <constant name="BLEND_CONSTANT_COLOR" value="0x8" grade="inferred"/>
+  <constant name="BLEND_DST_ALPHA" value="0x6" grade="inferred"/>
+  <constant name="BLEND_ONE" value="0x1" grade="inferred"/>
+  <constant name="BLEND_ONE_MINUS_CONSTANT_ALPHA" value="0xb" grade="inferred"/>
+  <constant name="BLEND_ONE_MINUS_CONSTANT_COLOR" value="0x9" grade="inferred"/>
+  <constant name="BLEND_ONE_MINUS_DST_ALPHA" value="0x7" grade="inferred"/>
+  <constant name="BLEND_ONE_MINUS_OTHER_COLOR" value="0x3" grade="inferred"/>
+  <constant name="BLEND_ONE_MINUS_SRC_ALPHA" value="0x5" grade="inferred"/>
+  <constant name="BLEND_OP_ADD" value="0x0" grade="inferred"/>
+  <constant name="BLEND_OP_MAX" value="0x2" grade="inferred"/>
+  <constant name="BLEND_OP_MIN" value="0x1" grade="inferred"/>
+  <constant name="BLEND_OP_REVERSE_SUBTRACT" value="0x4" grade="inferred"/>
+  <constant name="BLEND_OP_SUBTRACT" value="0x3" grade="inferred"/>
+  <constant name="BLEND_OTHER_COLOR" value="0x2" grade="inferred"/>
+  <constant name="BLEND_SRC_ALPHA" value="0x4" grade="inferred"/>
+  <constant name="BLEND_SRC_ALPHA_SATURATE" value="0xc" grade="inferred"/>
+  <constant name="BLEND_ZERO" value="0x0" grade="inferred"/>
+  <constant name="CMP_ALWAYS" value="0x7" grade="inferred"/>
+  <constant name="CMP_EQUAL" value="0x2" grade="inferred"/>
+  <constant name="CMP_GEQUAL" value="0x6" grade="inferred"/>
+  <constant name="CMP_GREATER" value="0x4" grade="inferred"/>
+  <constant name="CMP_LEQUAL" value="0x3" grade="inferred"/>
+  <constant name="CMP_LESS" value="0x1" grade="inferred"/>
+  <constant name="CMP_NEVER" value="0x0" grade="inferred"/>
+  <constant name="CMP_NOTEQUAL" value="0x5" grade="inferred"/>
+  <constant name="FILTER_LINEAR" value="0x1" grade="inferred"/>
+  <constant name="FILTER_LINEAR_MIP_LINEAR" value="0x5" grade="inferred"/>
+  <constant name="FILTER_LINEAR_MIP_NEAREST" value="0x3" grade="inferred"/>
+  <constant name="FILTER_NEAREST" value="0x0" grade="inferred"/>
+  <constant name="FILTER_NEAREST_MIP_LINEAR" value="0x4" grade="inferred"/>
+  <constant name="FILTER_NEAREST_MIP_NEAREST" value="0x2" grade="inferred"/>
+  <constant name="STENCIL_DECR" value="0x4" grade="inferred"/>
+  <constant name="STENCIL_INCR" value="0x3" grade="inferred"/>
+  <constant name="STENCIL_INVERT" value="0x5" grade="inferred"/>
+  <constant name="STENCIL_KEEP" value="0x0" grade="inferred"/>
+  <constant name="STENCIL_REPLACE" value="0x2" grade="inferred"/>
+  <constant name="STENCIL_ZERO" value="0x1" grade="inferred"/>
+  <constant name="TEXCLASS_ALPHA" value="0x3" grade="inferred"/>
+  <constant name="TEXCLASS_INTENSITY" value="0x4" grade="inferred"/>
+  <constant name="TEXCLASS_LUMINANCE" value="0x2" grade="inferred"/>
+  <constant name="TEXCLASS_LUMINANCE_ALPHA" value="0x5" grade="inferred"/>
+  <constant name="TEXCLASS_RGB" value="0x0" grade="inferred"/>
+  <constant name="TEXCLASS_RGBA" value="0x1" grade="inferred"/>
+  <constant name="TEXENV_ADD" value="0x4" grade="inferred"/>
+  <constant name="TEXENV_BLEND" value="0x2" grade="inferred"/>
+  <constant name="TEXENV_DECAL" value="0x1" grade="inferred"/>
+  <constant name="TEXENV_MODULATE" value="0x0" grade="inferred"/>
+  <constant name="TEXENV_REPLACE" value="0x3" grade="inferred"/>
+  <constant name="TEXTYPE_ALPHA_OR_INTENSITY8" value="0x8" grade="inferred"/>
+  <constant name="TEXTYPE_INDEX8" value="0x0" grade="inferred"/>
+  <constant name="TEXTYPE_LUMINANCE8" value="0x6" grade="inferred"/>
+  <constant name="TEXTYPE_LUMINANCE_ALPHA8" value="0x7" grade="inferred"/>
+  <constant name="TEXTYPE_RGB5A1" value="0x2" grade="inferred"/>
+  <constant name="TEXTYPE_RGBA4" value="0x3" grade="inferred"/>
+  <constant name="TEXTYPE_RGBA8" value="0x4" grade="inferred"/>
+  <constant name="TEXTYPE_RGBA8_ALT" value="0x5" grade="unknown"/>
+  <constant name="TEXTYPE_YUV_A" value="0xe" grade="inferred"/>
+  <constant name="TEXTYPE_YUV_B" value="0xf" grade="inferred"/>
   <constant name="WINDOW_PHYS" value="0xc8000000" grade="inferred"/>
   <constant name="WINDOW_SIZE" value="0x19000" grade="inferred"/>
+  <constant name="WRAP_CLAMP" value="0x1" grade="inferred"/>
+  <constant name="WRAP_CLAMP_TO_EDGE" value="0x2" grade="inferred"/>
+  <constant name="WRAP_REPEAT" value="0x0" grade="inferred"/>
 </genxml>

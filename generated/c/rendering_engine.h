@@ -1,7 +1,7 @@
 /* generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2 */
+/* input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 */
 /* Rendering engine register window */
 #ifndef RENG_GEN_H
 #define RENG_GEN_H
@@ -526,7 +526,69 @@
 #define RENG_XFORM_MODE_EN_CLIP_CHECK_MASK           0x1u
 #define RENG_XFORM_MODE_EN_CLIP_CHECK_INPLACE        (RENG_XFORM_MODE_EN_CLIP_CHECK_MASK << RENG_XFORM_MODE_EN_CLIP_CHECK_SHIFT)
 
+#define RENG_BLEND_CONSTANT_ALPHA                    0xau /* inferred */
+#define RENG_BLEND_CONSTANT_COLOR                    0x8u /* inferred */
+#define RENG_BLEND_DST_ALPHA                         0x6u /* inferred */
+#define RENG_BLEND_ONE                               0x1u /* inferred */
+#define RENG_BLEND_ONE_MINUS_CONSTANT_ALPHA          0xbu /* inferred */
+#define RENG_BLEND_ONE_MINUS_CONSTANT_COLOR          0x9u /* inferred */
+#define RENG_BLEND_ONE_MINUS_DST_ALPHA               0x7u /* inferred */
+#define RENG_BLEND_ONE_MINUS_OTHER_COLOR             0x3u /* inferred */
+#define RENG_BLEND_ONE_MINUS_SRC_ALPHA               0x5u /* inferred */
+#define RENG_BLEND_OP_ADD                            0x0u /* inferred */
+#define RENG_BLEND_OP_MAX                            0x2u /* inferred */
+#define RENG_BLEND_OP_MIN                            0x1u /* inferred */
+#define RENG_BLEND_OP_REVERSE_SUBTRACT               0x4u /* inferred */
+#define RENG_BLEND_OP_SUBTRACT                       0x3u /* inferred */
+#define RENG_BLEND_OTHER_COLOR                       0x2u /* inferred */
+#define RENG_BLEND_SRC_ALPHA                         0x4u /* inferred */
+#define RENG_BLEND_SRC_ALPHA_SATURATE                0xcu /* inferred */
+#define RENG_BLEND_ZERO                              0x0u /* inferred */
+#define RENG_CMP_ALWAYS                              0x7u /* inferred */
+#define RENG_CMP_EQUAL                               0x2u /* inferred */
+#define RENG_CMP_GEQUAL                              0x6u /* inferred */
+#define RENG_CMP_GREATER                             0x4u /* inferred */
+#define RENG_CMP_LEQUAL                              0x3u /* inferred */
+#define RENG_CMP_LESS                                0x1u /* inferred */
+#define RENG_CMP_NEVER                               0x0u /* inferred */
+#define RENG_CMP_NOTEQUAL                            0x5u /* inferred */
+#define RENG_FILTER_LINEAR                           0x1u /* inferred */
+#define RENG_FILTER_LINEAR_MIP_LINEAR                0x5u /* inferred */
+#define RENG_FILTER_LINEAR_MIP_NEAREST               0x3u /* inferred */
+#define RENG_FILTER_NEAREST                          0x0u /* inferred */
+#define RENG_FILTER_NEAREST_MIP_LINEAR               0x4u /* inferred */
+#define RENG_FILTER_NEAREST_MIP_NEAREST              0x2u /* inferred */
+#define RENG_STENCIL_DECR                            0x4u /* inferred */
+#define RENG_STENCIL_INCR                            0x3u /* inferred */
+#define RENG_STENCIL_INVERT                          0x5u /* inferred */
+#define RENG_STENCIL_KEEP                            0x0u /* inferred */
+#define RENG_STENCIL_REPLACE                         0x2u /* inferred */
+#define RENG_STENCIL_ZERO                            0x1u /* inferred */
+#define RENG_TEXCLASS_ALPHA                          0x3u /* inferred */
+#define RENG_TEXCLASS_INTENSITY                      0x4u /* inferred */
+#define RENG_TEXCLASS_LUMINANCE                      0x2u /* inferred */
+#define RENG_TEXCLASS_LUMINANCE_ALPHA                0x5u /* inferred */
+#define RENG_TEXCLASS_RGB                            0x0u /* inferred */
+#define RENG_TEXCLASS_RGBA                           0x1u /* inferred */
+#define RENG_TEXENV_ADD                              0x4u /* inferred */
+#define RENG_TEXENV_BLEND                            0x2u /* inferred */
+#define RENG_TEXENV_DECAL                            0x1u /* inferred */
+#define RENG_TEXENV_MODULATE                         0x0u /* inferred */
+#define RENG_TEXENV_REPLACE                          0x3u /* inferred */
+#define RENG_TEXTYPE_ALPHA_OR_INTENSITY8             0x8u /* inferred */
+#define RENG_TEXTYPE_INDEX8                          0x0u /* inferred */
+#define RENG_TEXTYPE_LUMINANCE8                      0x6u /* inferred */
+#define RENG_TEXTYPE_LUMINANCE_ALPHA8                0x7u /* inferred */
+#define RENG_TEXTYPE_RGB5A1                          0x2u /* inferred */
+#define RENG_TEXTYPE_RGBA4                           0x3u /* inferred */
+#define RENG_TEXTYPE_RGBA8                           0x4u /* inferred */
+#define RENG_TEXTYPE_RGBA8_ALT                       0x5u /* unknown */
+#define RENG_TEXTYPE_YUV_A                           0xeu /* inferred */
+#define RENG_TEXTYPE_YUV_B                           0xfu /* inferred */
 #define RENG_WINDOW_PHYS                             0xc8000000u /* inferred */
 #define RENG_WINDOW_SIZE                             0x19000u /* inferred */
+#define RENG_WRAP_CLAMP                              0x1u /* inferred */
+#define RENG_WRAP_CLAMP_TO_EDGE                      0x2u /* inferred */
+#define RENG_WRAP_REPEAT                             0x0u /* inferred */
 
 #endif /* RENG_GEN_H */

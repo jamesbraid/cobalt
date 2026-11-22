@@ -1,7 +1,7 @@
 // generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2
+// input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22
 // Rendering engine register window
 #![allow(dead_code)]
 
@@ -1267,5 +1267,67 @@ pub mod xform_mode {
         }
     }
 }
+pub const BLEND_CONSTANT_ALPHA: u32 = 0xa; // inferred
+pub const BLEND_CONSTANT_COLOR: u32 = 0x8; // inferred
+pub const BLEND_DST_ALPHA: u32 = 0x6; // inferred
+pub const BLEND_ONE: u32 = 0x1; // inferred
+pub const BLEND_ONE_MINUS_CONSTANT_ALPHA: u32 = 0xb; // inferred
+pub const BLEND_ONE_MINUS_CONSTANT_COLOR: u32 = 0x9; // inferred
+pub const BLEND_ONE_MINUS_DST_ALPHA: u32 = 0x7; // inferred
+pub const BLEND_ONE_MINUS_OTHER_COLOR: u32 = 0x3; // inferred
+pub const BLEND_ONE_MINUS_SRC_ALPHA: u32 = 0x5; // inferred
+pub const BLEND_OP_ADD: u32 = 0x0; // inferred
+pub const BLEND_OP_MAX: u32 = 0x2; // inferred
+pub const BLEND_OP_MIN: u32 = 0x1; // inferred
+pub const BLEND_OP_REVERSE_SUBTRACT: u32 = 0x4; // inferred
+pub const BLEND_OP_SUBTRACT: u32 = 0x3; // inferred
+pub const BLEND_OTHER_COLOR: u32 = 0x2; // inferred
+pub const BLEND_SRC_ALPHA: u32 = 0x4; // inferred
+pub const BLEND_SRC_ALPHA_SATURATE: u32 = 0xc; // inferred
+pub const BLEND_ZERO: u32 = 0x0; // inferred
+pub const CMP_ALWAYS: u32 = 0x7; // inferred
+pub const CMP_EQUAL: u32 = 0x2; // inferred
+pub const CMP_GEQUAL: u32 = 0x6; // inferred
+pub const CMP_GREATER: u32 = 0x4; // inferred
+pub const CMP_LEQUAL: u32 = 0x3; // inferred
+pub const CMP_LESS: u32 = 0x1; // inferred
+pub const CMP_NEVER: u32 = 0x0; // inferred
+pub const CMP_NOTEQUAL: u32 = 0x5; // inferred
+pub const FILTER_LINEAR: u32 = 0x1; // inferred
+pub const FILTER_LINEAR_MIP_LINEAR: u32 = 0x5; // inferred
+pub const FILTER_LINEAR_MIP_NEAREST: u32 = 0x3; // inferred
+pub const FILTER_NEAREST: u32 = 0x0; // inferred
+pub const FILTER_NEAREST_MIP_LINEAR: u32 = 0x4; // inferred
+pub const FILTER_NEAREST_MIP_NEAREST: u32 = 0x2; // inferred
+pub const STENCIL_DECR: u32 = 0x4; // inferred
+pub const STENCIL_INCR: u32 = 0x3; // inferred
+pub const STENCIL_INVERT: u32 = 0x5; // inferred
+pub const STENCIL_KEEP: u32 = 0x0; // inferred
+pub const STENCIL_REPLACE: u32 = 0x2; // inferred
+pub const STENCIL_ZERO: u32 = 0x1; // inferred
+pub const TEXCLASS_ALPHA: u32 = 0x3; // inferred
+pub const TEXCLASS_INTENSITY: u32 = 0x4; // inferred
+pub const TEXCLASS_LUMINANCE: u32 = 0x2; // inferred
+pub const TEXCLASS_LUMINANCE_ALPHA: u32 = 0x5; // inferred
+pub const TEXCLASS_RGB: u32 = 0x0; // inferred
+pub const TEXCLASS_RGBA: u32 = 0x1; // inferred
+pub const TEXENV_ADD: u32 = 0x4; // inferred
+pub const TEXENV_BLEND: u32 = 0x2; // inferred
+pub const TEXENV_DECAL: u32 = 0x1; // inferred
+pub const TEXENV_MODULATE: u32 = 0x0; // inferred
+pub const TEXENV_REPLACE: u32 = 0x3; // inferred
+pub const TEXTYPE_ALPHA_OR_INTENSITY8: u32 = 0x8; // inferred
+pub const TEXTYPE_INDEX8: u32 = 0x0; // inferred
+pub const TEXTYPE_LUMINANCE8: u32 = 0x6; // inferred
+pub const TEXTYPE_LUMINANCE_ALPHA8: u32 = 0x7; // inferred
+pub const TEXTYPE_RGB5A1: u32 = 0x2; // inferred
+pub const TEXTYPE_RGBA4: u32 = 0x3; // inferred
+pub const TEXTYPE_RGBA8: u32 = 0x4; // inferred
+pub const TEXTYPE_RGBA8_ALT: u32 = 0x5; // unknown
+pub const TEXTYPE_YUV_A: u32 = 0xe; // inferred
+pub const TEXTYPE_YUV_B: u32 = 0xf; // inferred
 pub const WINDOW_PHYS: u32 = 0xc8000000; // inferred
 pub const WINDOW_SIZE: u32 = 0x19000; // inferred
+pub const WRAP_CLAMP: u32 = 0x1; // inferred
+pub const WRAP_CLAMP_TO_EDGE: u32 = 0x2; // inferred
+pub const WRAP_REPEAT: u32 = 0x0; // inferred

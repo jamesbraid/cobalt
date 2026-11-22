@@ -1,7 +1,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2 -->
+<!-- input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 -->
 
 # Rendering engine register window
 
@@ -369,5 +369,67 @@ Transform mode word , the draw flags word.
 
 | Constant | Value | Grade | Source | Description |
 |---|---|---|---|---|
+| `BLEND_CONSTANT_ALPHA` | 0xa | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_CONSTANT_COLOR` | 0x8 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_DST_ALPHA` | 0x6 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | the driver sends 1 instead when the buffer has no alpha |
+| `BLEND_ONE` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_ONE_MINUS_CONSTANT_ALPHA` | 0xb | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_ONE_MINUS_CONSTANT_COLOR` | 0x9 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_ONE_MINUS_DST_ALPHA` | 0x7 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | the driver sends 0 instead when the buffer has no alpha |
+| `BLEND_ONE_MINUS_OTHER_COLOR` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_ONE_MINUS_SRC_ALPHA` | 0x5 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_OP_ADD` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_OP_MAX` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_OP_MIN` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_OP_REVERSE_SUBTRACT` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_OP_SUBTRACT` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_OTHER_COLOR` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | destination colour in src_func, source colour in dst_func |
+| `BLEND_SRC_ALPHA` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `BLEND_SRC_ALPHA_SATURATE` | 0xc | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | src_func only |
+| `BLEND_ZERO` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_ALWAYS` | 0x7 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_EQUAL` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_GEQUAL` | 0x6 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_GREATER` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_LEQUAL` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_LESS` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_NEVER` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `CMP_NOTEQUAL` | 0x5 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `FILTER_LINEAR` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | min_filter and mag_filter |
+| `FILTER_LINEAR_MIP_LINEAR` | 0x5 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | min_filter only |
+| `FILTER_LINEAR_MIP_NEAREST` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | min_filter only |
+| `FILTER_NEAREST` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | min_filter and mag_filter |
+| `FILTER_NEAREST_MIP_LINEAR` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | min_filter only |
+| `FILTER_NEAREST_MIP_NEAREST` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | min_filter only |
+| `STENCIL_DECR` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `STENCIL_INCR` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `STENCIL_INVERT` | 0x5 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `STENCIL_KEEP` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `STENCIL_REPLACE` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `STENCIL_ZERO` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXCLASS_ALPHA` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXCLASS_INTENSITY` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXCLASS_LUMINANCE` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXCLASS_LUMINANCE_ALPHA` | 0x5 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXCLASS_RGB` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXCLASS_RGBA` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXENV_ADD` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXENV_BLEND` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXENV_DECAL` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXENV_MODULATE` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXENV_REPLACE` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `TEXTYPE_ALPHA_OR_INTENSITY8` | 0x8 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 8-bit alpha or intensity, depth 0 |
+| `TEXTYPE_INDEX8` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 8-bit colour index, depth 0; display driver colour format word 0 |
+| `TEXTYPE_LUMINANCE8` | 0x6 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 8-bit luminance, depth 0 |
+| `TEXTYPE_LUMINANCE_ALPHA8` | 0x7 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 16 bits, luminance and alpha, depth 1 |
+| `TEXTYPE_RGB5A1` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 16 bits, 5-5-5-1, depth 1 |
+| `TEXTYPE_RGBA4` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 16 bits, 4-4-4-4, depth 1 |
+| `TEXTYPE_RGBA8` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 32 bits, 8 per component, depth 2 |
+| `TEXTYPE_RGBA8_ALT` | 0x5 | unknown | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | 32 bits, depth 2, written for host transfer sources; how it differs from type 4 is unknown |
+| `TEXTYPE_YUV_A` | 0xe | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | YUV 4:2:2 form, depth 1; the display driver's YUV blit |
+| `TEXTYPE_YUV_B` | 0xf | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | the other YUV 4:2:2 form, depth 1 |
 | `WINDOW_PHYS` | 0xc8000000 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
 | `WINDOW_SIZE` | 0x19000 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `WRAP_CLAMP` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database | uses the border colour |
+| `WRAP_CLAMP_TO_EDGE` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
+| `WRAP_REPEAT` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database |  |
