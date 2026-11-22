@@ -1,0 +1,361 @@
+unit = "rendering_engine"
+prefix = "RENG"
+block = "RENG"
+title = "Rendering engine register window"
+doc = "The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Nothing here is a reset value, and no register is read before it is written."
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
+public_from = ["SGI Cobalt Graphics Driver 5.2.4"]
+name_source = "ours"
+
+# What the hardware does with any of these is inferred at best: the drivers are the only witness. A
+# register's grade says that the driver access is read in full; a field's grade is its own.
+
+[registers.tlb_entry]
+offset = 0x8000
+width = 32
+access = "w"
+count = 2048
+stride = 8
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets"
+doc = "Translation table: one entry per 4 KB page of the pool the engine addresses. Only the low dword is ever written, with a page frame number masked to 24 bits; entries not in use hold the first entry's value. The packet pool, the display buffers and the textures are named through these entries, so the engine fetches packets through this table rather than by physical address."
+[registers.tlb_entry.fields]
+page_frame = { bits = [23, 0], grade = "inferred" }
+
+[registers.tlb_desc]
+offset = 0xc000
+width = 32
+access = "w"
+count = 64
+stride = 8
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
+doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 alone (tiles_per_row 32) and the packet pool sets page_type and tiles_per_row 1."
+[registers.tlb_desc.fields]
+offset = { bits = [31, 21], grade = "inferred" }
+tiles_per_row = { bits = [20, 14], grade = "inferred" }
+tile_width = { bits = [13, 13], grade = "inferred", doc = "0 for a 128-byte tile, 1 for 512 bytes" }
+page_size = { bits = [12, 10], grade = "inferred", doc = "log base 4 of the pages in one tile: 1, 4, 16, 64 or 256 pages give 0 to 4" }
+page_type = { bits = [9, 9], grade = "inferred", doc = "set for the packet pool; the driver sets it when the tile width is neither 128 nor 512" }
+
+[registers.exec_ctl]
+offset = 0x10000
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines"
+doc = "Starts the engine on a packet position and reports where it is. A write is the packet position (in 32-byte units from the pool base) shifted to bit 12, bit 11 and the idle count; the driver writes 2 as the idle count with every start and 0x40 with 0xfffff in the position field at start-up. A read returns the position in bits 31:12, and zero there means none, in which case the driver reads the chain register instead."
+[registers.exec_ctl.fields]
+pkt_pos = { bits = [31, 12], grade = "inferred" }
+start = { bits = [11, 11], grade = "inferred", doc = "set in every write that starts or restarts a node, clear at start-up" }
+idle_count = { bits = [10, 0], grade = "inferred", doc = "the driver keeps this value in a field it names as the packet idle count" }
+
+[registers.doorbell]
+offset = 0x10008
+width = 32
+access = "w"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routines that queue work or resume a suspended context"
+doc = "Written with a single bit after work is appended to the node the engine is running, or a suspended context is resumed, when the scheduler is in its second mode and the running node has no pending chunks."
+[registers.doorbell.fields]
+kick = { bits = [10, 10], grade = "inferred" }
+
+[registers.int_cause]
+offset = 0x10018
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, context switch and stop-event routines"
+doc = "The interrupt handler treats a read of zero as not its own, masks the value with the two cause bits, writes zero and waits for the masked bits to change. The context switch waits for bit 31 to read set and then writes every bit but 31 set."
+[registers.int_cause.fields]
+ctx_wait = { bits = [31, 31], grade = "inferred", doc = "polled after the outgoing context's dump offset is written, before the next context starts" }
+stop = { bits = [30, 30], grade = "inferred", doc = "second cause bit: the event routine reads the stop position and sequence from the chain registers and wakes the waiters" }
+done = { bits = [29, 29], grade = "inferred", doc = "first cause bit: queues the same event and wakes the waiters; no stop position is read" }
+
+[registers.int_enable]
+offset = 0x10020
+width = 32
+access = "w"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up"
+doc = "Written once, with both cause bits set."
+[registers.int_enable.fields]
+en_stop = { bits = [30, 30], grade = "inferred" }
+en_done = { bits = [29, 29], grade = "inferred" }
+
+[registers.scissor_min]
+offset = 0x18138
+width = 32
+access = "r"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routine that builds the window-parameter packet; the OpenGL driver's scissor packet"
+doc = "Scissor minimum corner, read back into the packet that restores a context. The window offset follows from the scissor packet's address field."
+[registers.scissor_min.fields]
+x = { bits = [15, 0], grade = "inferred" }
+y = { bits = [31, 16], grade = "inferred" }
+
+[registers.scissor_max]
+offset = 0x18140
+width = 32
+access = "r"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routine that builds the window-parameter packet; the OpenGL driver's scissor packet"
+doc = "Scissor maximum corner, inclusive."
+[registers.scissor_max.fields]
+x = { bits = [15, 0], grade = "inferred" }
+y = { bits = [31, 16], grade = "inferred" }
+
+[registers.chain_next]
+offset = 0x185c0
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, stop-event routine, and the chain packet the OpenGL driver ends a node with"
+doc = "The first word of the chain packet. The stop-event routine reads it: the low 12 bits are the high half of a 24-bit sequence number and bits 31:12 a node position, which it falls back to when the execution register reads zero."
+[registers.chain_next.fields]
+node_pos = { bits = [31, 12], grade = "inferred" }
+seq_hi = { bits = [11, 0], grade = "inferred" }
+
+[registers.chain_this]
+offset = 0x185c8
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch and stop-event routines"
+doc = "The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when no context was running."
+[registers.chain_this.fields]
+node_pos = { bits = [31, 12], grade = "inferred" }
+seq_lo = { bits = [11, 0], grade = "inferred" }
+
+[registers.tex_id]
+offset = 0x185d0
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch, stop-event and bind routines; the OpenGL driver's texture-free packet"
+doc = "The third word of the long chain packet. The kernel driver keeps a per-context current-texture id and writes it here when it starts the context and reads it back at a stop; the OpenGL driver zeroes it before it frees the pages of the bound texture."
+
+[registers.ctx_dump]
+offset = 0x18800
+width = 32
+access = "w"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch"
+doc = "Written with the outgoing context's dump offset (the field the driver names as its context-switch dump offset) when another context is started, before the new context's start word."
+
+# Payload words. Field names are the driver's own, from the register-view types in its program database;
+# the grade is for the layout, which the driver's own writes match where noted. Packet header values are in
+# the packet-set page.
+
+[words.DRAW_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
+doc = "Pixel-pipe mode word."
+[words.DRAW_MODE.fields]
+en_stencil_test = { bits = [31, 31], grade = "inferred" }
+en_depth_mask = { bits = [30, 30], grade = "inferred" }
+en_depth_test = { bits = [29, 29], grade = "inferred" }
+en_depth_offset = { bits = [28, 28], grade = "inferred", doc = "set when polygon offset is enabled for the primitive and the factor or units is non-zero" }
+en_color_discard = { bits = [27, 27], grade = "inferred", doc = "the colour write mask is all zero" }
+en_color_mask = { bits = [26, 26], grade = "inferred" }
+en_dither = { bits = [25, 25], grade = "inferred" }
+en_logic_op = { bits = [24, 24], grade = "inferred" }
+en_blend = { bits = [23, 23], grade = "inferred" }
+en_color_test = { bits = [22, 22], grade = "inferred" }
+en_fog = { bits = [21, 21], grade = "inferred" }
+en_color_matrix = { bits = [20, 20], grade = "inferred" }
+en_pixel_xfer = { bits = [19, 19], grade = "inferred" }
+en_texture = { bits = [18, 18], grade = "inferred" }
+en_second_color = { bits = [17, 17], grade = "inferred" }
+en_smooth_shade = { bits = [16, 16], grade = "inferred" }
+en_opaq_stipple = { bits = [15, 15], grade = "inferred" }
+en_poly_stipple = { bits = [14, 14], grade = "inferred" }
+en_line_stipple = { bits = [13, 13], grade = "inferred" }
+reserved = { bits = [12, 0], grade = "unknown", doc = "no routine of the three drivers sets a bit here" }
+
+[words.PRIM_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+doc = "Primitive mode word."
+[words.PRIM_MODE.fields]
+prim_type = { bits = [31, 29], grade = "inferred" }
+aa_line = { bits = [28, 28], grade = "inferred" }
+closed_line = { bits = [27, 27], grade = "inferred" }
+line_width = { bits = [26, 15], grade = "inferred" }
+cull_face = { bits = [14, 13], grade = "inferred" }
+front_face = { bits = [12, 12], grade = "inferred" }
+back_face_line = { bits = [11, 11], grade = "inferred" }
+prim_dir = { bits = [10, 9], grade = "inferred" }
+sel_prim_dir = { bits = [8, 8], grade = "inferred" }
+reserved = { bits = [7, 0], grade = "unknown" }
+
+[words.XFORM_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver"
+doc = "Transform mode word , the draw flags word."
+[words.XFORM_MODE.fields]
+en_viewport_xform = { bits = [31, 31], grade = "inferred" }
+en_model_xform = { bits = [30, 30], grade = "inferred" }
+en_tex_xform = { bits = [29, 29], grade = "inferred", doc = "cleared on both paths that leave bits 31:30 set; no routine sets it" }
+en_clip_check = { bits = [28, 28], grade = "inferred" }
+
+[words.COLOR_FORMAT]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
+doc = "Draw-buffer descriptor."
+[words.COLOR_FORMAT.fields]
+linear = { bits = [31, 31], grade = "inferred" }
+color_type = { bits = [30, 27], grade = "inferred" }
+buf_depth = { bits = [26, 25], grade = "inferred" }
+desc_id = { bits = [24, 19], grade = "inferred" }
+span_mode = { bits = [18, 18], grade = "inferred" }
+
+[words.SZ_FORMAT]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers"
+doc = "Depth and stencil buffer descriptor."
+[words.SZ_FORMAT.fields]
+sz_type = { bits = [31, 31], grade = "inferred" }
+buf_depth = { bits = [30, 29], grade = "inferred" }
+desc_id = { bits = [28, 23], grade = "inferred" }
+
+[words.BLEND_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer"
+doc = "First word of the blend packet; the second is the constant colour."
+[words.BLEND_MODE.fields]
+dst_func = { bits = [31, 28], grade = "inferred" }
+src_func = { bits = [27, 24], grade = "inferred" }
+op = { bits = [23, 20], grade = "inferred" }
+
+[words.COLOR_TEST_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoColorTestModeReg, alpha-test writer"
+doc = "First word of the alpha-test packet; the second is the reference colour."
+[words.COLOR_TEST_MODE.fields]
+en_comp = { bits = [31, 28], grade = "inferred" }
+func = { bits = [27, 25], grade = "inferred" }
+
+[words.DEPTH_TEST]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers"
+doc = "Depth test word."
+[words.DEPTH_TEST.fields]
+func = { bits = [31, 29], grade = "inferred" }
+init_occlusion_test = { bits = [28, 28], grade = "inferred" }
+en_occlusion_test = { bits = [27, 27], grade = "inferred" }
+equal_range = { bits = [26, 23], grade = "inferred" }
+
+[words.STENCIL_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+doc = "First word of the stencil packet."
+[words.STENCIL_MODE.fields]
+dppass = { bits = [31, 28], grade = "inferred" }
+dpfail = { bits = [27, 24], grade = "inferred" }
+sfail = { bits = [23, 20], grade = "inferred" }
+func = { bits = [19, 16], grade = "inferred" }
+mask = { bits = [15, 8], grade = "inferred" }
+ref = { bits = [7, 0], grade = "inferred" }
+
+[words.LOGIC_OP]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoLogicOpReg, logic-operation writer"
+doc = "Logic operation word."
+[words.LOGIC_OP.fields]
+op = { bits = [31, 28], grade = "inferred" }
+
+[words.LIGHT_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+doc = "Lighting mode word."
+[words.LIGHT_MODE.fields]
+two_sided = { bits = [31, 31], grade = "inferred" }
+en_light3 = { bits = [30, 30], grade = "inferred" }
+en_light2 = { bits = [29, 29], grade = "inferred" }
+en_light1 = { bits = [28, 28], grade = "inferred" }
+en_light0 = { bits = [27, 27], grade = "inferred" }
+en_normalize = { bits = [26, 26], grade = "inferred" }
+en_specular = { bits = [25, 25], grade = "inferred" }
+spec_only = { bits = [24, 24], grade = "inferred" }
+en_lighting = { bits = [23, 23], grade = "inferred" }
+
+[words.TEXGEN_FORMAT]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers"
+doc = "First word of the four-word texture packet; the display driver's YUV blit sends 14 or 15 as the texture type."
+[words.TEXGEN_FORMAT.fields]
+linear = { bits = [31, 31], grade = "inferred" }
+tex_type = { bits = [30, 27], grade = "inferred" }
+buf_depth = { bits = [26, 25], grade = "inferred" }
+desc_id = { bits = [24, 19], grade = "inferred" }
+
+[words.TEXGEN_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+doc = "Second word of the texture packet."
+[words.TEXGEN_MODE.fields]
+min_filter = { bits = [31, 29], grade = "inferred" }
+mag_filter = { bits = [28, 28], grade = "inferred" }
+wrap_t = { bits = [27, 26], grade = "inferred" }
+wrap_s = { bits = [25, 24], grade = "inferred" }
+map_height = { bits = [23, 20], grade = "inferred" }
+map_width = { bits = [19, 16], grade = "inferred" }
+
+[words.TEXGEN_LOD]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg"
+doc = "Third word of the texture packet; the fourth is the border colour."
+[words.TEXGEN_LOD.fields]
+max_level = { bits = [31, 28], grade = "inferred" }
+min_level = { bits = [27, 24], grade = "inferred" }
+lod_frac_size = { bits = [23, 21], grade = "inferred" }
+lod_bias = { bits = [20, 11], grade = "inferred" }
+
+[words.TEXENV_MODE]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoTexEnvModeReg, texture-environment writers"
+doc = "First word of the two-word texture-environment packet; the second is the environment colour."
+[words.TEXENV_MODE.fields]
+func = { bits = [31, 29], grade = "inferred" }
+type = { bits = [28, 25], grade = "inferred" }
+
+[words.LINK_WORD]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+doc = "Link word of a packet node: bit 0 set means the engine owns the node and clears it when done."
+[words.LINK_WORD.fields]
+next = { bits = [31, 12], grade = "inferred" }
+size = { bits = [11, 3], grade = "inferred" }
+sync = { bits = [2, 2], grade = "inferred" }
+intr = { bits = [1, 1], grade = "inferred" }
+ready = { bits = [0, 0], grade = "inferred" }
+
+[words.FB_ADDR]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 type CoFbAddrType, scissor and clear-rectangle writers"
+doc = "A corner: x in the low half, y in the high half (signed 16-bit)."
+[words.FB_ADDR.fields]
+x = { bits = [15, 0], grade = "inferred" }
+y = { bits = [31, 16], grade = "inferred" }
+
+[constants]
+WINDOW_PHYS = { value = 0xc8000000, grade = "inferred" }
+WINDOW_SIZE = { value = 0x19000, grade = "inferred" }

@@ -1,0 +1,50 @@
+"""generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
+SPDX-License-Identifier: BSD-3-Clause
+defs-gen 2
+input sha256 79cce65d709c28941340affc1289b539c5f1ca3e48631d4ac89646f02493ab78
+Rendering engine register window"""
+
+UNIT = 'rendering_engine'
+REGISTERS = {'tlb_entry': {'offset': 32768, 'access': 'w', 'width': 32, 'count': 2048, 'stride': 8, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'tlb_desc': {'offset': 49152, 'access': 'w', 'width': 32, 'count': 64, 'stride': 8, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'exec_ctl': {'offset': 65536, 'access': 'rw', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'doorbell': {'offset': 65544, 'access': 'w', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'int_cause': {'offset': 65560, 'access': 'rw', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'int_enable': {'offset': 65568, 'access': 'w', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'scissor_min': {'offset': 98616, 'access': 'r', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'scissor_max': {'offset': 98624, 'access': 'r', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'chain_next': {'offset': 99776, 'access': 'rw', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'chain_this': {'offset': 99784, 'access': 'rw', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'tex_id': {'offset': 99792, 'access': 'rw', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}, 'ctx_dump': {'offset': 100352, 'access': 'w', 'width': 32, 'count': 1, 'stride': 4, 'space': None, 'reset': 'unknown', 'grade': 'inferred'}}
+WORDS = {'BLEND_MODE': {'width': 32, 'grade': 'inferred'}, 'COLOR_FORMAT': {'width': 32, 'grade': 'inferred'}, 'COLOR_TEST_MODE': {'width': 32, 'grade': 'inferred'}, 'DEPTH_TEST': {'width': 32, 'grade': 'inferred'}, 'DRAW_MODE': {'width': 32, 'grade': 'inferred'}, 'FB_ADDR': {'width': 32, 'grade': 'inferred'}, 'LIGHT_MODE': {'width': 32, 'grade': 'inferred'}, 'LINK_WORD': {'width': 32, 'grade': 'inferred'}, 'LOGIC_OP': {'width': 32, 'grade': 'inferred'}, 'PRIM_MODE': {'width': 32, 'grade': 'inferred'}, 'STENCIL_MODE': {'width': 32, 'grade': 'inferred'}, 'SZ_FORMAT': {'width': 32, 'grade': 'inferred'}, 'TEXENV_MODE': {'width': 32, 'grade': 'inferred'}, 'TEXGEN_FORMAT': {'width': 32, 'grade': 'inferred'}, 'TEXGEN_LOD': {'width': 32, 'grade': 'inferred'}, 'TEXGEN_MODE': {'width': 32, 'grade': 'inferred'}, 'XFORM_MODE': {'width': 32, 'grade': 'inferred'}}
+FIELDS = {'tlb_entry': {'page_frame': (23, 0)}, 'tlb_desc': {'offset': (31, 21), 'tiles_per_row': (20, 14), 'tile_width': (13, 13), 'page_size': (12, 10), 'page_type': (9, 9)}, 'exec_ctl': {'pkt_pos': (31, 12), 'start': (11, 11), 'idle_count': (10, 0)}, 'doorbell': {'kick': (10, 10)}, 'int_cause': {'ctx_wait': (31, 31), 'stop': (30, 30), 'done': (29, 29)}, 'int_enable': {'en_stop': (30, 30), 'en_done': (29, 29)}, 'scissor_min': {'y': (31, 16), 'x': (15, 0)}, 'scissor_max': {'y': (31, 16), 'x': (15, 0)}, 'chain_next': {'node_pos': (31, 12), 'seq_hi': (11, 0)}, 'chain_this': {'node_pos': (31, 12), 'seq_lo': (11, 0)}, 'tex_id': {}, 'ctx_dump': {}, 'BLEND_MODE': {'dst_func': (31, 28), 'src_func': (27, 24), 'op': (23, 20)}, 'COLOR_FORMAT': {'linear': (31, 31), 'color_type': (30, 27), 'buf_depth': (26, 25), 'desc_id': (24, 19), 'span_mode': (18, 18)}, 'COLOR_TEST_MODE': {'en_comp': (31, 28), 'func': (27, 25)}, 'DEPTH_TEST': {'func': (31, 29), 'init_occlusion_test': (28, 28), 'en_occlusion_test': (27, 27), 'equal_range': (26, 23)}, 'DRAW_MODE': {'en_stencil_test': (31, 31), 'en_depth_mask': (30, 30), 'en_depth_test': (29, 29), 'en_depth_offset': (28, 28), 'en_color_discard': (27, 27), 'en_color_mask': (26, 26), 'en_dither': (25, 25), 'en_logic_op': (24, 24), 'en_blend': (23, 23), 'en_color_test': (22, 22), 'en_fog': (21, 21), 'en_color_matrix': (20, 20), 'en_pixel_xfer': (19, 19), 'en_texture': (18, 18), 'en_second_color': (17, 17), 'en_smooth_shade': (16, 16), 'en_opaq_stipple': (15, 15), 'en_poly_stipple': (14, 14), 'en_line_stipple': (13, 13), 'reserved': (12, 0)}, 'FB_ADDR': {'y': (31, 16), 'x': (15, 0)}, 'LIGHT_MODE': {'two_sided': (31, 31), 'en_light3': (30, 30), 'en_light2': (29, 29), 'en_light1': (28, 28), 'en_light0': (27, 27), 'en_normalize': (26, 26), 'en_specular': (25, 25), 'spec_only': (24, 24), 'en_lighting': (23, 23)}, 'LINK_WORD': {'next': (31, 12), 'size': (11, 3), 'sync': (2, 2), 'intr': (1, 1), 'ready': (0, 0)}, 'LOGIC_OP': {'op': (31, 28)}, 'PRIM_MODE': {'prim_type': (31, 29), 'aa_line': (28, 28), 'closed_line': (27, 27), 'line_width': (26, 15), 'cull_face': (14, 13), 'front_face': (12, 12), 'back_face_line': (11, 11), 'prim_dir': (10, 9), 'sel_prim_dir': (8, 8), 'reserved': (7, 0)}, 'STENCIL_MODE': {'dppass': (31, 28), 'dpfail': (27, 24), 'sfail': (23, 20), 'func': (19, 16), 'mask': (15, 8), 'ref': (7, 0)}, 'SZ_FORMAT': {'sz_type': (31, 31), 'buf_depth': (30, 29), 'desc_id': (28, 23)}, 'TEXENV_MODE': {'func': (31, 29), 'type': (28, 25)}, 'TEXGEN_FORMAT': {'linear': (31, 31), 'tex_type': (30, 27), 'buf_depth': (26, 25), 'desc_id': (24, 19)}, 'TEXGEN_LOD': {'max_level': (31, 28), 'min_level': (27, 24), 'lod_frac_size': (23, 21), 'lod_bias': (20, 11)}, 'TEXGEN_MODE': {'min_filter': (31, 29), 'mag_filter': (28, 28), 'wrap_t': (27, 26), 'wrap_s': (25, 24), 'map_height': (23, 20), 'map_width': (19, 16)}, 'XFORM_MODE': {'en_viewport_xform': (31, 31), 'en_model_xform': (30, 30), 'en_tex_xform': (29, 29), 'en_clip_check': (28, 28)}}
+ENUMS = {}
+FIELD_ENUM = {}
+CONSTANTS = {'WINDOW_PHYS': {'value': 3355443200, 'count': 1, 'stride': 1}, 'WINDOW_SIZE': {'value': 102400, 'count': 1, 'stride': 1}}
+TESTS = []
+
+
+def decode(name, value):
+    """Field name -> value for a register or word."""
+    return {f: (value >> lo) & ((1 << (hi - lo + 1)) - 1) for f, (hi, lo) in FIELDS[name].items()}
+
+
+def encode(name, **fields):
+    v = 0
+    for f, x in fields.items():
+        hi, lo = FIELDS[name][f]
+        if x >> (hi - lo + 1):
+            raise ValueError('%s.%s: %d does not fit' % (name, f, x))
+        v |= x << lo
+    return v
+
+
+def describe(name, value):
+    """decode, with enum labels where the field has an enum."""
+    out = {}
+    for f, x in decode(name, value).items():
+        e = ENUMS.get(FIELD_ENUM.get('%s.%s' % (name, f)))
+        out[f] = e.get(x, x) if e else x
+    return out
+
+
+def selftest():
+    for name, value, expect in TESTS:
+        got = decode(name, value)
+        for f, want in expect.items():
+            assert got[f] == want, (name, hex(value), f, got[f], want)
+    return len(TESTS)
+
+
+if __name__ == '__main__':
+    print('%s: %d vectors ok' % (UNIT, selftest()))

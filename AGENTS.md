@@ -18,7 +18,7 @@ Proprietary SGI binaries are not tracked. Copy the files [references/windows-fil
 
 ## 3. Deliverables
 
-Register and word layouts live in `devices/<unit>/registers.toml`, one file per unit, with a grade on every item. `generated/` and `devices/<unit>/registers.md` are written from it by `retools/tools/defs/defs-gen` and never edited by hand. To change a layout, edit the TOML, run `defs-gen`, then `retools/tools/defs/defs-check --build`, and commit both. No unit has a definition file yet; the display back end and the engine window are the first candidates. Everything else goes in pages under `devices/` and `software/`, in your own words, each finding labelled with its rating and derivation.
+Register and word layouts live in `devices/<unit>/registers.toml`, one file per unit, with a grade on every item. `generated/` and `devices/<unit>/registers.md` are written from it by `retools/tools/defs/defs-gen` and never edited by hand. To change a layout, edit the TOML, run `defs-gen`, then `retools/tools/defs/defs-check --build`, and commit both. The rendering engine window has one (`devices/rendering-engine/`); the display back end does not yet. Everything else goes in pages under `devices/` and `software/`, in your own words, each finding labelled with its rating and derivation.
 
 ## 4. Toolchain
 
