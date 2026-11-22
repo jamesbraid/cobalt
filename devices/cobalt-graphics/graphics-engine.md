@@ -250,7 +250,7 @@ vendor's `CoPktDescType` (`intr` bit 1, `sync` bit 2). The two
 builders disagree by one in the length field, so which one the engine follows, or whether the engine reads a different word altogether, is not settled.
 
 **Waiting. Established (`CoWaitForPacket` `0x6901b50c`, tail of `DispatchCurrentPkt`).** To reuse a node, or to wait for the engine, the ICD spins on bit 0 of the
-node's first dword. It steps through an 18-entry backoff table (`delayTable`) of busy-wait counts; at the last step, unless the context's no-block flag is set,
+node's first dword. It steps through an 18-entry backoff table (`delayTable`) of busy-wait counts; at the last step, unless `glCoStateFlags1` bit 1 is set (the variable `GLCOBUSYWAITFORPACKET` sets it; the page used to call it the no-block flag),
 it asks the driver (`0x62`) whether the hardware is still busy and, if so, sleeps on a kernel event (handle kept in the context) that the miniport signals
 from the engine's completion interrupt. `Finish` is escape `0x4c` followed by a wait on a second event. `__glCoIcdKickScheduler` is escape `0x4d` with the
 closed node's position as its one argument.

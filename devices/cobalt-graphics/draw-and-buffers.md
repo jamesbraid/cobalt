@@ -14,8 +14,8 @@ is decided per `glBegin`, and the lighting path is decided per validation. The f
 decision is **established** (the routines named were read in disassembly); what the engine does on each path is
 **unknown**.
 
-**Transform: engine or host.** `___glcoim_Begin@0x6904319e` sets the draw flags word (`gc+0x2dbb0`, sent as
-`0x00210020`) before every primitive, from the primitive's mask word (`gc+0x2d920 + 4 * type`):
+**Transform: engine or host.** `___glcoim_Begin@0x6904319e` sets the draw flags word (`gc+0x2dbb0` (`xformmodeReg`), sent as
+`0x00210020`) before every primitive, from the primitive's mask word (`vertex.primNeeds[type]`, `gc+0x2d920 + 4 * type`):
 
 | Condition | Draw flags bits 31:30 | Meaning |
 |---|---|---|
@@ -23,7 +23,7 @@ decision is **established** (the routines named were read in disassembly); what 
 | else, engine transform not allowed or not requested | `10` | the host sends the four clip coordinates (`clip`, `+0x20`), which it computed; the vendor's names for the bits are `enViewportXform` (31) and `enModelXform` (30), so the engine applies only the viewport transform |
 | else, engine transform on | `11` | the vertex packets carry the four object coordinates (`obj`, `+0x00`), and the modelview-projection matrix is resent if it changed (`__glCoPassMVPMatrix`); the vertex-send routine tests bit 30 first, so `11` reads as `01`: the engine applies the model transform, and the viewport transform if bit 31 is also set |
 
-Engine transform is on when (`gc+0x2d583` is nonzero and `gc+0x2d960` is nonzero) or bit 2 of `gc+0x2e494` is set
+Engine transform is on when (`gc+0x2d583` is nonzero and `gc+0x2d960` is nonzero) or bit 2 of `gc+0x2e494` (`glCoStateFlags1`) is set
 (`sgcoicd.dll@0x69043267`..`0x690432b5`). `gc+0x2d583` (`modes.allowChipXForm`) is 1 unless the variable `GLCOALLOWCHIPXFORM` is set to 0.
 `gc+0x2d960` (`vertex.noNeedToClip`) has bit 0 from the variable `GLCOSIMFORCECHIPXFORM` (read once, `GetBoardInfo@0x6901ae92`) and bit 1 set
 while the hint `0x80F0` (`GL_CLIP_VOLUME_CLIPPING_HINT_EXT`; the context word `+0x1cd0` equal to `GL_FASTEST`) is in force (`___glcoim_Hint@0x69029090`,
@@ -43,7 +43,7 @@ clips when it transforms is not read; the hint above is the application's promis
 **Lighting: engine or host** (`__glCoValidateLighting@0x690269f6`, `__glCoValidateSoftLighting@0x6902702a`,
 `LoadLightPath@0x690267b4`, `__glCoPickSetMask@0x6902ddf8`, `GetBoardInfo`):
 
-1. Soft lighting. `gc+0x2d57e` is set at start-up when the context is colour-index (`gc+0x2459`) or the variable
+1. Soft lighting. `gc+0x2d57e` (`modes.softLighting`) is set at start-up when the context is colour-index (`gc+0x2459` (`gc.modes.colorIndexMode`)) or the variable
    `GLCOSOFTLIGHTING` is nonzero. Then `InitFnPtrs` (stores at `sgcoicd.dll@0x6901a668` and `0x6901a67e`) installs `__glCoValidateSoftLighting` and the generic
    colour-material pick: the lighting-mode packet is sent with bit 23 clear, the path word is 2 (10 with `+0x3d80` bit
    28), the host computes every colour and the vertex packets carry it. This is the only lighting the driver has for
@@ -54,20 +54,26 @@ clips when it transforms is not read; the hint above is the application's promis
    slots (`LoadLightSource`). A light is left to the host, and the path word becomes 3 (engine lighting plus a host contribution), when any of:
    - it is the fifth or later enabled light;
    - one of its ambient, diffuse or specular colours is outside 0 to 1 (`IsColorOutOfRange@0x6902978c`, called by
-     `___glcoim_Lightfv` for each of the three, sets a bit in the flag word at light `+0x108`);
+     `___glcoim_Lightfv` for each of the three, sets a bit in the light record's `outOfRange` word, `+0x108`);
    - it is positional, its constant attenuation is below 0.5 and either the variable `GLCOLIGHTINGWAR` is nonzero or its
-     linear and quadratic attenuation are both zero (the node fields `+0xf0`, `+0xf4`, `+0xf8` are the stores
-     `___glcoim_Lightfv` makes for `GL_CONSTANT_ATTENUATION`, `GL_LINEAR_ATTENUATION` and `GL_QUADRATIC_ATTENUATION`: the
-     base of the two structures is inferred, the offsets agree).
-3. Colour-material tracking also puts the colour on the host: when the tracked-material mask `gc+0x2d5a8 & 0x199` is
-   nonzero and the path word is above 0, `LoadLightPath` is called with the host flag, which clears bit 23 of the lighting
-   mode word, and `gc+0x2d608` becomes `__glCoCalcRGBColor` (the host computes the lit colour per vertex).
+     linear and quadratic attenuation are both zero (the light record's `constantAttenuation`, `linearAttenuation` and
+     `quadraticAttenuation`, `+0xf0`, `+0xf4` and `+0xf8` of the vendor's `__GLlightSourceMachineRec`, are the stores
+     `___glcoim_Lightfv` makes for `GL_CONSTANT_ATTENUATION`, `GL_LINEAR_ATTENUATION` and `GL_QUADRATIC_ATTENUATION`; the
+     structure is the one the program database declares, so this is no longer an inferred base).
+3. A material or scene colour outside 0 to 1 also puts the colour on the host. `light.cOutOfRange` (`gc+0x2d5a8`) holds one flag per
+   colour parameter: `ApplyParameterF2` sets bit `n` for the front side's ambient (0), diffuse (1), specular (2) and emission (3), shifted
+   up by 4 for the back side, through `IsColorOutOfRange` (which tests the red, green and blue components against 0 and 1), and
+   `___glcoim_LightModelfv` and `___glcoim_LightModeliv` set `0x100` for the light-model ambient. When any bit of `0x199` (front and back ambient, front and back
+   emission, light-model ambient) is set and lighting is on, `__glCoEnableLighting` and `__glCoValidateLighting` call `LoadLightPath`
+   with the host flag, which clears bit 23 of the lighting mode word, and `light.calcColor` (`gc+0x2d608`) becomes `__glCoCalcRGBColor`
+   (the host computes the lit colour per vertex). An earlier version called `gc+0x2d5a8` the tracked-material mask and tied the rule to
+   colour-material tracking; the vendor's name and the two setters say otherwise.
 4. With the engine path, the per-vertex helper in `gc+0x2d608` is picked from a table by a small index: 2 for a host
    flag, 1 for local lights, 4 for `+0x3d80` bit 28 (index 1 `__glCoCalcLightVectors`, 2 `__glCoCalcExtraColor`, 4
    `__glCoCalcSpecColor`, every combination `__glCoCalcAllCases`, 0 a no-op; `sgcoicd.dll@0x690f390c`). These produce the extra per-vertex packets the engine needs:
    the light vector and scalar packets for positional lights (attribute-mask bit `0x08`), and a host colour contribution
    (`0x02`) which matches the white paper's "accumulating a host-supplied contribution".
-5. `__glCoPickSetMask` turns the path word into the vertex attribute mask (`gc+0x2d91c`): position `0x01` always; colour
+5. `__glCoPickSetMask` turns the path word into the vertex attribute mask (`gc+0x2d91c` (`vertex.attribSetMask`)): position `0x01` always; colour
    `0x02` when there is no lighting or a host colour; normal `0x04` when lighting is on; light vectors `0x08` for
    positional lights; secondary colour `0x10` (`+0x3d80` bit 29 without lighting, bit 28 with it); texture coordinate
    `0x20` (`+0x3d80` bit 3); fog `0x40` (`+0x3d80` bit 13, RGB mode); `0x80` calls the colour-material helper when colour
@@ -77,12 +83,13 @@ clips when it transforms is not read; the hint above is the application's promis
 `__glCoPickPhase1Procs@0x6903572a` read in full; every reference to the flag's offset listed). `GLCOSIMFORCECHIPTEXXFORM`
 lands in `modes.forceChipTexXForm` (`gc+0x2d584`) and `GetBoardInfo` is the only routine that touches that byte: there
 is no branch on it, so there is no engine rule to find. `__glCoPickCalcTextureProcs` chooses a host routine for the
-context's texture-calc slot (`gc+0x3100`) from the texture-generation enables (`gc+0x1c54`, bits 3 to 6) and the S and T
-generation modes (`gc+0x1d0c`, `gc+0x1d30`): equal eye-linear modes pick `__glCalcEyeLinear` (state flag 1, and flag
+context's texture-calc slot (`gc+0x3100` (`gc.procs.calcTexture`)) from the texture-generation enables (`gc+0x1c54` (`gc.state.enables.texture`), bits 3 to 6) and the S and T
+generation modes (`gc+0x1d0c` (`gc.state.texture.set[0].s.mode`), `gc+0x1d30` (`gc.state.texture.set[0].t.mode`)): equal eye-linear modes pick `__glCalcEyeLinear` (state flag 1, and flag
 `0x10` when the six plane components it tests are all zero), object-linear `__glCalcObjectLinear` (flag 2), sphere map
-`__glCalcSphereMap` (flag 4 or 8 by bit 2 of `gc+0x2a24`, after `__glValidateTexGenModelView`); any other mix with
-generation on picks `__glCalcMixedTexture` (flag 8); none picks `__glCalcTexture`, or a no-op when the bound texture's
-kind field (`+0x40`) is 4. Flag `0x20` is added when that field is not 4 and the texture matrix flag
+`__glCalcSphereMap` (flag 4 or 8 by bit 2 of `gc+0x2a24` (`gc.constants.cpuFlags`), after `__glValidateTexGenModelView`); any other mix with
+generation on picks `__glCalcMixedTexture` (flag 8); none picks `__glCalcTexture`, or a no-op when the
+texture matrix's type (`gc.transform.texture[0]`, `matrix.matrixType`) is 4; an earlier reading called that the bound texture's kind field.
+Flag `0x20` is added when the type is not 4 and the texture matrix flag
 `vertex.enableTexMatrix` (`gc+0x2d96e`) is clear. The flags go to `texture.controlWord` (`gc+0x2da78`), which the four
 code generators (`GenerateValidate`, `GenerateCalcTexture` and their Pentium III versions) read to emit x86 code for
 the vertex path. The texture coordinate the engine gets is the packet `0x198da080` the host fills, and the engine's own
@@ -91,16 +98,16 @@ transform mode has no texture bit that anything sets (`enTexXform` stays clear).
 `__glCoPickPhase1Procs` makes no engine-or-host choice about transform or texture coordinates; it neither reads
 `gc+0x2d583` nor `gc+0x2d960`. It is the first stage of state validation: it folds the dirty-state words, installs the
 vertex procedures (`__glCoPickOGVertexProcs`, `__glCoPickVertexArraysProc`, `__glCoPickSetMask`), and builds the
-attribute-need words. From the enables it sets the polygon-offset bits of `gc+0x3d80` (the three enables, each only when the
-offset factor or units is non-zero), the lighting and fog needs, and in `gc+0x3430`, `+0x3434` and `+0x3438` the coordinate
+attribute-need words. From the enables it sets the polygon-offset bits of `gc+0x3d80` (`gc.polygon.shader.modeFlags`) (the three enables, each only when the
+offset factor or units is non-zero), the lighting and fog needs, and in `gc+0x3430` (`gc.vertex.needs`), `+0x3434` and `+0x3438` (the two-dword `gc.vertex.faceNeeds`) the coordinate
 sets the host must produce (eye coordinates `8` for eye-linear or sphere-map generation, local lights, a local viewer or
 clip planes; the normal `4` for lighting and sphere map; `0x80` for texturing), which it copies to the vertex needs
-`gc+0x2d918`, `+0x2d948` and `+0x2d94c`, from the soft-lighting variants when `modes.softLighting` is set. Established.
+`gc+0x2d918` (`vertex.needs`), `+0x2d948` and `+0x2d94c` (`vertex.faceNeeds`), from the soft-lighting variants when `modes.softLighting` is set. Established.
 
 **Display lists and arrays.** `__glCoPickVertexProcs@0x6902e4ba` does not choose the engine or host path. In feedback
 mode it installs the colour-save routines; otherwise it indexes two tables (by lighting, colour-material and
 sphere-map texgen state) to pick which per-vertex attributes (`CoSaveN`, `CoSaveNT`, `CoSaveCNT` and the generic
-`__glSaveC` family) a compiled list records, and when `gc+0x3434` is nonzero it installs `CoValidateVertex2/3/4` as the
+`__glSaveC` family) a compiled list records, and when `gc+0x3434` (`gc.vertex.faceNeeds`) is nonzero it installs `CoValidateVertex2/3/4` as the
 per-vertex validators for glVertex2, 3 and 4. `__glCoPickOGVertexProcs@0x69030568` installs the run-time-generated
 `GenerateVertex2fv/3fv/4fv` as the dispatch-table targets of `glVertex2fv`, `glVertex3fv` and `glVertex4fv` when
 `GLCOUSEOG` is not zero (default 1); with it zero the generic functions stay. The generated handlers carry the same
@@ -149,13 +156,13 @@ Two ports, `0x18a33060` (`A` = `0x0c5`) and `0x18c33060` (`A` = `0x0c6`), each w
 2. If bit 0 is set, the vertex itself: a header from the port table plus an **attribute-presence mask in the instance
    field**, then the payload in this order: the colour (four dwords) if instance bit 1, the normal (three dwords) if bit 2,
    a w dword if bit 4 (set when bit 30 of the draw flags is clear), the x and y coordinates, the z coordinate for port B
-   only, and the texture coordinate (two dwords) if bit 3. With mask bit 0 set, the colour (RGB mode, when `gc+0x2d620` is nonzero) and the
+   only, and the texture coordinate (two dwords) if bit 3. With mask bit 0 set, the colour (RGB mode, when `gc+0x2d620` (`vertex.colorPerVertex`) is nonzero) and the
    normal go into the vertex packet instead of a packet of their own, and so does the texture coordinate when its fourth
-   word equals the context constant at `gc+0x250c`; otherwise each has its own packet. A colour index always has its own
+   word equals 1.0 (`gc.constants.one`, `gc+0x250c`); otherwise each has its own packet. A colour index always has its own
    packet. A mask of zero means the
    coordinates only. The header count stays 3 for both ports whatever the mask adds, so it is not the payload length.
 3. **The ports differ in the vertex's component count, and so in whether z is sent.** The routine chooses port A when
-   bits 19:18 of the vertex record's clip word (offset `0x30`) are `01` and either depth test is off in the pixel-pipe
+   bits 19:18 of the vertex record's `flags` word (offset `0x30`, the clip-code word) are `01` and either depth test is off in the pixel-pipe
    mode word (bit 29 clear) or bit 30 of the draw flags is set; otherwise port B. Those two bits are set by the
    immediate-mode entry points: `0x40000` by `glVertex2*`, `0x80000` by `glVertex3*` and `0xc0000` by `glVertex4*`
    (`___glim_Vertex2fv@0x690b391e`, `___glim_Vertex3fv@0x690b398e`, `___glim_Vertex4fv@0x690b3a03`). Port A therefore
@@ -202,7 +209,7 @@ The two buffer descriptors are read-modify-write words kept in the context and s
 **Draw-buffer descriptor** (`0x91aa0020`, context word `+0x2e30c`). Disassembly-checked: bits 24:19 are the low six
 bits of the first dword of the buffer's record (the record that `CREATE_BUFFER` and `BIND_BUFFERS` set up), the other
 bits are preserved. `__glCoInitRGB` clears bits 18:0 and sets the format field in bits 30:25 from the context's bits
-per colour component (`gc+0x2460`): 4 gives `0b001101`, 5 gives `0b001001`, 8 gives `0b010010`. What the driver does with the
+per colour component (`gc+0x2460` (`gc.modes.redBits`)): 4 gives `0b001101`, 5 gives `0b001001`, 8 gives `0b010010`. What the driver does with the
 field is established: `__glCoClearBuffers` reads `(descriptor >> 25) & 3` and branches on 0 (byte colour index), 1
 (16-bit) and 2 (32-bit, per-byte write masks), which is why this page calls bits 26:25 a size class (1 for 4-4-4-4 and
 5-5-5-1, 2 for 8-8-8-8) and bits 30:27 the layout. What the engine reads from the field is unknown; the white paper's 8-,
@@ -246,7 +253,7 @@ hardware rectangle clear, `0x99ce00a0` (and `0x9e7200a0`, a second register bank
 
 That is the order both builders write and the vendor's `CoClearModeReg` declares (descriptor, mask, value, start, end); an earlier
 reading of this list had the value first. The second bank (`0x9e7200a0`) is chosen by the context's `fastClear` byte
-(`gc+0x2e2cc`), not by a second buffer.
+(`gc+0x2e2cc` (`fastClear`)), not by a second buffer.
 
 The rectangle is in units of 32-byte memory rows: 32 pixels per column at 8 bits, 16 at 16 bits and 8 at 32 bits
 (`coClearBuffers`, the part that builds the packets, and the miniport's `CoClearRect`, read in full). A rectangle that does not start or end on a
