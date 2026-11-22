@@ -34,8 +34,8 @@ rasteriser (inferred, from the names). The brief's `__glGenerateSetup` therefore
 | `___gllc_*` and `___glcolc_*` | 321 | display-list compile entry points |
 | `___glcoim_*` | 114 | the Cobalt versions of the immediate calls; they set the context's state and call a `__glCoPass*` routine to write the packet |
 | `__glCo*`, `co*`, `Co*` | 572 | the Cobalt back end: begin and restart routines, fill and render routines, buffer and texture management, pixel transfer, display-list conversion, validation |
-| `Generate*` and `__glGenerate*` (the `__glCoGenerate*` ones are in the row above) | 19 | run-time code generators for vertex handling (below) |
-| the rest | 2,297 | the generic OpenGL machinery from the vendor's base code, including the span, store and image-pipe routines used for fallbacks: evaluators, texture state, clipping, lighting maths, colour tables |
+| `Generate*` and `__glGenerate*` (the `__glCoGenerate*` ones are in the row above) | 21 | run-time code generators for vertex handling (below); an earlier count gave 19 |
+| the rest | 2,295 | the generic OpenGL machinery from the vendor's base code, including the span, store and image-pipe routines used for fallbacks: evaluators, texture state, clipping, lighting maths, colour tables |
 
 **The driver compiles code at run time.** `__glCoGeneratePrimitiveHandler`, `GenerateSetAttribs`,
 `GenerateTransformer` (and a Pentium III `KNI` version of each), `GenerateHostCullHandler`,
@@ -50,7 +50,7 @@ and is not in the image.
 quad strip, plus a wrapper that asks `__glGenerateDrawVerticesVcache` for a code body) are the generic OpenGL
 primitive loops. They read vertex records of 0x170 bytes, test the clip-code word at record offset `0x30` against the
 mask `0xfff20000`, call `__glDoClipTriangle` when a triangle straddles the frustum and call the context's triangle
-render procedure (offset `0x3164`) otherwise. They contain no header constants.
+render procedure (`procs.renderTriangle`, offset `0x3164`) otherwise. They contain no header constants.
 
 ## Where the packets come from
 
@@ -88,13 +88,16 @@ alike. The type streams give the vendor's own declarations of the context, the v
 register words. Read in full this round; the NT 4.0 and Windows 2000 `sgcoicd.pdb` files declare identical layouts
 (`__GLcontextRec` 185,720 bytes, `__GLCOcontextRec` 189,600, the same member offsets), so one table serves both builds.
 
-**How they were read.** Ghidra's PDB reader (`--pdb` of the export tool) applies the NT 4.0 `sgcomp.pdb` and `sgcoicd.pdb`
-(function names and prototypes; the decompiler shows the vendor's names for callees and for globals) and fails on
+**How they were read.** Ghidra's PDB reader (`--pdb` of the export tool) applies the NT 4.0 `sgcomp.pdb`, `sgcodd.pdb` and `sgcoicd.pdb`
+(function names, prototypes and structure types; the decompiler shows the vendor's names for callees, fields and globals) and fails on
 the Windows 2000 `sgcoicd.pdb` and `sgcomp.pdb` with "Needed data is not available" in the module-information stream, so no
-Windows 2000 routine got a PDB name. The type streams themselves were read with a small parser of the PDB 2.00 container
-and its type records (the member lists, bit fields and array sizes), which does not touch the module stream; the layouts
-below come from it. The prototypes Ghidra applies say `__cdecl` for routines that take the context in ECX, so the
-decompiler leaves the context's fields as raw offsets: the tables here are what names them.
+Windows 2000 routine got a PDB name. The type streams were first read with a small parser of the PDB 2.00 container
+and its type records (the member lists, bit fields and array sizes); the layouts below were then checked a second time
+against the structures Ghidra builds from the same streams (every offset and size in this section matches). The prototypes
+Ghidra applies say `__cdecl` for routines that take the context in ECX, so by default the decompiler leaves the context's fields as raw
+offsets. A project that sets `__fastcall` on the routines whose first parameter is a pointer to a vendor structure and whose body reads ECX
+(1,247 of them, 962 with the context first), and types a context parameter as `__GLCOcontextRec` (the vendor's context with the generic part first), makes the decompiler print every field by name; that is how the
+other pages' offsets into the context were resolved.
 
 **The context, from `gc+0x2d578` (the `__GLCOcontextRec` part after the generic context).** Established (declaration read in
 full; the offsets match the routines cited in [draw-and-buffers.md](../../devices/cobalt-graphics/draw-and-buffers.md)).
@@ -102,7 +105,7 @@ full; the offsets match the routines cited in [draw-and-buffers.md](../../device
 | Offset | Vendor name | Notes |
 |---|---|---|
 | `+0x2d578` | `modes` (16 bytes of flags) | `+6` `softLighting`, `+7` `useOG`, `+8` `forceClip`, `+9` `clipToBigFrustum`, `+0xa` `forceChipXForm` (`GLCOSIMFORCECHIPXFORM`), `+0xb` `allowChipXForm` (`GLCOALLOWCHIPXFORM`, at `+0x2d583`), `+0xc` `forceChipTexXForm` (`GLCOSIMFORCECHIPTEXXFORM`, at `+0x2d584`), `+0xd` `fastSetAttribs`, `+0xe` `objectClipCheck`, `+0xf` `hardwareDisplayListsEnabled` |
-| `+0x2d5a0` | `light` | `lightingMode` at `+0x2d5c0`, `controlWord` (the lighting-mode packet's word) at `+0x2d5cc`, `lightModeReg` at `+0x2d5e4` |
+| `+0x2d5a0` | `light` | `lightingMode` (the path word) at `+0x2d5c0`, `controlWord` (per-light bits: `__glCoSetVertexAttribsMask` tests `1 << light` shifted left 8 to decide whether a light's scalar packet is sent) at `+0x2d5cc`, `lightModeReg` (the lighting-mode packet's word, a `CoLightModeReg`) at `+0x2d5e4`, `calcColor` at `+0x2d608`; the out-of-range flags `cOutOfRange` at `+0x2d5a8` |
 | `+0x2d60c` | `vertex` (868 bytes) | `noNeedToClip` at `+0x2d960` (a four-byte word: bit 0 `forceChipXForm` from `GLCOSIMFORCECHIPXFORM`, bit 1 the clip-volume hint while it is `GL_FASTEST`, bit 2 lock-array, bit 3 display list); `allTuples` `+0x2d964`; `hostCulling` `+0x2d968`; `enableTexMatrix` byte at `+0x2d96e` |
 | `+0x2d9b0` | `texture` (204 bytes) | `coParam` (the four texture-format words) `+0x2d9b0`, `coEnv` `+0x2d9c0`; `controlWord` at `+0x2da78` is the texture-generation state word of `__glCoPickCalcTextureProcs` |
 | `+0x2da7c` | `pixel` (284 bytes) | `yCrCbToRGBA` `+0xc`, `RGBAToyCrCb` `+0xd`, `enableHwCM` (colour-matrix flag) `+0xd6`, `xferParam` `+0x104` (the five words `descId`, `pixDepth`, `pixType`, `pixMode`, `linear`), `colorFormat` `+0x118` |
@@ -152,24 +155,30 @@ The OpenGL driver of the NT 4.0 OEM disc set (disc 2, April 1999, file version 1
 hashes) was read against 5.2.4 with the same scan. It is in the disc's top-level InstallShield 5 cabinet, which `unshield`
 opens; an earlier note that no tool opened it had the wrong archive in mind.
 
-- **Names.** Its `.dbg` holds a CodeView table (the NB09 form) of 3,964 public names and no COFF symbol table, so the
-  Ghidra importer for `.dbg` files refuses it ("has no COFF symbol table") and names came from a direct parse of the
-  publics: 3,785 names in `.text` once the import slots are left out, at 3,784 distinct addresses. File-static routines
+- **Names.** Its `.dbg` holds a CodeView table (the NB09 form) of 3,964 public names and no COFF symbol table. The
+  Ghidra importer for `.dbg` files used to refuse it ("has no COFF symbol table"); the current one reads NB09 and
+  reports the same 3,964 records (3,389 functions and 573 other labels, 80 functions it could not create), and Ghidra finds 3,716 functions in the image. The page's own
+  names came from a direct parse of the publics: 3,785 names in `.text` once the import slots are left out, at 3,784 distinct addresses. File-static routines
   such as the material and light loaders have no public record, so 1999 routine names are those of the nearest public,
   not the routine's own. The counts are not comparable with the 3,633 of 5.2.4. Established (the table read in full).
 - **Header scan.** The 5.2.4 scan found 57 distinct immediates in the known set (52 base headers and their instance
   variants); the Windows 2000 build gives the same 57. The 1999 build gives 56. It has no `0x97400020` (the texture-id
-  reset) and no `0x99ce00a0` (the rectangle clear), and it sends the vertex port `0x18c33068`, which 5.2.4 does not
-  (a texture-coordinate mask on a port known already). No header outside the known 52 plus `0x91ca1020` occurs as an
+  reset), no `0x99ce00a0` as an immediate (the rectangle clear is built by arithmetic, see Clears below) and no `0x04a40000`, and it sends the vertex port `0x18c33068`, which 5.2.4 does not
+  (a texture-coordinate mask on a port known already). A second pass over the decompiled C of both builds (the literals in the typed
+  decompile) agrees on all of these differences. No header outside the known 52 plus `0x91ca1020` occurs as an
   immediate in `.text`. The 25 dwords in 5.2.4 and 43 in 1999 whose top 20 bits match a known address and register but
   whose value is not in the set are not immediates (they straddle instruction bytes or sit in data). The scan this round
   also matches the exact header values byte by byte over `.text`, because the linear sweep had lost the viewport header
   `0x0362a0c0` in the 1999 image; the 5.2.4 counts did not change. Established as a scan result; a header the code
   computes is not found by it.
-- **Clears.** `__glCoClearBuffers@0x6904fcb0` in the 1999 build never writes the rectangle clear: every header it stores is
+- **Clears.** `__glCoClearBuffers@0x6904fcb0` in the 1999 build does not write the rectangle clear itself: every header it stores is
   among `0x18e84020`, `0x936ae020`, `0x938af040`, `0x98804000`, `0x80003020`, `0x18002020` and the vertex port
-  `0x18c33060`, plus the lighting mode word `0x05260020` (`@0x69050413`, `@0x6905093a`) and the draw flags `0x00210020` (`@0x69050657`, `@0x690508ef`), so a clear is always a drawn rectangle. Established (routine read for its stores). The engine's
-  rectangle clear exists for the miniport's own clears in the 1999 pack.
+  `0x18c33060`, plus the lighting mode word `0x05260020` (`@0x69050413`, `@0x6905093a`) and the draw flags `0x00210020` (`@0x69050657`, `@0x690508ef`). It
+  does call the static routine at `0x69050cb0` (no public name; the 5.2.4 `coClearBuffers`), which builds the rectangle clear: the header is
+  `(fastClear == 0 ? 0 : 0x04a40000) + 0x99ce00a0`, computed here as `0x9e7200a0` less `0xfb5c0000` when the byte is clear, so the scan finds
+  `0x9e7200a0` as an immediate and no `0x99ce00a0`; the same routine queues a kernel clear (escape `0x50`, input `0x70`) when its mode flag is set. The
+  earlier statement that a 1999 clear is always a drawn rectangle, and that the engine's rectangle clear was for the miniport's own clears only, is withdrawn.
+  Established (both routines read).
 - **Texture-id reset.** Without `0x97400020` the 1999 `__glCoCreateTexLevel@0x690219a0` has no texture-id reset before it frees a
   bound texture's pages. Its call sites at `0x69021f60` and `0x690220c1` instead call `__glCoExtEscape`
   with code `0x64`, a 0x20-byte input and a 4-byte output, a code the 1999 display driver's table (`0x40` to `0x63`) does

@@ -304,9 +304,10 @@ layout read. Computed forms: the vertex port plus attribute mask (constants seen
 the class `11` table loads (miniport only). Not emitted by the ICD but by the miniport: `0x97000020`, `0x97000060`,
 `0x98250160`, `0x9845b020`, `0x9865c020`, class `11`. The display driver adds `0x91ca1020` and uses 22 of the other
 headers; the miniport uses 15. The count is of distinct header values from the tables above that occur as an immediate
-operand in a linear disassembly sweep of `.text`, with payload constants such as `0x3f000000` left out. The same scan of the Windows 2000 display driver and miniport, and of the April 1999
-builds, found the same headers and no others. The April 1999 OpenGL driver has 50 of the 52 base values (no `0x97400020`, no
-`0x99ce00a0`), and no header outside the set ([nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md#the-april-1999-build)).
+operand in a linear disassembly sweep of `.text`, with payload constants such as `0x3f000000` left out. The same scan of the Windows 2000 display driver and miniport found the same headers and no others (a raw search of each file for the
+header dwords, repeated in the typed re-check, gives identical sets for the NT 4.0 and Windows 2000 builds of both). The April 1999 builds
+found no header outside the set but are smaller: the miniport has no long chain packet `0x97000060`, and the display driver has no blend packet `0x928a7040`. The April 1999 OpenGL driver has 50 of the 52 base values as immediates (no `0x97400020`, no
+`0x99ce00a0`; the second is still emitted, built from the immediate `0x9e7200a0` by subtraction), and no header outside the set ([nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md#the-april-1999-build)).
 
 **Withdrawn.** The earlier page listed `0x9400014f` as a span header written by `__glStoreSpanARGB8`. The bytes occur
 once in the image, at `sgcoicd.dll@0x690f2681`, in the export address table (they straddle two of its 15 entries), not
