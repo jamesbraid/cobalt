@@ -15,6 +15,8 @@ emulator brief. The registers and the software that drives them are in three com
 - [draw-and-buffers.md](draw-and-buffers.md): how those packets draw, clear, set buffers and bind textures.
 - [board-data.md](board-data.md): what SGI's graphics white paper and a real machine's registry export settle.
 - The OpenGL driver itself, its symbols and its run-time code generators: [nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md).
+- [framebuffer-driver-floor.md](framebuffer-driver-floor.md): the smallest set of registers and of HAL and driver-model facts a
+  frame-buffer-only driver needs, how well each is known, and the drivers' hot paths.
 
 The system side is covered by pages in the [chips repository](https://github.com/jamesbraid/chips): [the platform](https://github.com/jamesbraid/chips/blob/main/platforms/visws/README.md), [the Cobalt system ASIC](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md)
 (processor interface, interrupt controller, timer) and [Lithium](https://github.com/jamesbraid/chips/blob/main/devices/lithium/README.md) (PCI bridges, audio). This one stops
