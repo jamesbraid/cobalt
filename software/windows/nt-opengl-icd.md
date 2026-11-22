@@ -14,10 +14,9 @@ CodeView `.pdb` (`NB10`, Microsoft program database version 2.00). The COFF tabl
 Windows `.dbg` header, the debug directory, and the table with its string pool). It has 13,109 records, of which 8,883
 are symbols and the rest are auxiliary records; 3,929 are function-typed symbols in `.text`, at 3,633 distinct
 addresses (some routines carry two names), and those names, with their stdcall and fastcall decorations, are what the
-pages cite. The 4.2 MB `.pdb` was not
-needed for names. The `.pdb` carries
-types and local variable names the project has not used. Any claim about a routine therefore cites a vendor name and an
-address, for example `__glCoSetScissor` at `0x69018ebe`.
+pages cite. Any claim about a routine therefore cites a vendor name and an
+address, for example `__glCoSetScissor` at `0x69018ebe`. The `.pdb` (4.2 MB) carries the vendor's type declarations, read
+in [the next section](#the-program-databases-types).
 
 The static locals of `__glGenerateSetup` (names such as `affine_texture_bias`, `mmx_q_bias`, `alpha_correction_factor`,
 at `0x69013810` to `0x690138a0`) are in the image but nothing in `.text` addresses them, and no function of that name
@@ -81,6 +80,69 @@ code loses its place (it missed the viewport header in the April 1999 image). Th
 and import tables, jump tables, string pools) occur: the earlier `0x9400014f` was one, in the export address table at
 `0x690f2681` where it straddles two entries, which is why every row also rests on a routine whose body was read. The
 scan is repeatable with any script that does the same arithmetic; no scanner or listing is committed.
+
+## The program databases' types
+
+Every 5.2.4 pack ships a `.pdb` (Microsoft program database 2.00, Visual C 6) for each driver, NT 4.0 and Windows 2000
+alike. The type streams give the vendor's own declarations of the context, the vertex, the window record and the engine
+register words. Read in full this round; the NT 4.0 and Windows 2000 `sgcoicd.pdb` files declare identical layouts
+(`__GLcontextRec` 185,720 bytes, `__GLCOcontextRec` 189,600, the same member offsets), so one table serves both builds.
+
+**How they were read.** Ghidra's PDB reader (`--pdb` of the export tool) applies the NT 4.0 `sgcomp.pdb` and `sgcoicd.pdb`
+(function names and prototypes; the decompiler shows the vendor's names for callees and for globals) and fails on
+the Windows 2000 `sgcoicd.pdb` and `sgcomp.pdb` with "Needed data is not available" in the module-information stream, so no
+Windows 2000 routine got a PDB name. The type streams themselves were read with a small parser of the PDB 2.00 container
+and its type records (the member lists, bit fields and array sizes), which does not touch the module stream; the layouts
+below come from it. The prototypes Ghidra applies say `__cdecl` for routines that take the context in ECX, so the
+decompiler leaves the context's fields as raw offsets: the tables here are what names them.
+
+**The context, from `gc+0x2d578` (the `__GLCOcontextRec` part after the generic context).** Established (declaration read in
+full; the offsets match the routines cited in [draw-and-buffers.md](../../devices/cobalt-graphics/draw-and-buffers.md)).
+
+| Offset | Vendor name | Notes |
+|---|---|---|
+| `+0x2d578` | `modes` (16 bytes of flags) | `+6` `softLighting`, `+7` `useOG`, `+8` `forceClip`, `+9` `clipToBigFrustum`, `+0xa` `forceChipXForm` (`GLCOSIMFORCECHIPXFORM`), `+0xb` `allowChipXForm` (`GLCOALLOWCHIPXFORM`, at `+0x2d583`), `+0xc` `forceChipTexXForm` (`GLCOSIMFORCECHIPTEXXFORM`, at `+0x2d584`), `+0xd` `fastSetAttribs`, `+0xe` `objectClipCheck`, `+0xf` `hardwareDisplayListsEnabled` |
+| `+0x2d5a0` | `light` | `lightingMode` at `+0x2d5c0`, `controlWord` (the lighting-mode packet's word) at `+0x2d5cc`, `lightModeReg` at `+0x2d5e4` |
+| `+0x2d60c` | `vertex` (868 bytes) | `noNeedToClip` at `+0x2d960` (a four-byte word: bit 0 from `GLCOSIMFORCECHIPXFORM`, bit 1 while the clip-volume hint is `GL_FASTEST`); `allTuples` `+0x2d964`; `hostCulling` `+0x2d968`; `enableTexMatrix` byte at `+0x2d96e` |
+| `+0x2d9b0` | `texture` (204 bytes) | `coParam` (the four texture-format words) `+0x2d9b0`, `coEnv` `+0x2d9c0`; `controlWord` at `+0x2da78` is the texture-generation state word of `__glCoPickCalcTextureProcs` |
+| `+0x2da7c` | `pixel` (284 bytes) | `yCrCbToRGBA` `+0xc`, `RGBAToyCrCb` `+0xd`, `enableHwCM` (colour-matrix flag) `+0xd6`, `xferParam` `+0x104` (the five words `descId`, `pixDepth`, `pixType`, `pixMode`, `linear`), `colorFormat` `+0x118` |
+| `+0x2db98` | `displayBank` | |
+| `+0x2db9c`, `+0x2dba0` | `drawmode`, `drawModeReg` | the pixel-pipe mode word and the last value sent, a `CoDrawModeReg` |
+| `+0x2dba4`, `+0x2dba8`, `+0x2dbac` | `linePrimMode`, `polyPrimMode`, `primitiveReg` | `CoPrimModeReg` |
+| `+0x2dbb0` | `xformmodeReg` | a `CoXformModeReg`: the draw flags word |
+| `+0x2dbb4`, `+0x2dbb8` | `flatColorReg`, `scissor` | the colour last sent (reset to all ones by a node dispatch); the scissor corners (`CoClipRectReg`) |
+| `+0x2dbc4` | `tlbDescTable` | 64 descriptors of 24 bytes (id, type, slots, base, offset, descriptor word) |
+| `+0x2e284` to `+0x2e2c8` | `pktSequence`, `pktCount`, `pktSize`, `baseOffset`, `pktFlushOffset`, `currentPkt`, `currentLevelPtr`, `currentHighPtr`, `pktBuffers`, `pktBufferDesc`, `dispatchCurrentPkt`, `forceDispatchPrim`, `forceDispatchAll`, `forceFinish` | the packet-buffer state the dispatch routines keep |
+| `+0x2e2cc`, `+0x2e2cd` | `fastClear`, `bigScissor` | `fastClear` picks the second bank of the rectangle-clear register (`0x9e7200a0` instead of `0x99ce00a0`) |
+| `+0x2e2d0` | `fbDesc` (76 bytes) | `colorFormat` at `+0x2e30c` (the draw-buffer descriptor word) and `szFormat` at `+0x2e310` (the depth descriptor word) |
+| `+0x2e31c` | `colorBitMask` | the colour write mask |
+| `+0x2e460`, `+0x2e474`, `+0x2e494` | `pendingState`, `validEnables`, `glCoStateFlags1` | the validation shadow and the flags `GetBoardInfo` sets |
+
+The generic context part holds, among much else, the vertex record: **`__GLvertexRec`, 368 bytes**, with `obj` at `+0x00`, `userNormal` `+0x10`,
+`clip` `+0x20`, `flags` `+0x30`, `color` and `secondColor` pointers `+0x34` and `+0x38`, `fog` `+0x3c`, `window` `+0x40`,
+`eye` `+0x50`, `texture[2]` `+0x60`, `colors[2]` `+0x80`, `secondColors[2]` `+0xa0`, `normal` `+0xc0`, `materialColor`
+`+0xd0`, `lightAtt[4]` `+0xe0`, `lightVPli[4]` `+0xf0` and `lightHAngle[4]` `+0x130`. So the three coordinate sets the
+draw-flags word chooses from are object (`+0x00`), clip (`+0x20`) and window (`+0x40`) coordinates, not the unnamed word
+ranges the draw-and-buffers page described. Established (declaration), the same page gives the packet routine's use.
+
+**The window record.** The miniport's `_GRMDRAWABLEINFO` is 472 bytes, the size `pCoAllocateDrawable` clears: the drawable's
+client and clip regions (`rgnClient` `+0x08`, `rgnClips` `+0x1c`, with the previous pair after them), `pixelFormatId`
+`+0x58`, `numTiles` `+0x84` and a 256-byte `tileList`, `drawLock` `+0x188`, `drawIncarn` `+0x18c`, `winOffset`
+`+0x190`, **`cidMode` `+0x194`**, **`scrMaskMode` `+0x198`**, `scrMask[5]` of two dwords at `+0x19c`, **`texWinoffsetS`
+`+0x1c4`**, **`texWinoffsetT` `+0x1c8`**, `nextSwapFrame` `+0x1cc` and two list links. The three window-parameter words of
+the miniport are therefore the valid mask (`scrMaskMode`), five (minimum, maximum) pairs (`scrMask`) and the clip-ID
+word (`cidMode`), and the two bias floats are the texture window offsets. The rendering node `_RENDERINGNODE` (1,464 bytes)
+names `+0x108` `savedPktOffset`, `+0x4e0` `currentTexId`, `+0x4e4` to `+0x4f0` the context-switch packet page and its offset,
+`+0x500` `cxswDumpOffset`, `+0x514` `gfxType`, `+0x518` `nodeStatus`, `+0x560` `waitingEvents`, `+0x58c`
+`DrawableInfo`, `+0x5a8` `chunkCount` and `+0x5b0` `serialOnRemove`. In the adapter extension `+0xbd0` is `pktIdleCount`,
+`+0xbd8` `CAI_InterruptReg` (the register at the second interrupt address), `+0xbdc` `coBase` and `+0xbe0` `asBase`.
+Established (declarations).
+
+**The engine register words.** The program database declares twenty-three word types for the registers the packets
+load (`CoDrawModeReg`, `CoPrimModeReg`, `CoXformModeReg`, `CoColorFormatReg`, `CoSzFormatReg`, `CoTlbDescReg`,
+`CoBlendReg`, `CoColorTestReg`, `CoDepthTestReg`, `CoStencilModeReg`, `CoLogicOpReg`, `CoLightModeReg`, `CoTexGenParamReg`,
+`CoTexEnvParamReg`, `CoClearModeReg`, `CoPktDescType` and the rest), with bit-field names and positions. They are compared
+with every writer in [packet-set.md](../../devices/cobalt-graphics/packet-set.md).
 
 ## The April 1999 build
 
