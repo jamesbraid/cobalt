@@ -55,7 +55,7 @@ it; an entry the driver implements entirely on the host says so.
 | `GL_SGIX_instruments`, `GL_SGIX_depth_pass_instrument` | the occlusion bits of the depth-test word (28:27): `glStartInstrumentsSGIX` (`0x690434e2`) sends 11 and every later depth-test update sends 01, `glStopInstrumentsSGIX` (`0x6904353c`) sends 00 and then dispatches the packet node with its flag byte at `+0x20` set; how the count comes back is not decoded | established (the bits), unknown (the readback) |
 | `GL_SGIX_interlace` | none found | unknown |
 | `GL_SGIX_pbuffer` | off-screen buffers: escapes `0x5a` and `0x5b` create and delete one | established |
-| `GL_SGIX_subsample`, `GL_SGIX_ycrcb_subsample` | the YCrCb transfer types 9, 10, 14 and 15 | inferred |
+| `GL_SGIX_subsample`, `GL_SGIX_ycrcb_subsample` | the YCrCb transfer types 14 and 15 (types 9 and 10 are depth transfers) | inferred |
 | `GL_WIN_swap_hint` | none from the engine | inferred |
 
 **Not advertised.** No multitexture (`GL_ARB_multitexture` names appear in the dispatch table but not in the list, and
@@ -73,7 +73,7 @@ Set in `__glCoCreateContext@0x69019596` (stores at `0x690195f1` to `0x690196f9`;
 | `numberOfLights` | 8 | `GL_MAX_LIGHTS` (the engine holds four; the other four are host lighting, [draw-and-buffers.md](../../devices/cobalt-graphics/draw-and-buffers.md#who-does-what)) |
 | `numberOfClipPlanes` | 6 | `GL_MAX_CLIP_PLANES` (clipping is on the host) |
 | `maxViewportWidth`, `maxViewportHeight` | 2048, 2048 | `GL_MAX_VIEWPORT_DIMS` |
-| `viewportXAdjust`, `viewportYAdjust` | -1024, -1024 | used in the host's guard-band range test only; the miniport adds 1024 to the window origin ([packet-set.md](../../devices/cobalt-graphics/packet-set.md#window-parameter-packets)) |
+| `viewportXAdjust`, `viewportYAdjust` | -1024, -1024 | -1024.0 is added to the x and y offsets of the viewport packet and used in the guard-band range test; the miniport adds 1024 to the window origin ([packet-set.md](../../devices/cobalt-graphics/packet-set.md#window-parameter-packets)) |
 | `maxTextureSize` | 4096 | `GL_MAX_TEXTURE_SIZE` |
 | `maxMipMapLevel` | 13 | levels 0 to 12 |
 | `maxActiveTextures`, `numberOfTextureEnvs` | 1, 1 | one texture unit |
@@ -120,11 +120,12 @@ describe, output `0x30` bytes) and were not decoded here.
 
 **Queries of the engine.** The driver never reads an engine register; the ICD runs in user mode and sees the engine only
 through the packet buffers and the kernel driver's escapes ([graphics-engine.md](../../devices/cobalt-graphics/graphics-engine.md)).
-It asks the kernel driver three things that describe hardware: the pixel formats (escape `0x5d`), the first context's
-buffers and packet pool (escape `0x41`, which reports the sizes the driver settled on) and the presence of OpenGL
-(`OPENGL_GETINFO`, output `0x214` bytes). None of these returns a register value; a replacement driver has to answer the
-format and buffer queries and may treat everything else as the shipped kernel driver does. Established (the escape table
-and the first-context routine read in full).
+All of the ICD's kernel traffic is `ExtEscape` (33 call sites, codes `0x40` to `0x64`) sent through `_openglcmd`, which is
+`0x1100`, or `0x3f` under an environment variable; it never sends `OPENGL_GETINFO` (`0x1101`). Escapes such as `0x42`, the
+pixel-format describe (`0x5d`) and the first-context escape (`0x41`) return values the ICD stores. The driver's wait loops
+(`0x6901aa0b`, `0x690614c2`) poll a word at `[node+0xc]`; what updates it is unknown. No escape returns a register value; a
+replacement driver has to answer the escapes in [graphics-engine.md](../../devices/cobalt-graphics/graphics-engine.md) and
+the wait-word update. Established (the call sites read), the wait word unknown.
 
 **What breaks if the engine is replaced.** The driver depends on the engine for correctness in: the colour and depth
 formats it sets up (type 3/2/4 for colour, depth 16 or 24), the blend equations and factors, the logic operation, the

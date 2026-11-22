@@ -261,7 +261,7 @@ plus 0.5, truncated); the depth function is in 31:29 of its word; the stencil fu
 | `GL_FUNC_REVERSE_SUBTRACT_EXT` (`0x800b`) | 4 |
 
 `GL_LOGIC_OP` as the equation (`0xbf1`) sends no blend packet; the logic-operation path is used. An equation outside this
-list leaves the field as the routine's uninitialised local, so the value is not defined.
+list leaves the field as the routine's uninitialised local, so the value is not defined; the same holds for a factor outside the lists below.
 
 | Factor | Source code | Destination code |
 |---|---:|---:|
@@ -283,7 +283,7 @@ list leaves the field as the routine's uninitialised local, so the value is not 
 
 So the codes 2 and 3 name "the other operand's colour": the destination colour in the source field and the source colour
 in the destination field. "The buffer has alpha" is the context's alpha bit count above zero. The second word is the
-constant colour packed red in 31:24, green 23:16, blue 15:8, alpha 7:0, each the float times 255 plus 0.5 truncated. The
+constant colour packed red in 31:24, green 23:16, blue 15:8, alpha 7:0, each the float times 255 plus 0.5, truncated. The
 blend is sent when the pixel-pipe mode word's blend bit is set; an RGBA context only (a colour-index context sends none).
 
 **Logic operation** (`__glCoPassLogicOp@0x6902cafa`): the GL enum minus `0x1500` in 31:28 (clear 0, and 1, and-reverse 2,
@@ -305,7 +305,7 @@ mode word (bits 30 and 29), not here.
 
 **Cull and face orientation** (`__glCoPassCullFace@0x69024320`, `__glCoPassFrontFace@0x69024378`): when face culling
 is enabled the primitive mode word's bits 14:13 get 01 for `GL_FRONT`, 10 for `GL_BACK` and 11 for
-`GL_FRONT_AND_BACK` (so bit 13 culls front faces and bit 14 culls back faces); with culling off both are cleared. Bit 12
+`GL_FRONT_AND_BACK` (so bit 13 culls front faces and bit 14 culls back faces); with culling off both are cleared; an unknown cull or front-face enum leaves the bits as they were, and `__glCoFillStippledTriangle@0x69025634` rewrites the cull bits (`0x69025947`) while it draws. Bit 12
 is set for `GL_CCW` (`0x901`) and cleared for `GL_CW` (`0x900`).
 
 **Polygon offset** (`__glCoPassPolygonOffset@0x69024398`): word 1 is the GL factor as a float, word 2 is the units times
@@ -319,19 +319,25 @@ fixes the coordinate space it expects. Established as what is written; the engin
 - The six words of `0x0362a0c0` are x scale, y scale, z scale, x offset, y offset, z offset. The x scale is half the
   viewport width, the y scale is the negative of half the height (the engine's y runs down the screen: the driver flips it
   against the window height), the z scale and offset come from `glDepthRange` as
-  `(far - near) * 0.49999997` (`0x3effffff`, so a window z never reaches 1.0 exactly) and, read from the second store only, `(far + near) * 0.49999997` (`__glCoUpdateDepthRange@0x6902cee2`, called from `___glcoim_DepthRange@0x6902cf7e`), with the
-  two swapped when a depth-reversal byte in the context is set.
-- The x offset is the viewport's left edge plus half its width, plus the context's float x adjustment, less `0.492`; the
-  y offset is the window height less (the viewport's bottom edge plus half its height), plus the float y adjustment, less
-  `0.508`. The two constants are at `0x69002680` (0.492) and `0x6900267c` (0.508): the half-pixel of OpenGL's pixel
-  centres, split asymmetrically by 1/128 pixel. The float adjustments (`gc+0x2558`, `gc+0x255c`) are read here and no
-  routine of the driver writes them, so they hold zero unless the context allocator fills them (not seen). The driver's
-  `subpixelBits` is 6, so the engine is expected to take window coordinates with 1/64 pixel resolution; that the 1/128 pixel
-  bias exists to settle ties in the engine's fill rule is inferred, and the fill rule itself is unknown.
-- The context's integer viewport adjustments (-1024 on each axis) are not in the packet. They enter a range test
-  (`0x69019a6c`) that decides whether the viewport lies inside the guard-band rectangle the host clipper assumes. The
-  miniport adds 1024 to the window origin it sends in `0x9845b020` ([packet-set.md](packet-set.md#window-parameter-packets)),
-  and how the engine combines that bias with vertex coordinates is unknown.
+  `(far - near) * 0.49999997` (`0x3effffff`, so a window z never reaches 1.0 exactly) and `(far + near) * 0.49999997`
+  (`__glCoUpdateDepthRange@0x6902cee2`, called from `___glcoim_DepthRange@0x6902cf7e`). When a depth-reversal byte in the
+  context is set, each value is first mirrored (`max - x`, with `max` the context's `one` constant at `gc+0x250c`), not
+  swapped, so the packet carries `(near - far) * k` and `(2 * max - near - far) * k`. A second writer of the same state exists:
+  `__glUpdateDepthRange@0x690823fc` calls `__glSetDepthRange`, reached through `__glValidateZCount` from
+  `__glGenericPickDepthProcs` (procedure slot `gc+0x3060`); whether it runs on the Cobalt path was not traced.
+- The x offset is the viewport's left edge plus half its width, plus the float x adjustment, less `0.492`; the y offset is
+  the window height less (the viewport's bottom edge plus half its height), plus the float y adjustment, less `0.508`.
+  The adjustments are -1024.0 each: `__glCoCreateContext` stores `0xfffffc00` to `gc+0x2550` and `gc+0x2554`
+  (`0x69019604`, `0x6901960a`), `__glEarlyInitContext` converts them to floats at `gc+0x2558` and `gc+0x255c`
+  (`0x6907651f` to `0x69076533`), and `UpdateViewport` adds them (`0x69019920`, `0x69019956`). So the x offset is
+  `left + halfWidth - 1024 - 0.492` and the y offset is `H - (bottom + halfHeight) - 1024 - 0.508`, which matches the
+  miniport adding 1024 to the window origin it sends in `0x9845b020` ([packet-set.md](packet-set.md#window-parameter-packets));
+  how the engine combines the two is unknown. The constants are at `0x69002680` (0.492) and `0x6900267c` (0.508): the
+  half-pixel of OpenGL's pixel centres, offset by 0.008 (about 1/125 pixel) in opposite directions. The driver's
+  `subpixelBits` is 6, so the engine is expected to take window coordinates with 1/64 pixel resolution; that the offset
+  exists to settle ties in the engine's fill rule is inferred, and the fill rule itself is unknown.
+- The integer adjustments also enter a range test (`0x69019a6c`) that decides whether the viewport lies inside the
+  guard-band rectangle the host clipper assumes.
 - Clip volume: guard-band factors come from the viewport and the viewport maximum of 2048 by 2048
   ([opengl-expectations.md](../../software/windows/opengl-expectations.md#limits)).
 - The rasterisation rules proper (coverage, top-left or other fill convention, pixel centre, rounding of the fixed-point
@@ -411,3 +417,23 @@ full memory bandwidth" are agreement, not the meaning.
   The drivers' side is read ([packet-set.md](packet-set.md#instance-bits-per-block)); the engine's side has no source.
 - What the flush marker does, and what the engine does with every field the vendor's types name but no routine sets
   (mode-word bits 12:0 are declared reserved).
+
+## What must be exact and what may be approximated
+
+For a model of the engine that runs the shipped OpenGL driver and display driver. Grades are the repository's three.
+
+| Item | Class | Why | Grade |
+|---|---|---|---|
+| Header decoding: class, `A`, `B`, count, instance; vertex port word order and the attribute-presence mask | exact | every packet the drivers write is parsed by these | established (writers), inferred (engine) |
+| Descriptor and translation-table words, tile geometry of levels and buffers, class-11 table loads | exact | the drivers allocate memory by them and the kernel driver reads the packet pool through them | established, inferred |
+| Format words: type, depth and id of colour, depth and texture buffers; the colour byte order (red in the top byte at 32 bits) | exact | the display driver writes the screen through them | established, inferred |
+| Link words, chain packets, serial numbers, stop interrupts, the context-switch handshake | exact | [graphics-engine.md](graphics-engine.md) | established, inferred |
+| Comparison, blend, logic-operation, stencil and cull codes and the occlusion control bits | exact | GL state the drivers rely on; the codes are in the tables above | established, inferred |
+| Texture filter, wrap, environment and level-of-detail codes, GL-format-to-type mapping, linear-source uploads | exact | [textures.md](textures.md) | established, inferred |
+| Rectangle clear and copy with the valid mask, the stipple and styled-line repeat words | exact | the 2D paths of the display driver | see [2d-blit-video.md](2d-blit-video.md) |
+| Coverage and fill convention, 1/64 pixel rounding, attribute interpolation precision | approximable | no shipped routine reads a pixel back to depend on them; an exact-pixel guest check would | unknown |
+| Filter arithmetic, level selection, blend rounding, dither, perspective correction | approximable | same | unknown |
+| Texel order inside a tile, channel order of type 5 | approximable while the model reads back what it wrote | the driver never reads a level back through the engine | unknown |
+| The 16-bit depth representation and precision, polygon-offset arithmetic | approximable | not shown | unknown |
+| Throughput, packet fetch timing | approximable | only the stop and idle handshakes are observed | inferred |
+

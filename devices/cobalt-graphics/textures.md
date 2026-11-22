@@ -55,9 +55,10 @@ independent writers are what the codes' meanings rest on, which is why those row
 | 6 | 0 | 8-bit luminance | texture LUMINANCE4 to 16; transfer source luminance bytes | established (writers), inferred (layout) |
 | 7 | 1 | 16 bits, luminance and alpha, 8 each | texture LUMINANCE_ALPHA and the `LUMINANCEn_ALPHAn` formats; transfer source luminance-alpha bytes | same |
 | 8 | 0 | 8-bit alpha or intensity | texture ALPHA4 to 16 and INTENSITY4 to 16 (the environment's type field tells them apart, [below](#environment-word)); a transfer source of RGB bytes with a swizzle converter | same |
-| 9, 10 | 2 | emitted for the SGIX YCrCb source formats `0x81bb` and `0x8318` when no conversion to 14 or 15 is asked for | `coInitTexImageStore@0x69020110` | established (writers), unknown (layout) |
+| 9, 10 | 1, 2 | depth transfer types: `FetchDepth@0x6902d0ae` writes 9 with depth 1 for a 16-bit depth buffer and 10 with depth 2 otherwise; 9 is also set at `0x690389a4` and `0x69021e10`. In `coInitTexImageStore` the 9 written for the SGIX YCrCb formats is overwritten, so it is dead there | established (writers), inferred (depth) |
 | 14, 15 | 1 | YUV 4:2:2 forms | the display driver's YUV blit (`0x72100000`, `0x7a100000`); the transfer routine when a YCrCb conversion is selected | established (writers), unknown (which is which) |
-| 1, 11 to 13 | | not written by any shipped routine | | unknown |
+| 0 (colour index, depth 0) | | also written at `0x69038b4d` | | |
+| 1, 11 to 13 | | no immediate writer found; the writers that store a computed value were not all resolved, so "never written" is not established | | unknown |
 
 A colour or depth buffer carries the same fields in its own words ([draw-and-buffers.md](draw-and-buffers.md#colour-depth-and-stencil-buffers)):
 `__glCoInitRGB` sets bits 30:25 of the draw-buffer descriptor to `0b001101` for 4 bits per component, `0b001001` for 5 and
@@ -90,7 +91,7 @@ The two debug strings the driver prints for the mipmap filters call code 3 "LINE
 first), so codes 3 and 4 read as above. The wrap codes 0 and 1 and the clamp-to-edge code are the only ones the
 routine writes; `GL_CLAMP` also makes it build the border word. Wrap R is not sent (there are no 3D textures:
 `max3DTextureSize` is never set, [opengl-expectations.md](../../software/windows/opengl-expectations.md#limits)).
-A minification value outside the six leaves the field as it was; the routine has no error path for it.
+The mode word is an uninitialised local: a minification value outside the six, or a wrap value outside the three, leaves stack garbage in that field (the routine has no error path for it).
 
 ## Word 3: level of detail
 
@@ -101,10 +102,10 @@ A minification value outside the six leaves the field as it was; the routine has
 | 31:28 | `maxLevel` | `min(round(maxLod), the object's maxLevel, the texture record's top level `p`)`, where `p` is shifted down as the base level rises (the shift count was read, its meaning is inferred) |
 | 27:24 | `minLevel` | `max(round(minLod), 0)`, where round is the sum with the context's `half` constant (`gc+0x2508`) truncated (`_ftol`) |
 | 23:21 | `lodFracSize` | 4 for a 1-D texture (the texture record's `dim` is 1), 3 otherwise; overridden by the variable `GLCOTEXLODFRACSIZE` |
-| 20:0 | | zero. The vendor's type declares a `lod_bias` in 20:11 that nothing sets |
+| 20:0 | | zero. The vendor's type declares a `lodBias` in 20:11 that nothing sets |
 
 Established for the packing; inferred for the meaning of `lodFracSize` (the number of fraction bits the engine keeps
-of the level of detail; the only evidence is the name). The code compares `minLevel` and `maxLevel` and refuses the
+of the level of detail; the only evidence is the name). A minification filter that is not a mipmap form (code 0 or 1) forces both the minimum and the maximum level to 0 (`0x6901e152`, `0x6901e157`). `GLCOTEXLODFRACSIZE` is clamped to 0 to 4 (default -2 becomes -1, meaning "use the computed value"). The code compares `minLevel` and `maxLevel` and refuses the
 texture (returns 0) if the rounded minimum is above the rounded maximum.
 
 ## Word 4: border colour
@@ -112,9 +113,9 @@ texture (returns 0) if the rounded minimum is above the rounded maximum.
 Built only when a wrap mode is `GL_CLAMP`. When neither wrap mode clamps the routine leaves its local for the word
 uninitialised and still sends it whenever it sends the packet, so the fourth word is then stack garbage and a model must
 not depend on it. The border colour floats
-(texture record `+0x1c`, `+0x20`, `+0x24`, `+0x28`, which are red, green, blue and alpha) are scaled by 255, rounded
-(`+0.5`) and packed red in 31:24, green 23:16, blue 15:8, alpha 7:0. Established. The packing for the environment colour
-below has the same order.
+(texture record `+0x1c`, `+0x20`, `+0x24`, `+0x28`, which are red, green, blue and alpha) are scaled by 255 and truncated
+(no `+0.5`; `0x6901e5ad` to `0x6901e612`) and packed red in 31:24, green 23:16, blue 15:8, alpha 7:0. Established. The environment colour
+below has the same order and the same truncation (`0x6901e91a` to `0x6901e991`); the alpha reference, blend colour and fog colour round instead.
 
 ## Environment word
 
@@ -170,8 +171,8 @@ No colour-index, paletted or compressed texture format exists in the hardware pa
 [opengl-expectations.md](../../software/windows/opengl-expectations.md) lists none for the Cobalt context. The byte
 count is the *stored* size, so a 1 or 2 byte request widens to 4 for the RGB8 family.
 
-A level's width and height are the image's less twice the border; the log2 of each is the map size field. A level
-wider than the context's `maxTextureSize` (4096) after scaling by its level number is refused. A level no larger than 16
+A level's width and height are the image's less twice the border; the log2 of each is the map size field. A refused format gives a level size of 0 (descriptor id 0, texturing off). A level
+wider than the context's `maxTextureSize` (4096) after scaling by its level number returns -1, and the caller raises the GL error `0x501` (`GL_INVALID_VALUE`). A level no larger than 16
 by 16 is flagged (flag bit 0 of the record) and is held in the texture's one shared "common" tile, a 128-byte-wide
 single 4 KB tile (`coAllocCommonLevel@0x6901efde`: slots 1, tiles per row 1), not in tiles of its own. Established
 for the driver's structure; the engine's reading of the flag is inferred.
@@ -208,7 +209,7 @@ global variables the vendor names and one environment variable sets:
 
 | Route | When | Grade |
 |---|---|---|
-| **Engine transfer** (`___dmaXferTextures`, default 1) | the source format and type are one the type list above can describe and the context's hardware and colour-matrix capability flags allow it; the full condition list was not decoded (the checks seen include an 8-byte multiple for the row and offset, `(x << depthShift) & 7`). The host image is described as a *linear* buffer (format-word bit 31 set) and a pixel-transfer packet sequence draws it into the tiled level; a rectangle is cut so that it does not cross destination row 4064 (`0xfe0`, `coXferTexImage@0x6902118a`) | established (routing and the cut), inferred (what the engine does) |
+| **Engine transfer** (`___dmaXferTextures`, default 1) | the source format and type are one the type list above can describe and the pixel-transfer state `coInitTexImageStore` tests allows it (the gates are transfer state, not capability flags); the full condition list was not decoded (the checks seen include an 8-byte multiple for the row and offset, `(x << depthShift) & 7`). Levels of 16 by 16 or less (the common tile) and levels where `width << level` is under 4 skip the engine transfer (`0x69020a7d`, `0x69020a87`, `0x6902089a`). The host image is described as a *linear* buffer (format-word bit 31 set) and a pixel-transfer packet sequence draws it into the tiled level; a rectangle is cut so that it does not cross destination row 4064 (`0xfe0`, `coXferTexImage@0x6902118a`) | inferred (routing, from partly decoded gates), established (the cut) |
 | **CPU stores** | the transfer is not possible: the driver converts and copies texels through the CPU's mapping of the pages (UMA); `GLCOTEXLOADSPANMODE` selects span-at-a-time copying | established |
 | **Hook** (`___vhdlLoadTextures`, default 0) | emits packet `0x9ed380e0` (`coVhdlTexImage`); a simulation aid, never on by default | established |
 
