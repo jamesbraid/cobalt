@@ -19,13 +19,13 @@ decision is **established** (the routines named were read in disassembly); what 
 
 | Condition | Draw flags bits 31:30 | Meaning |
 |---|---|---|
-| mask bit `0x400` set: the primitive is drawn by a host fill routine | `00` | the host sends window x, y, z (vertex +0x40) and the context's w |
-| else, engine transform not allowed or not requested | `10` | the host sends the four words at vertex +0x20 (computed on the host) |
-| else, engine transform on | `11` | the vertex packets carry the four words at vertex +0, and the modelview-projection matrix is resent if it changed (`__glCoPassMVPMatrix`); the vertex-send routine tests bit 30 first, so `11` reads as `01` |
+| mask bit `0x400` set: the primitive is drawn by a host fill routine | `00` | the host sends window x, y, z (the vertex record's `window`, `+0x40`) and the context's w |
+| else, engine transform not allowed or not requested | `10` | the host sends the four clip coordinates (`clip`, `+0x20`), which it computed; the vendor's names for the bits are `enViewportXform` (31) and `enModelXform` (30), so the engine applies only the viewport transform |
+| else, engine transform on | `11` | the vertex packets carry the four object coordinates (`obj`, `+0x00`), and the modelview-projection matrix is resent if it changed (`__glCoPassMVPMatrix`); the vertex-send routine tests bit 30 first, so `11` reads as `01`: the engine applies the model transform, and the viewport transform if bit 31 is also set |
 
 Engine transform is on when (`gc+0x2d583` is nonzero and `gc+0x2d960` is nonzero) or bit 2 of `gc+0x2e494` is set
-(`sgcoicd.dll@0x69043267`..`0x690432b5`). `gc+0x2d583` is 1 unless the variable `GLCOALLOWCHIPXFORM` is set to 0.
-`gc+0x2d960` has bit 0 from the variable `GLCOSIMFORCECHIPXFORM` (read once, `GetBoardInfo@0x6901ae92`) and bit 1 set
+(`sgcoicd.dll@0x69043267`..`0x690432b5`). `gc+0x2d583` (`modes.allowChipXForm`) is 1 unless the variable `GLCOALLOWCHIPXFORM` is set to 0.
+`gc+0x2d960` (`vertex.noNeedToClip`) has bit 0 from the variable `GLCOSIMFORCECHIPXFORM` (read once, `GetBoardInfo@0x6901ae92`) and bit 1 set
 while the hint `0x80F0` (`GL_CLIP_VOLUME_CLIPPING_HINT_EXT`; the context word `+0x1cd0` equal to `GL_FASTEST`) is in force (`___glcoim_Hint@0x69029090`,
 `__glCoProcessHints@0x690291c8`). `gc+0x2e494` bit 2 comes from a control-panel registry value named `ShadowTransform`,
 read only for 32-bit RGBA contexts. So an application gets the engine transform by setting that hint, which is its
@@ -73,9 +73,29 @@ clips when it transforms is not read; the hint above is the application's promis
    `0x20` (`+0x3d80` bit 3); fog `0x40` (`+0x3d80` bit 13, RGB mode); `0x80` calls the colour-material helper when colour
    material is enabled with lighting.
 
-**Texture coordinates.** The variable `GLCOSIMFORCECHIPTEXXFORM` is read into `gc+0x2d584` and nothing reads it
-afterwards, so the decision between host and engine texture-coordinate generation is not seen; the texture coordinate
-the host sends (vertex +0x2c, +0x60) is already generated, and `__glCoPickCalcTextureProcs` stays unread.
+**Texture coordinates: always the host's. Established** (`__glCoPickCalcTextureProcs@0x6901f31a` and
+`__glCoPickPhase1Procs@0x6903572a` read in full; every reference to the flag's offset listed). `GLCOSIMFORCECHIPTEXXFORM`
+lands in `modes.forceChipTexXForm` (`gc+0x2d584`) and `GetBoardInfo` is the only routine that touches that byte: there
+is no branch on it, so there is no engine rule to find. `__glCoPickCalcTextureProcs` chooses a host routine for the
+context's texture-calc slot (`gc+0x3100`) from the texture-generation enables (`gc+0x1c54`, bits 3 to 6) and the S and T
+generation modes (`gc+0x1d0c`, `gc+0x1d30`): equal eye-linear modes pick `__glCalcEyeLinear` (state flag 1, and flag
+`0x10` when the six plane components it tests are all zero), object-linear `__glCalcObjectLinear` (flag 2), sphere map
+`__glCalcSphereMap` (flag 4 or 8 by bit 2 of `gc+0x2a24`, after `__glValidateTexGenModelView`); any other mix with
+generation on picks `__glCalcMixedTexture` (flag 8); none picks `__glCalcTexture`, or a no-op when the bound texture's
+kind field (`+0x40`) is 4. Flag `0x20` is added when that field is not 4 and the texture matrix flag
+`vertex.enableTexMatrix` (`gc+0x2d96e`) is clear. The flags go to `texture.controlWord` (`gc+0x2da78`), which the four
+code generators (`GenerateValidate`, `GenerateCalcTexture` and their Pentium III versions) read to emit x86 code for
+the vertex path. The texture coordinate the engine gets is the packet `0x198da080` the host fills, and the engine's own
+transform mode has no texture bit that anything sets (`enTexXform` stays clear).
+
+`__glCoPickPhase1Procs` makes no engine-or-host choice about transform or texture coordinates; it neither reads
+`gc+0x2d583` nor `gc+0x2d960`. It is the first stage of state validation: it folds the dirty-state words, installs the
+vertex procedures (`__glCoPickOGVertexProcs`, `__glCoPickVertexArraysProc`, `__glCoPickSetMask`), and builds the
+attribute-need words. From the enables it sets the polygon-offset bits of `gc+0x3d80` (the three enables, each only when the
+offset factor or units is non-zero), the lighting and fog needs, and in `gc+0x3430`, `+0x3434` and `+0x3438` the coordinate
+sets the host must produce (eye coordinates `8` for eye-linear or sphere-map generation, local lights, a local viewer or
+clip planes; the normal `4` for lighting and sphere map; `0x80` for texturing), which it copies to the vertex needs
+`gc+0x2d918`, `+0x2d948` and `+0x2d94c`, from the soft-lighting variants when `modes.softLighting` is set. Established.
 
 **Display lists and arrays.** `__glCoPickVertexProcs@0x6902e4ba` does not choose the engine or host path. In feedback
 mode it installs the colour-save routines; otherwise it indexes two tables (by lighting, colour-material and
@@ -216,14 +236,17 @@ and fog colour are per-state registers; their layouts are in [packet-set.md](pac
 Two ways. A clear that needs the depth or stencil operations is drawn: `__glCoClearBuffers` sets the depth function
 to "always" (`0x936ae020`, payload `0xe0000000`), the stencil registers (`0x938af040`, payload `0x2227ff00` OR a byte)
 and the colour write mask, then sends the rectangle as vertex packets. A plain colour or depth clear uses the
-hardware rectangle clear, `0x99ce00a0` (and `0x9e7200a0`, a second register bank, when the context has a second
-buffer), five words:
+hardware rectangle clear, `0x99ce00a0` (and `0x9e7200a0`, a second register bank, when `fastClear` is set), five words:
 
-1. the value to write (a colour in the layout of the buffer, or the depth);
+1. the buffer's descriptor word (`tlbDesc` of the clear request), so the clear names the buffer it writes;
 2. a byte-enable mask for the 32-byte row;
-3. the second value, from a parallel array (for depth and stencil clears);
+3. the value to write (a colour in the layout of the buffer, or the depth);
 4. the minimum corner as `y << 16 | tile column`;
 5. the maximum corner, same form.
+
+That is the order both builders write and the vendor's `CoClearModeReg` declares (descriptor, mask, value, start, end); an earlier
+reading of this list had the value first. The second bank (`0x9e7200a0`) is chosen by the context's `fastClear` byte
+(`gc+0x2e2cc`), not by a second buffer.
 
 The rectangle is in units of 32-byte memory rows: 32 pixels per column at 8 bits, 16 at 16 bits and 8 at 32 bits
 (`coClearBuffers`, the part that builds the packets, and the miniport's `CoClearRect`, read in full). A rectangle that does not start or end on a
@@ -257,19 +280,21 @@ full memory bandwidth" are agreement, not the meaning.
   and stores the position words of the texture packet, so the texture packet runs between two ICD nodes. A bind is
   therefore made of chain packets, not of a register write from the ICD. The order of the jump into the packet and the
   return is not decoded. Texture addressing, filtering and wrap modes are not packets of their own in anything
-  read: the texture parameters go in the two transfer-parameter packets (`coSetTexParam` writes `0x91ea2040` and
-  `0x93cc0080`), which is why they are named "transfer parameters" here.
+  read: the texture parameters go in the two packets `coSetTexParam` writes, `0x91ea2040` and `0x93cc0080`. The vendor's
+  types for them are the texture environment and the texture-generator parameters (format, filters, wraps, map size,
+  level of detail and border colour: [packet-set.md](packet-set.md#the-vendors-register-word-types)); this page calls
+  them "transfer parameters" because the pixel-transfer routines load the same two packets.
 - **Texture memory and unified memory addressing.** Buffers and textures sit in 4 KB-multiple pages named through the
   engine's translation table, 2048 entries of 8 bytes at `0x8000` ([graphics-engine.md](graphics-engine.md)), with
-  the per-context base-pointer table at `0xc000`. The white paper says the pages are "organized linearly (without
-  tiles)". An entry is a 4 KB page frame number and the base-pointer entry carries the buffer's first slot
-  ([packet-set.md](packet-set.md#texture-table-packets-class-11)); which addresses go through the table is not determined.
+  the 64-entry buffer descriptor table at `0xc000`. The white paper says the pages are "organized linearly (without
+  tiles)". An entry is a 4 KB page frame number and the descriptor carries the buffer's first slot and tile geometry
+  ([packet-set.md](packet-set.md#texture-table-packets-class-11)). The packet pool is descriptor 0, so packet fetch goes
+  through the table too (`CoInitHw` loads the pool's pages into it); that pixel and texture accesses go through it is the
+  same reading, inferred.
 
 ## Unknown, with the route
 
 - What the engine does with the attribute-presence mask in the vertex header, and with a port A vertex that has no z.
   The drivers' side is read ([packet-set.md](packet-set.md#instance-bits-per-block)); the engine's side has no source.
-- What mode-word bits 28, 19 and 12:0 select, and what the flush marker does.
-- The lighting rule is read; the texture-coordinate rule (`GLCOSIMFORCECHIPTEXXFORM`, `__glCoPickCalcTextureProcs`) and
-  `__glCoPickPhase1Procs` are not.
-- The two record fields `pCoMakeTlbDesc` shifts into a base-pointer entry (bits 18:14 and 13, 9).
+- What the flush marker does, and what the engine does with every field the vendor's types name but no routine sets
+  (mode-word bits 12:0 are declared reserved).
