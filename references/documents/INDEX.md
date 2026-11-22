@@ -13,6 +13,7 @@ Public documents this workspace reads, by title and public URL only. Nothing her
 
 - "The Silicon Graphics 320 and Silicon Graphics 540 Visual Workstation Graphics Subsystem", Silicon Graphics white paper, form J10043 (2351 6/99), five pages: https://sgi320.wordpress.com/wp-content/uploads/2013/01/320_gfx_subsystem.pdf
 - "Contents of the HKLM\HARDWARE registry key", a registry export of a running SGI 320, linked from the ReactOS wiki page "SGI 320/540": https://pastebin.com/raw/dnE1xn5q and https://reactos.org/wiki/SGI_320/540
+- Public history of the `sgi_320` branch of a PC emulator that models the machine (used as another project's model, cross-check only; commit `96d399ef4`, 21 January 2025): https://github.com/disean/86Box/commits/sgi_320
 
 ## Software
 

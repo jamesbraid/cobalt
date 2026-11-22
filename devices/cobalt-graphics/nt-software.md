@@ -90,14 +90,15 @@ Reading the names together, the OpenGL driver asks for a packet buffer mapped in
 (display-list compile) and `__glle_` (display-list execute) families for every OpenGL 1.1 call, the span unpack and
 pack routines for pixel transfer, and 15 texture storage formats (`Luminance8`, `LuminanceAlpha8`, `RGB8`, `RGB332`,
 `XRGB1555`, `RGB565`, `RGBA8`, `RGBA4`, `ARGB4`, `RGBA5551`, `ARGB1555`, `Alpha8`, `Intensity8`, `ColorIndex8`,
-`ColorIndex16`). Its hardware path is `__glGenerateSetup` and the `__glDrawVertexes_*` family, which compute per-triangle
-setup with x87 and MMX code and write packets. The table `___glBlendTab`, the fog-and-dither tables and the "MMX q bias"
-constants show that perspective-correct texture coordinates, colour and depth interpolation setup is done on the host
-CPU, in packet-ready form. Observed from names and constants; the instruction-level behaviour was not read. That
-means the engine consumes *setup* (edge and attribute slopes), not raw vertices, which is the single most important
-fact for scoping a functional model, but it is inferred from names and has not been checked in code. The datasheet
-lists "per-vertex lighting computation" and "rasterizer setup" among the Cobalt features; whether the engine or the
-host does them is therefore **unknown**.
+`ColorIndex16`). The generic loops `__glDrawVertexes_*` contain no packet writes: they test clip codes, clip on the host and call the
+context's render procedure, and the Cobalt render, begin and fill routines (`__glCo*`, 572 symbols) then send **vertices
+and per-vertex attributes** to the engine, not triangle set-up ([packet-set.md](packet-set.md),
+[draw-and-buffers.md](draw-and-buffers.md)). An earlier reading of this page, from names and constants alone, had the
+host computing edge and attribute slopes in `__glGenerateSetup` and the engine consuming set-up; that is withdrawn:
+`__glGenerateSetup` has no code in this build (only unreferenced static constants such as the "MMX q bias"), none of the
+52 header values the driver emits carries slopes or edge coefficients, and the white paper lists rasteriser set-up and
+attribute interpolation set-up among the engine's functions. Inferred. What the host still does is transform, clip and,
+optionally, light; see [draw-and-buffers.md](draw-and-buffers.md#who-does-what).
 
 The datasheet lists "Direct X, GDI" next to the OpenGL driver; the OpenGL driver contains `DDERR_*` strings. Which
 DirectDraw or Direct3D calls the hardware accelerates is unknown.
@@ -150,4 +151,4 @@ are `GraphicsMemory` and `GraphicsMemorySize` only (no bank list).
    running context), `+0x10018` (cause) and `+0x185c0`..`+0x185d0`, and reflect the context word the driver writes.
    That is enough for NT's miniport to attach, init, and schedule; it is not enough to draw.
 6. Interrupt pins 24 and 25 with the register at `0xca000000`.
-7. For hardware rendering, nothing is specified: see the open question on the packet format.
+7. For hardware rendering, the packet formats the driver writes are catalogued ([packet-set.md](packet-set.md)); what the engine does with them is not specified: see the open question on packet semantics.

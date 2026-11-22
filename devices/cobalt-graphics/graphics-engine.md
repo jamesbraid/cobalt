@@ -25,9 +25,9 @@ at the display back end's ID. Accesses seen are 32-bit. Offsets are from the bas
 | `0x10008` | doorbell | write `0x400` to restart the engine's scheduler after queuing work | software expectation |
 | `0x10018` | interrupt cause | read, mask `0x60000000`, write 0 to acknowledge, then re-read until the cause bits drop. Bit 31 is also polled by `pCoWaitForEvent`: wait for it set, then write `0x7fffffff` | software expectation |
 | `0x10020` | interrupt enable | `CoInitHw` writes `0x60000000` (both causes on) | software expectation |
-| `0x18138`, `0x18140` | read | read into the packet being built after a header word `0x84e44040`; looks like two 32-bit instrument or occlusion counters | inferred |
-| `0x185c0`, `0x185c8` | read | on a stop interrupt, read to find where the engine stopped: two 12-bit values combine into a position that is then converted to an offset in the context's packet buffer (low 20 bits) | inferred |
-| `0x185d0` | write | the current-context packet pointer (written when the current context changes or is freed) | inferred |
+| `0x18138`, `0x18140` | read | read into the packet being built after a header word `0x84e44040`, which is the scissor box packet the OpenGL driver writes ([packet-set.md](packet-set.md)): the two registers are the scissor minimum and maximum corner, saved and restored across a context switch. The earlier reading as two instrument counters is withdrawn | inferred (header `A` = `0x427` maps to this offset; the miniport and the ICD agree on the packet) |
+| `0x185c0`, `0x185c8` | read | on a stop interrupt, read to find where the engine stopped: two 12-bit values combine into a position that is then converted to an offset in the context's packet buffer (low 20 bits). These are the two registers the chain packet `0x97000040` writes (next node, this node) | inferred |
+| `0x185d0` | write | the current-context packet pointer (written when the current context changes or is freed). The OpenGL driver writes 0 to it with packet `0x97400020` before it frees the pages of a texture that is bound | inferred |
 | `0x18800` | write | a per-context value read from the context record at `+0x500` | unknown |
 | `0x19000` end | | | |
 
@@ -189,51 +189,16 @@ and the descriptor carries the next node and the node's position in 32-byte unit
 base is physical address zero or the pool's start was not determined; the units are 20 bits wide in the words below). The first words of
 each node buffer are a header: a link word (below) at dword 0 and again at dword 2, and a running sequence number at dword 3.
 
-**Packet header word. Software expectation, checked against 17 of 18 table entries.** A packet is a header dword followed by payload
-dwords. Bits 11:5 are the payload dword count: in the context-shadow table (`initialCxShadow`, copied by `CoInitShadowRam`) the
-distance in dwords between consecutive packets is that count plus one for 17 of the 18 packets (headers `0x80003020` through `0x93cc0340`); the last, `0x00210440`,
-runs to a padded end. Bits 4:0 hold a small index (the four copies seen differ only there, 0 to 3), and bits 31:12 are a target that selects the
-state block. Seen in the shadow table: `0x80003020`, `0x046400c0`, `0x05260480`, four each of `0x09a900c0`, `0x0ca96120` and `0x1129f020`, then `0x91aa0220`,
-`0x93cc0340`, `0x00210440`. The ICD emits, besides those, headers with the top byte `0x9x` whose targets step by `0x201` or `0x402` from one block to the next
-(`0x922a4`, `0x924a5`, `0x928a7`, `0x92ca9`, `0x92eaa`, `0x930ab`, `0x932ac`, `0x936ae`, `0x938af`), so the target looks like two fields that advance together; it was not decoded.
-Counts from the ICD's own headers: `0x80003020`, `0x91aa0020`, `0x92eaa020`, `0x936ae020` and `0x97400020` carry one payload dword; `0x84e44040`, `0x97000040`, `0x938af040` and `0x91ea2040`
-two; `0x93cc0080` four; `0x944c42c0` twenty-two (bits 11:5 give 22, and the builder that emits it copies a 20-dword table behind the header); `0x9ed380e0` seven. `0x98804000` is a header with no payload (count 0, bit 14 set): the ICD inserts
-it before the closing packet when the context asks for a flush, so it is a one-dword marker (its meaning, inferred: pipeline flush or fence).
-
-**Headers by emitting routine (`sgcoicd.dll` 5.2.4). The header values and the routines that store them are established (every immediate header
-dword in the ICD's code was collected, 20 distinct headers, and each was attributed to the routines that write it, by the vendor's symbol names);
-what a field means to the engine is a software expectation, read from the GL state each routine copies; the engine's own use is unknown.** A
-routine writes the header, then its payload dwords, through one running pointer in the context (the context's packet cursor, its limit and an
-overflow callback that closes the node when the cursor passes the limit), so a header is always followed by exactly the payload it counts.
-
-| Header (count in bits 11:5) | Payload dwords | Written by | What the payload holds |
-|---|---|---|---|
-| `0x922a4020` | 1 | `__glCoPassFog` | fog colour: three 8-bit components in bits 31:8 |
-| `0x924a5040` | 2 | `__glCoPassAlphaFunc` | word 1: bit 31 set, comparison function in bits 27:25; word 2: reference value in bits 7:0 |
-| `0x928a7040` | 2 | `__glCoPassBlend` | word 1: destination factor in bits 23:20, source factor in 27:24, equation in 31:28 (each a 4-bit code mapped from the GL enum); word 2: constant blend colour, three bytes in 31:8 and alpha in 7:0 |
-| `0x92ca9020` | 1 | `__glCoPassLogicOp` | the logic operation in bits 31:28, equal to the GL enum minus `0x1500` |
-| `0x92eaa020` | 1 | `__glCoPassColorMask` | the 32-bit write mask, red in the top byte (written only when the mask is neither all ones nor zero) |
-| `0x930ab020` | 1 | `__glCoSetSzBuffer` | the depth and stencil buffer descriptor from the context; written after the flush marker |
-| `0x932ac040` | 2 | `__glCoPassPolygonOffset` | the units value and the factor times a scale, as a float |
-| `0x936ae020` | 1 | `__glCoPassDepthTest`, `__glCoClearBuffers` | the depth function in bits 31:29 and a mode in bits 28:27 |
-| `0x938af040` | 2 | `__glCoPassStencil`, `__glCoClearBuffers` | word 1: three 4-bit stencil operation codes (0 to 5 each), a 3-bit compare function, then two bytes of stencil state; word 2: one more byte of stencil state |
-| `0x91aa0020` | 1 | `__glCoSetDrawBuffer`, the pixel transfer routines | the draw-buffer descriptor from the context; written after the flush marker |
-| `0x91ea2040`, `0x93cc0080` | 2, 4 | `__glCoSetXferParam`, `__glCoRestoreXferParam`, `coSetTexParam` | pixel-transfer and texture parameters |
-| `0x944c42c0` | 22 | `coSetColorMatrixRegisters` | the colour-matrix registers: 22 dwords, 20 of them floats copied from the context |
-| `0x9ed380e0` | 7 | `coVhdlTexImage` | a texture image: three parameters passed by the caller, width times height, a base word, width and height packed into 15:0 and 31:16, and a final word computed from them |
-| `0x97400020` | 1 | `__glCoCreateTexLevel` | one texture-level word |
-| `0x97000040` | 2 | `ClosePacket`, `DispatchCurrentPkt`, `__glCoDlistExecutePackets` | next node position, this node position (the chain packet below) |
-| `0x98804000` | 0 | `__glCoSetDrawBuffer`, `__glCoSetSzBuffer`, `DispatchCurrentPkt` | none: a marker inserted before a buffer-descriptor change and before closing |
-| `0x84e44040` | 2 | `__glCoDrawBufferRegion`, `__glCoFillStippledTriangle`, `__glCoLinearToTileXfer` | two words read back from `0x18138` and `0x18140` of the engine window by the miniport after this header (see above) |
-| `0x80003020` | 1 | the span-store routines (`StoreALWAYS`, `ReturnRGBASpan`, `FillAASubTriangle`) | one word, the shadow table's first entry |
-| `0x9400014f` | 10 | `__glStoreSpanARGB8` | a span header; its index bits are `0xf`, the only non-zero index outside the shadow table |
-
-In the pass-state family the target field in bits 31:12 is two fields that step together: bits 31:21 are `0x491 + k` and bits 20:12 are `0xa4 + k`,
-with `k` taking the values 0 (fog), 1 (alpha function), 3 (blend), 5 (logic operation), 6 (colour mask), 7 (depth and stencil buffer), 8 (polygon
-offset), 10 (depth test) and 11 (stencil); `k` of 2, 4 and 9 was not seen. That is arithmetic on the headers above (established); that `k`
-selects a state register block of the engine is inferred. The families do not share it: the `0x91...` buffer and transfer headers, the
-`0x93cc0` and `0x944c4` headers and the texture headers have other target values. The per-vertex draw packets (`__glDrawVertexes_*`,
-`__glGenerateSetup`) build their headers from computed fields, not from constants; they were not classified, so the opcode set is not complete.
+**Packet header word and the headers the ICD emits.** A packet is a header dword followed by payload dwords; bits 11:5 are
+the payload count (checked against 17 of 18 entries of the context shadow table, whose last entry runs to a padded end),
+bits 31:21 are the start address of a state or register block, and the packet set is now classified in full in
+[packet-set.md](packet-set.md): 52 constant header values in `sgcoicd.dll` 5.2.4, each with its emitting routine, and
+the computed forms (vertex port plus attribute mask, light index, second clear bank). The packets' combined use is in
+[draw-and-buffers.md](draw-and-buffers.md). Three statements made here earlier were wrong and are corrected there:
+`0x932ac040` (polygon offset) carries the factor first and the units times a scale second; `0x97400020` writes the
+constant 0 (it is not "one texture-level word"); and `0x9400014f` is not a header the driver emits. The list of
+20 headers and the remark that the pass-state targets were "two fields that step together" are superseded by the
+address reading, in which the first field is an address and the step is the previous block's payload count.
 
 **Closing a buffer and chaining. Established (`DispatchCurrentPkt` `0x6901a83a`, `ClosePacket` `0x69062118`).** The ICD ends the data in a node with a
 three-dword packet: header `0x97000040`, a dword with the next node's position in bits 31:12 and, in the low bits, a field built from the running sequence
@@ -255,7 +220,7 @@ closed node's position as its one argument.
 
 ## What is not known
 
-The computed packet headers (per-vertex draw packets) and the engine's use of every header listed above; the contents of `0x00000` to `0x07fff` and `0x0c200` to `0x17fff`; what `0x8000` entries
+The engine's use of every header in [packet-set.md](packet-set.md) (the register-file rows are tied to registers only by three matches); the contents of `0x00000` to `0x07fff` and `0x0c200` to `0x17fff`; what `0x8000` entries
 and `0xc000` entries are in hardware terms; what the engine does on each interrupt cause; whether the engine reads the
 packet buffers by physical address or through the `0x8000` table; reset values; the Z and stencil buffer layout; how
 the engine writes pixels into the display back end's tile lists (the miniport hands it the same lists it gives the

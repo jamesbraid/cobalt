@@ -6,4 +6,5 @@
 
 | Page | Title | Summary |
 |---|---|---|
+| [nt-opengl-icd.md](windows/nt-opengl-icd.md) | The NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4 | How the OpenGL installable client driver (ICD) is built, how its symbols were applied, and where its packet emitters... |
 | [w2k-display-drivers.md](windows/w2k-display-drivers.md) | Windows 2000 display drivers for the Visual Workstation: sgibvid, sglfb | The two SGI-specific video files on the Windows 2000 CD: the boot video driver `sgibvid.dll` and the "Cobalt... |

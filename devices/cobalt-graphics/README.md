@@ -10,7 +10,11 @@ emulator brief. The registers and the software that drives them are in three com
 - [graphics-engine.md](graphics-engine.md): the rendering engine's window, the packet queue in main memory, interrupts.
 - [nt-software.md](nt-software.md): what the Windows NT miniport, display driver and OpenGL driver do, and the Linux
   frame buffer driver.
+- [packet-set.md](packet-set.md): the header words the OpenGL driver puts in the packet stream, one row each, with the
+  address-field reading and the engine-register class.
+- [draw-and-buffers.md](draw-and-buffers.md): how those packets draw, clear, set buffers and bind textures.
 - [board-data.md](board-data.md): what SGI's graphics white paper and a real machine's registry export settle.
+- The OpenGL driver itself, its symbols and its run-time code generators: [nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md).
 
 The system side is covered by other pages: [the platform](https://github.com/jamesbraid/chips/blob/main/platforms/visws/README.md), [the Cobalt system ASIC](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md)
 (processor interface, interrupt controller, timer) and [Lithium](https://github.com/jamesbraid/chips/blob/main/devices/lithium/README.md) (PCI bridges, audio). This one stops
@@ -46,6 +50,7 @@ The repository's rules use three ratings ([AGENTS.md](../../AGENTS.md)). Until t
 | Usenet posts in comp.sys.sgi.admin (2003 to 2004) | public posts | history, absence of Linux 3D support |
 | "The Silicon Graphics 320 and Silicon Graphics 540 Visual Workstation Graphics Subsystem", white paper J10043, 1999 | published document | features and peak rates of the engine, memory pool, formats ([board-data.md](board-data.md)) |
 | `HKEY_LOCAL_MACHINE\HARDWARE` export of a running 320 | published output from a real machine | firmware and chip revisions, resource claims, memory ranges ([board-data.md](board-data.md)) |
+| A public emulator's model of this machine (source history) | another project's code | cross-check only; it decodes no packet ([packet-set.md](packet-set.md#another-emulators-model)) |
 
 The NT driver package is on the Internet Archive as item `sgi_320_540_drivers` (file `SGICoGraphics524nt4.exe`). It is
 a self-extracting InstallShield archive; its `data1.cab` holds the files above. SGI Support Folio, the original host,
@@ -77,7 +82,8 @@ vendor's own and are cited here by name.
   logical operations, plane mask, stencil (8-bit), depth (16-bit float or 24-bit fixed), full-scene anti-aliasing at 4x,
   pixel transfer with format conversion and a 4x4 colour matrix (YCrCb to RGB and back), p-buffers, an overlay buffer,
   occlusion instruments, and frame-lock video sync. Established as a feature list (published datasheet); the order of
-  the stages and what runs in software on the host is **unknown**. Trade press quotes 7.4 Mtriangles/s and 176 Mpixels/s
+  the stages is **unknown**; what the OpenGL driver does on the host and what it leaves to the engine is in
+  [draw-and-buffers.md](draw-and-buffers.md#who-does-what). Trade press quotes 7.4 Mtriangles/s and 176 Mpixels/s
   with trilinear filtering as peaks. Observed.
 - **Frame buffer formats.** The datasheet lists 8-, 16- and 32-bit colour, 16/16 and 32/32 double buffering, and
   1920 by 1200 at 66 Hz in 32-bit RGBA as the largest mode. Established. The display back end exposes three pixel depths
@@ -127,10 +133,11 @@ Enough to run the NT display driver's 2D and the OpenGL driver:
 
 6. **The rendering engine window**, the packet chain in main memory and its ownership bit (bit 0 of a header word,
    set by software and cleared by the engine), and the context-switch and doorbell registers. See
-   [graphics-engine.md](graphics-engine.md). What the packets mean, to the level needed to rasterise, is **unknown**:
-   no source describes the packet formats and no public code drives the engine other than SGI's own driver. A
-   functional model will have to be clean-room reverse engineered from the OpenGL driver's setup code; that work is
-   not done.
+   [graphics-engine.md](graphics-engine.md). The header words, their payload layouts and the way the OpenGL driver
+   combines them are now catalogued ([packet-set.md](packet-set.md), [draw-and-buffers.md](draw-and-buffers.md)). What
+   the engine does with them, to the level needed to rasterise (the arithmetic of set-up, interpolation, texturing,
+   blending and the memory layout of the buffers) is **unknown**: no source describes it and no public code drives the
+   engine other than SGI's own driver.
 
 Not needed to show a console: video capture and video out, the cursor (neither driver programs the hardware cursor in
 the routines read), I2C, flat-panel logic, DDC, the audio, 1394 and USB blocks.

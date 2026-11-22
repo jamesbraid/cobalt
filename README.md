@@ -37,8 +37,8 @@ You'll need Podman, git and python3. The SGI software is not included.
 
 ## How far along
 
-The display back end's registers and the NT driver's use of them are mapped. The rendering engine's packet set is
-mostly open. [questions/](questions/README.md) has the open questions.
+The display back end's registers and the NT driver's use of them are mapped. The rendering engine's packet headers and
+their payloads, as the OpenGL driver writes them, are catalogued; what the engine does with them is mostly open. [questions/](questions/README.md) has the open questions.
 If you spot a mistake or have a manual, a board photograph or a configuration dump we don't, [open an issue](https://github.com/jamesbraid/cobalt/issues).
 
 ## License
