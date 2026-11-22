@@ -17,7 +17,7 @@ not stated is **unknown**. No register has a known reset value. The Windows 2000
 All in the display back end at physical `0xd0000000` (the NT miniport maps `0x80020` bytes), unless the row says
 otherwise. Every access the NT drivers make is a 32-bit load or store, with one exception: byte loads. The stop routines poll single
 bytes of three live words (`+0x30008`, `+0x20004` and `+0x40002`, the last being bit 16 of `+0x40000`), and the mode set, the
-firmware and the NT 4.0 HAL test the freeze bit with a byte load of `+0x10003` (bit 7).
+firmware, the NT 4.0 HAL and `sglfb.sys` test the freeze bit with a byte load of `+0x10003` (bit 7).
 
 | Need | Registers and what the NT driver does | Known | Source |
 |---|---|---|---|
@@ -112,7 +112,7 @@ emulator that sequences these correctly passes the NT drivers' loops.
 |---|---|---|
 | Start a packet chain | node's context-switch packets written in memory; for a switch from another node: `0x18800` write (its dump offset), poll `0x10018` until bit 31 reads set, write `0x10018` = `0x7fffffff`; for a restart of the node already running: write `0` to `0x185c8`; then `0x10000` = `pktIdleCount \| (position << 12) \| 0x800` | `pCoContextSwitch`; the start word is the last write |
 | Doorbell | `0x10008` = `0x400` after work is appended or a node is resumed | three routines, conditions in [graphics-engine.md](graphics-engine.md) |
-| Engine interrupt (pin 25) | a load of `0x10000` whose result is discarded, then read `0x10018` (zero means not ours, counted as spurious); mask with `0x60000000`; write `0`; re-read `0x10018` until its masked bits differ from the value read; queue a deferred routine | the one read-after-write: the clear must be visible before the handler returns |
+| Engine interrupt (pin 25) | a load of `0x10000` whose result is discarded (`CoInterruptHandler`, `sgcomp.sys@0x17bfa`), then read `0x10018` (zero means not ours, counted as spurious); mask with `0x60000000`; write `0`; re-read `0x10018` until its masked bits differ from the value read; queue a deferred routine | the one read-after-write: the clear must be visible before the handler returns |
 | Stop-event deferred routine | read `0x10000` (position in bits 31:12), or `0x185c0` when that reads 0; read `0x185c0`, `0x185c8` and, for an OpenGL node, `0x185d0`; for a stop inside a state-restore page rewrite `0x10000` with the same position | `CoProcessCobaltEvent` |
 | Retrace interrupt (pin 24) | read the dword at `0xca000000`; write its complement; if bit 1 was set count a frame; in stereo also a discarded load of `vt_f2rf_lock` (`+0x1001c`), then a read-modify-write of `vt_flags` and, when `bFreeRun` is set, a second write of `vt_flags` with bit 6 cleared | no re-read of `0xca000000`; the discarded `+0x1001c` load may have side effects |
 | Enable and park | `CoInitHw`: `0x10000` = `0xfffff040`, `0x10018` = 0, `0x10020` = `0x60000000`; `asStopIntr`: `vt_intr01` and `vt_intr23` = `0xffffff` | |
@@ -140,13 +140,19 @@ the hardware accepts more than one order.
 
 - `id` (`+0x14`) reads `0x666` as a 32-bit load. `sgcomp.sys@0x1196f` compares the whole dword; `sgibvid.dll@0x800106cb` and
   `sglfb.sys@0x1057c` mask to the low 16 bits first; the firmware's self-test table compares the whole dword. A read of `0x666` passes all. Established.
-- Access widths: 32-bit loads and stores everywhere, plus byte loads at `+0x10003`, `+0x20004`, `+0x30008` and `+0x40002`.
-  The block must answer a byte read with the matching byte, not fault or read as zero. Established (the byte loads are in
-  `asStopNormal`, `asStopOverlay`, `asStopDID` and `asSetConfigAndTiming`, the firmware stop at `1.1005@0x1131661` and
-  `halborg.dll@0x80014f17`).
+- Access widths: 32-bit loads and stores everywhere, plus byte loads. The freeze bit is tested as a byte at `+0x10003` by
+  `sgcomp.sys@0x1bd5d`, `sglfb.sys@0x10ef2`, `halborg.dll@0x80014f17` and the firmware (`1.1005@0x1131678`). The live copies
+  (`+0x30008`, `+0x20004`, `+0x40002`) are byte loads only in `sgcomp.sys` (`asStopNormal`, `asStopOverlay`, `asStopDID`),
+  `sglfb.sys` (`0x10d2f`, `0x10d69`, `0x10da6`) and the firmware (`1.1005@0x11316d3` to `0x11316e5`, `0x1131ccf`);
+  `sgibvid.dll` (`0x80010972`) and `halborg.dll` (`0x80014f90` to `0x80014fa1`) read them as dwords. A model must answer a byte
+  read with the matching byte, not fault or read as zero. Established.
 - Live copies (`+0x30008` bit 0, `+0x20004` bit 0, `+0x40000` bit 16) must follow their shadow words (`+0x3000c`, `+0x20008`,
-  `+0x40004`). After a shadow bit is cleared the live bit must clear within 200 ms (20,000 polls of 10 microseconds in every
-  stop routine). After the firmware writes `frm_control` with bit 0 set, the live bit must read 1 or the firmware waits forever
+  `+0x40004`). After a shadow bit is cleared the live bit must clear within 200 ms for the drivers that stall: `sgcomp.sys`, `sgibvid.dll`
+  and `sglfb.sys` poll up to 20,000 times with a 10 microsecond stall each. The NT 4.0 HAL's stop (`halborg.dll@0x80014f10`)
+  is one loop of at most 20,000 dword loads of the three live words with no stall (a few milliseconds at most), and it skips
+  the whole stop when the freeze bit reads set. The firmware's stop runs only when `ctrlstat` bits 29:28 read 3 and the freeze
+  bit is clear (`1.1005@0x1131661`): it writes `0x20000000` to `ctrlstat` first (`0x1131547`), so on a chip that reads back
+  `0x20000000` the stop and its inverted wait never run. After the firmware writes `frm_control` with bit 0 set, the live bit must read 1 or the firmware waits forever
   (`1.1005@0x1131ccf`, no time-out). When a follows-at-vblank delay is modelled it can be any value inside those bounds.
   Established as the driver contract; the hardware's own delay is unknown.
 - Colour-map FIFO status (`+0x58000`) must read a low six bits above `0x30` (use `0x3f`) whenever software writes the colour
@@ -157,7 +163,9 @@ the hardware accepts more than one order.
   bit 25 must read 1 for the firmware to select the internal dot clock (`1.1005@0x1131d0a` to `0x1131d40`, written `0x30000000` only if bit 25 read
   set and no flat panel answered). Bit 25 reading 1 is inferred.
 - The retrace register at `0xca000000`: bit 1 set means a frame has ended; the handler writes the bitwise complement of what
-  it read (`sgcomp.sys@0x191bb` to `0x191c4`) and does not read it again. That only clears the bits if a written 0 clears a bit
+  it read (`sgcomp.sys@0x191bb` to `0x191c4`) and does not read it again. The `vt_flags` read-modify-write in that handler runs
+  only in stereo, when `[device extension + 0x11c0] & 1` is set (`0x191d8` to `0x191e4`), and clears bit 6 again only when
+  the free-run flag is set. That only clears the bits if a written 0 clears a bit
   and a written 1 leaves it, so the register is write-0-to-clear (inferred). The pin is Cobalt line 24 and is latched.
 - Mapped ranges and the revision check: `sgcomp.sys` reads the dword at `0xc2000008` once (`0x10cb9`) and attaches only when its
   high nibble is `0xa` and its low nibble is neither 0 nor 8, so revisions `0xa0` and `0xa8` never get the SGI display driver.
@@ -183,9 +191,21 @@ the hardware accepts more than one order.
   the hsync, vsync and blank windows, `did_start_xy`, `crs_start_xy`, `vc_start_xy` and the pixel-enable windows are not read
   back by any shipped software. `sgibvid.dll` writes `0xffffffff` to the last three (`0x80010b36`).
 - Colour map, gamma and the 10-bit gamma map: store and return what was written; their effect is display-only.
-- Hardware cursor: only `sgcodd.dll` programs it (`0x282a0`, `0x293ac`); a replacement driver can draw its pointer in software.
-  The register block can store words and the model can scan the 32 by 32 two-bit glyph from the O2's layout.
-- The scanline interrupt registers (`+0x10020`, `+0x10024`): every shipped writer parks them at `0xffffff`.
+- Hardware cursor: `sgcodd.dll` programs it (`vMovePointer@0x282a0`, `bCopyColorPointerIntoHardware@0x293ac`, the set-pointer
+  path at `0x28f6b`); a replacement driver can draw its pointer in software. Every other writer only switches it off:
+  `sgibvid.dll`, `sglfb.sys` and `halborg.dll` write `+0x70004` = 0 (`0x80010bcc`, `0x10f33`, `0x80015043`), and the HAL's stop
+  also clears bit 0 of it with a read-modify-write (`0x80014fb7`). The firmware writes the colours (`+0x70008`, `+0x7000c`),
+  position 0 and the glyph at `+0x78000`, then control 0 (`1.1005@0x11318cb`). `sgcodd.dll`'s order varies: parking writes the
+  position then control (`0x282ce`), showing writes control 1 then the position (`0x283a2`, `0x283d8`), and the set-pointer path
+  writes the position then control 1 (`0x28f6b`). A model that stores words and honours control bit 0 satisfies all of them;
+  scanning the 32 by 32 two-bit glyph is from the O2's layout.
+- The scanline interrupt registers (`+0x10020`, `+0x10024`): the drivers park them at `0xffffff` (`asStopIntr`,
+  `sgibvid.dll@0x80010922`), but the SGI miniport then arms them: `asSetInterrupt` (`0x1c378`) is called from `CoSetMode`
+  at `0x1a318` (interrupt 0, line = screen height less a computed allowance, less one) and `0x1a338` (interrupt 1,
+  line = height plus one, plus two when mode flag `0x1000`, the flat-panel timing, is set). The firmware's later hand-over routine parks both
+  (`1.1005@0x1108040`) and then writes `0x1fff` to `+0x10020` (`0x11083d8`). No shipped handler for those two scanline interrupts was found; the
+  retrace handler (`CoVRetraceHandler`) acts on pin 24 only, so a model that raises just the once-per-frame retrace interrupt
+  satisfies the readers read here (inferred).
 - The self-test masks of the firmware (`prom-init.md`) matter only for a model that is to pass the firmware's register
   walk; a failed display test does not stop the boot.
 - Reset values: unknown for every register, and nothing reads a register before writing it except `id`, the low nibble of
@@ -196,21 +216,27 @@ all of them has the right contract; one that insists on the SGI miniport's order
 
 | Step | SGI 5.2.4 miniport | Windows 2000 `sgibvid.dll` | Windows 2000 `sglfb.sys` | NT 4.0 HAL `halborg.dll` | PROM 1.1005 |
 |---|---|---|---|---|---|
-| `ctrlstat` | `0x30000000` last | `0x30000000` first (`0x800109cc`), never again | `0x30000000` last (`0x111a1`) | not written, except `\|= 0x04000000` with a panel | `0x20000000` first; `0x30000000` last only if bit 25 read set and no panel |
-| PLL | clear `RUN`, 40 ms, `0x4101`, 40 ms, `RUN`, 1 s, `0x4101`, 100 ms, then value, 40 ms, `RUN`, 200 ms | clear `RUN`, 20 ms, value with `RUN`, 20 ms | same as `sgibvid.dll`, and the same value written again after the tile registers (`0x110f5`) | clear bits above 15 (`0x80015166`), value with `RUN` in one write, no waits (`0x800153a3`) | value with `RUN` in one write, then 11 ms |
-| `config` | `0xe5`, `0xe7`, plus `0x08`, bit 0 cleared with a panel | `0xad`, `0xac` with a panel | `0xa5`, `0xad` with a panel | `0xa7`, then \|`0x08` | `0xa7` (`0xaf` with a panel) |
-| `vt_flags` | 4 for hsync flag, 1 for vsync flag (`0x40` then 0 before) | 5 if the hsync flag is set, else 0 | 0 | from the record | not written |
-| `did`/`crs`/`vc` start | computed | `0xffffffff` | computed | computed | computed |
+| `ctrlstat` | `0x30000000` last | `0x30000000` first (`0x800109cc`), never again | `0x30000000` last (`0x111a1`) | not written, except `\|= 0x04000000` with a panel (`0x80015141`) | `0x20000000` first; `0x30000000` last only if bit 25 read set and no panel |
+| PLL | clear `RUN`, 40 ms, `0x4101`, 40 ms, `RUN`, 1 s, `0x4101`, 100 ms, then value, 40 ms, `RUN`, 200 ms | clear `RUN`, 20 ms, value with `RUN`, 20 ms | same as `sgibvid.dll`, and the same value written again after the tile registers, followed by an 11 ms stall (`0x110f5`, stall `0x2af8` microseconds) | clear bits above 15 (`0x80015166`), value with `RUN` in one write, no waits (`0x800153a3`) | value with `RUN` in one write, then 11 ms |
+| `config` | `0xe5`, `0xe7`, plus `0x08`, bit 0 cleared with a panel and set again by mode flag `0x2000` (`0x1bcd5`) | `0xad`, `0xac` with a panel; reads `+0x10004` back and discards it (`0x80010b9d`) | `0xa5`, `0xad` with a panel | `0xa7`, then \|`0x08` | `0xa7` (`0xaf` with a panel) |
+| `vt_flags` | 4 for hsync flag, 1 for vsync flag (`0x40` then 0 before) | 5 if the hsync flag is set, else 0 | 0 | 0 (`0x8001516d`, `0x8001528a`) | not written |
+| `did`/`crs`/`vc` start | computed | `0xffffffff` | computed | `did` and `vc` computed, `crs_start_xy` not written | computed |
 | `frm_size_tile` | whole columns, remainder in 32-byte units | width rounded up to whole tile columns, remainder 0 | whole columns plus remainder, depth field | from a precomputed word | whole columns, remainder |
 | `ovr_width_tile` | full width then pulse | 0 | full width, then `0x2000`, then 0 | 0 then pulsed | `0x2000` then 0 |
 | `frm_control` | tile list \| 1 | base \| 3 | tile list pointer, low bits masked, \| 3 | base \| 3 | base \| 3 |
-| Stop wait sense | waits for the live bit to clear | waits to clear | waits to clear | waits to clear | waits for the live bits to read **1**, so with a real stop it times out after 100 ms |
+| Stop wait sense | waits for the live bit to clear | waits to clear | waits to clear | waits to clear, no stall, skipped when frozen | waits for the live bits to read **1**, so with a real stop it times out after 100 ms; runs only if `ctrlstat` bits 29:28 read 3 and the freeze bit is clear |
 | `mode_regs` | not written | 32 words of 3 | word 0: 8 bpp 3, 32 bpp `0x17`, 16 bpp `0xf` (unreachable) | 32 words of 3 | 32 words of 3 (graphics console) |
+| Colour map | wait before every 32nd entry | 16 entries, wait before each | wait before every 32nd entry | two words (`0xff00`, `0xffffff00`) at `+0x50000`, no FIFO wait (`0x80015059`) | two words zero, wait before each |
 
 Binary addresses in the table: `sgcomp.sys@0x1bbcc` (`asSetConfigAndTiming`), `sgibvid.dll@0x800109b6`, `sglfb.sys@0x10de6`,
 `halborg.dll@0x80014f10` to `0x80015511`, `1.1005@0x1131949`. All are established readings of whole routines. What the hardware
 does with each difference is inferred; the one the page used to state wrongly was that all drivers wrote the sequence in the same
 order.
+
+Display firmware context: the PROM's legacy BIOS placement is established in
+[the chips firmware console-path page](https://github.com/jamesbraid/chips/blob/main/software/visws/prom-console-path.md).
+The 1.1005 image carries the strings "Enable VGA Mode" (a boot-menu entry) and "Monitor, Mini DB15 VGA with DDC2B Control" (a
+device name table entry), neither of which touches the display back end's registers.
 
 Still unknown, with the route tried: reset values (no shipped software reads one before writing it); what `ctrlstat` bit 25
 means and when it reads set; what `RUN` going low does to scan-out (the NT 4.0 HAL clears it with one write and sets it with the
