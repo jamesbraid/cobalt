@@ -6,28 +6,33 @@ which of the chip set's ASICs?
 Status: **unknown** for everything below. What is established and what software expects is in
 [the Cobalt graphics pages](../devices/cobalt-graphics/README.md).
 
-- **Packet semantics.** The headers are catalogued ([packet-set.md](../devices/cobalt-graphics/packet-set.md)): 52 constant
-  values in the OpenGL driver, each with its emitting routine and payload layout, and the computed forms. The vertex
-  and mode packets, the buffer descriptors, the clear, scissor and texture packets are described in
-  [draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md). Open: what the engine does with each
-  (the arithmetic of set-up, interpolation, texturing, blending, depth and stencil formats and the tile layout), the `B`
-  field of the header, what the instance bits mean for each block, the difference between the two vertex ports
-  `0xc5` and `0xc6`, the bits of the pixel-pipe mode word other than 13 and 22 to 25, the window parameter packets,
-  the translation-table entry format and the two link-word builders' one-off length difference. Routes tried: the OpenGL
-  driver (every constant header and its routine), the display driver and miniport (header scan and the packet builders
-  read), SGI's graphics white paper (features only), a registry export (identity only), a public emulator's model of
-  the machine (decodes no packet). Next: the miniport's texture-table packet and window packets in full, the display
-  driver's 2D routines, and a straight disassembly read of the vertex-port routine to settle the payload order.
-- **Host setup versus engine setup.** Answered in part: the OpenGL driver has both. It transforms, clips and (optionally)
-  lights on the host with run-time generated code, and it also sends the matrices, light and material blocks, a cull
-  field and, for replayed display lists, vertex packets in a coordinate mode the engine transforms
-  ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md#who-does-what)). Open: which path each
-  GL state selects. Route: the validation routines (`__glCoValidateLighting`, `__glCoValidateSoftLighting`,
-  `__glCoPickVertexProcs`, `__glCoPickOGVertexProcs`).
-- **Engine register window.** Meaning of `0x08000` entries, `0x0c000` entries, `0x10000` write fields, `0x10008`, the two
-  interrupt causes and `0x185c0` to `0x18800`; contents of `0x00000` to `0x07fff` and `0x0c200` to `0x17fff`. Route:
-  the rest of `sgcomp.sys` (`pCoContextSwitch`, `CoBuildTlbPacket`, `CoProcessCobaltEvent`) read in full, and the same
-  driver for Windows 2000 as a cross-check.
+- **Packet semantics.** The headers are catalogued ([packet-set.md](../devices/cobalt-graphics/packet-set.md)): 52
+  constant values in the OpenGL driver plus one in the display driver, each with its emitting routine and payload layout,
+  and the computed forms. The `B` field is the register's index in the engine's own file, the vertex ports, window
+  parameters, table entries and mode-word bits are decoded as the drivers write them
+  ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md)). Open: what the engine does with each (the
+  arithmetic of set-up, interpolation, texturing, blending, depth and stencil formats and the tile layout), what
+  `0x98804000` does, mode-word bits 28, 26, 19 and 12:0, the instance flag on the diffuse blocks, the third word of the
+  long chain packet, the miniport's window record fields at `+0x194` and the two record fields in the base-pointer entry,
+  and the register at `B` = `0xa3` (`A` = `0x490`), which no binary writes. Routes tried: the OpenGL driver (every
+  constant header and its routine), the display driver and miniport (the packet builders read in disassembly, 2D routines
+  and their mode words), the Windows 2000 packs, the April 1999 display driver and miniport, SGI's graphics white paper
+  (features only), a registry export (identity only), a public emulator's model of the machine (decodes no packet).
+  Next: the April 1999 OpenGL driver (inside an InstallShield 3 archive on disc 2 of the NT 4.0 OEM set, which neither 7z
+  nor unshield opens), the Windows 2000 program-database files for symbol names in the Windows 2000 ICD, and the display
+  driver's DirectDraw and video routines (`DdBlt`, `CoYUVBlt_S2S`).
+- **Host setup versus engine setup.** Answered for the driver's side
+  ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md#who-does-what)): transform is the engine's only
+  when the clip-volume hint is `GL_FASTEST`, the user enables it or a variable forces it, and the primitive is not drawn by
+  a host fill routine; lighting is the engine's for up to four lights unless a light, colour material or the soft-lighting
+  switch puts it on the host. Open: whether the engine clips when it transforms, the texture-coordinate rule
+  (`GLCOSIMFORCECHIPTEXXFORM` is read and never used, `__glCoPickCalcTextureProcs` unread), and `__glCoPickPhase1Procs`.
+- **Engine register window.** The `0x08000` entries (a 4 KB page frame number) and `0x0c000` entries (the buffer's
+  first translation slot in 31:21, a size class in 12:10) are decoded as the miniport writes them
+  ([packet-set.md](../devices/cobalt-graphics/packet-set.md#texture-table-packets-class-11)). Open: the meaning of the
+  `0x10000` write fields, `0x10008`, the two interrupt causes and `0x18800`; contents of `0x00000` to `0x07fff` and
+  `0x0c200` to `0x17fff`. Route: `pCoContextSwitch` and `CoProcessCobaltEvent` read in full, and the Windows 2000
+  miniport as a cross-check (its names need the program-database file).
 - **Second interrupt register.** The 32-bit register at `0xca000000` that the retrace handler reads and complements, and
   the register at `0xc0000020`. A public emulator's model keeps the low four bits of a write and returns them, and never
   raises the interrupt; it is no evidence for the write-back semantics. Route: the Linux Cobalt interrupt code (`visws_quirks.c` and the Lithium and PIIX4

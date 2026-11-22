@@ -17,7 +17,7 @@ Public documents this workspace reads, by title and public URL only. Nothing her
 
 ## Software
 
-- SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 and for Windows 2000, held in the project Library as `drivers/visws/SGICoGraphics524nt4.exe` (SHA-256 `5097ff4e911a73b892e3072d0db439afb42e9e5db099c8937ee8d38ed810d5e6`) and `drivers/visws/SGICoGraphics524w2k.exe` (SHA-256 `c09ea6c6e059b0a887b48dd8ffa66703783d5ba7308efccf994dc7e7ef675363`).
-- SGI Visual Workstation 320 and 540 Windows NT 4.0 OEM disc set, discs 1 and 2 (April 1999 display driver and miniport on disc 1, `I386`; the OpenGL driver's symbol files on disc 2, `SYMBOLS`), and Silicon Graphics Recovery CD-1 v1.1 (the same display driver and miniport builds, `I386`).
+- SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 and for Windows 2000: Library cache `drivers/visws/SGICoGraphics524nt4.exe` (SHA-256 `5097ff4e911a73b892e3072d0db439afb42e9e5db099c8937ee8d38ed810d5e6`) and `drivers/visws/SGICoGraphics524w2k.exe` (SHA-256 `c09ea6c6e059b0a887b48dd8ffa66703783d5ba7308efccf994dc7e7ef675363`).
+- SGI Visual Workstation 320 and 540 Windows NT 4.0 OEM disc set, discs 1 and 2 (April 1999 builds of the display driver and miniport on disc 1, `I386`; the OpenGL driver's symbol files and the display driver's on disc 2, `SYMBOLS`), and Silicon Graphics Recovery CD-1 v1.1 (the same display driver and miniport builds in `I386`).
 - Linux visws code (history tree): `drivers/video/sgivwfb.c`, `include/video/sgivw.h`, `arch/x86/kernel/visws_quirks.c`, `arch/x86/include/asm/visws/cobalt.h`.
 - Usenet, comp.sys.sgi.admin, 2003 to 2004: history and the absence of Linux 3D support.

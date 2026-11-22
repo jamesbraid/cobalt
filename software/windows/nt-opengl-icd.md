@@ -13,8 +13,9 @@ The `.dbg` file that ships next to it holds the vendor's own names twice: a COFF
 CodeView `.pdb` (`NB10`, Microsoft program database version 2.00). The COFF table was parsed directly (the layout is the
 Windows `.dbg` header, the debug directory, and the table with its string pool). It has 13,109 records, of which 8,883
 are symbols and the rest are auxiliary records; 3,929 are function-typed symbols in `.text`, at 3,633 distinct
-addresses (some routines carry two names). Those names, with their stdcall and fastcall decorations, were applied in
-Ghidra before analysis; the 4.2 MB `.pdb` was not needed for names. The `.pdb` carries
+addresses (some routines carry two names), and those names, with their stdcall and fastcall decorations, are what the
+pages cite. The 4.2 MB `.pdb` was not
+needed for names. The `.pdb` carries
 types and local variable names the project has not used. Any claim about a routine therefore cites a vendor name and an
 address, for example `__glCoSetScissor` at `0x69018ebe`.
 
@@ -65,14 +66,17 @@ render procedure (offset `0x3164`) otherwise. They contain no header constants.
 | `DispatchCurrentPkt`, `ClosePacket`, `__glCoDlistExecutePackets`, `InitCoPktBuffer` | chain, flush marker, node set-up ([graphics-engine.md](../../devices/cobalt-graphics/graphics-engine.md)) |
 | `__glCoDlistToPackets` | converts a compiled display list into recorded packets, with the same headers |
 
-The display driver `sgcodd.dll` uses the same headers for 2D (a scan for the headers listed in
-[packet-set.md](../../devices/cobalt-graphics/packet-set.md) finds them; headers outside that list were not looked for
-in it); the miniport `sgcomp.sys` builds the
-chain and window-parameter packets, the texture table loads and the hardware clear, copy and context-switch packets.
+The display driver `sgcodd.dll` uses the same headers for 2D, plus one the OpenGL driver never sends (`0x91ca1020`); a
+scan of both drivers' immediates for every header form outside the list found nothing else. The miniport `sgcomp.sys`
+builds the chain and window-parameter packets, the texture table loads and the hardware clear, copy and
+context-switch packets ([packet-set.md](../../devices/cobalt-graphics/packet-set.md)).
 
 ## How a header scan was done
 
-The ICD's `.text` and `.data` sections were read as raw bytes and every aligned or unaligned dword with a target field
-from the known list collected, then looked up in the function table. Unaligned hits in data occur: one such was the
-earlier `0x9400014f`, which sits in the export address table at `0x690f2681`, straddling two of its 15 entries, which is
-why every row also rests on a routine whose decompiled C was read. The scan is repeatable with any script that does the same arithmetic; no scanner or listing is committed.
+Two passes, both over the whole of `.text` and `.data`. First, a linear disassembly sweep collected every 32-bit
+immediate operand, which finds the headers the code stores and the generators emit. Second, every dword, aligned or not,
+whose bits 31:12 equal a known `(A, B)` pair was collected from the raw bytes, which also finds table entries and false
+hits. The immediates were attributed to the routine that contains them by the symbol table. Raw hits in data (export
+and import tables, jump tables, string pools) occur: the earlier `0x9400014f` was one, in the export address table at
+`0x690f2681` where it straddles two entries, which is why every row also rests on a routine whose body was read. The
+scan is repeatable with any script that does the same arithmetic; no scanner or listing is committed.

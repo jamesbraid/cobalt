@@ -1,38 +1,100 @@
 # Cobalt rendering engine: drawing, buffers and textures as the OpenGL driver programs them
 
 What the packets in [packet-set.md](packet-set.md) do together. Source: the NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4
-and its symbols, read as described there; the miniport `sgcomp.sys` 5.2.4 for the rows marked miniport. Everything
-here is **inferred** from decompiled C unless a statement says otherwise; the engine's own behaviour is **unknown**
+and its symbols, read as described there; the miniport `sgcomp.sys` 5.2.4 and display driver `sgcodd.dll` 5.2.4 for the
+rows marked so. A statement about what a routine does is **established** where it cites a routine read in disassembly
+(`file@address`); everything else is **inferred** from decompiled C, and the engine's own behaviour is **unknown**
 unless the SGI white paper ([board-data.md](board-data.md)) names it, and then the white paper is cited only as
 agreement.
 
 ## Who does what
 
-The driver transforms and clips on the host and also has paths that leave the transform to the engine.
+The driver transforms and clips on the host and also has a path that leaves the transform to the engine. Which one runs
+is decided per `glBegin`, and the lighting path is decided per validation. Everything in this section about the
+decision is **established** (the routines named were read in disassembly); what the engine does on each path is
+**unknown**.
 
-- **Host.** `GenerateTransformer` and `GenerateTransformerKNI` (plain and Pentium III versions) generate x86 code at
-  run time that takes an object vertex to clip coordinates, window coordinates and clip codes in the driver's vertex
-  record (0x170 bytes). `__glDrawVertexes_*` walk the vertex arrays; they test the clip codes and call
-  `__glDoClipTriangle` or the Cobalt clippers for primitives that cross the frustum, and otherwise call the context's
-  render procedure for the primitive, which ends in the vertex packets below. `__glDrawVertexes_*` and the `Generate*`
-  routines never write a header themselves; the headers come from the render procedures, the `__glCoBegin*` and
-  `RestartDispatch*` routines and the generated handlers (`__glCoGeneratePrimitiveHandler`,
-  `GenerateSetAttribs`, `GenerateQuadsHandler`, `GenerateHostCullHandler`, `__glCoGenerateNoXformHandler`), which
-  carry the same header constants as immediates. Established for `__glDrawVertexes_Triangles` (read in full).
-- **Engine.** The white paper lists vertex transform, frustum clip check, normal transform, lighting for up to four
-  lights, face culling and set-up as engine functions. The ICD matches: it sends the model-view-projection matrix
-  (`A` = `0x002`), the normal matrix (`0x012`), the viewport (`0x01b`), material blocks, light blocks and the scene
-  ambient, a cull field in the primitive mode word, and in display-list replay it sets bits 31 and 30 of the flags
-  word (`A` = `0x001`) before sending the matrix and then replays recorded vertex packets
-  (`__glCoDlistExecutePackets`, read in full). So the engine can transform and light vertices; whether it does for
-  immediate-mode vertices depends on the flags word, and the ICD also keeps a host lighting path
-  (`__glCoValidateSoftLighting`, `__glCoGenerateCalcColor`, `GenerateCalcLightVectors`). The rule that picks one is
-  not read. This answers the open question on host versus engine set-up for lighting and culling: both exist in the
-  driver, the engine ones are the packets above.
+**Transform: engine or host.** `___glcoim_Begin@0x6904319e` sets the draw flags word (`gc+0x2dbb0`, sent as
+`0x00210020`) before every primitive, from the primitive's mask word (`gc+0x2d920 + 4 * type`):
+
+| Condition | Draw flags bits 31:30 | Meaning |
+|---|---|---|
+| mask bit `0x400` set: the primitive is drawn by a host fill routine | `00` | the host sends window x, y, z (vertex +0x40) and the context's w |
+| else, engine transform not allowed or not requested | `10` | the host sends the four words at vertex +0x20 (computed on the host) |
+| else, engine transform on | `11` | the vertex packets carry the four words at vertex +0, and the modelview-projection matrix is resent if it changed (`__glCoPassMVPMatrix`); the vertex-send routine tests bit 30 first, so `11` reads as `01` |
+
+Engine transform is on when (`gc+0x2d583` is nonzero and `gc+0x2d960` is nonzero) or bit 2 of `gc+0x2e494` is set
+(`sgcoicd.dll@0x69043267`..`0x690432b5`). `gc+0x2d583` is 1 unless the variable `GLCOALLOWCHIPXFORM` is set to 0.
+`gc+0x2d960` has bit 0 from the variable `GLCOSIMFORCECHIPXFORM` (read once, `GetBoardInfo@0x6901ae92`) and bit 1 set
+while the hint `0x80F0` (`GL_CLIP_VOLUME_CLIPPING_HINT_EXT`; the context word `+0x1cd0` equal to `GL_FASTEST`) is in force (`___glcoim_Hint@0x69029090`,
+`__glCoProcessHints@0x690291c8`). `gc+0x2e494` bit 2 comes from a control-panel registry value named `ShadowTransform`,
+read only for 32-bit RGBA contexts. So an application gets the engine transform by setting that hint, which is its
+promise that the geometry needs no clipping, or the user turns it on in the control panel; otherwise the driver transforms
+and frustum-clips on the host. The mask bit `0x400` is set (with `0x40`, as `mask | 0x440`) in
+`__glCoPickTriangleProcs@0x690353ac` when the triangle goes through a host fill routine: anti-aliased polygons
+(`__glCoFillAntiAliasTriangle`), a polygon stipple that `__glCoConvertStipple` could not reduce to an 8 by 8 pattern
+(`__glCoFillStippledTriangle`) and two-sided processing (`__glCoFillFrontBackTriangle`); `__glCoPickPointProcs` sets
+`0xc40` or `0x440` for points the same way. In feedback and selection mode every mask is `0x40`.
+
+**Clip.** The host clips. The guard-band factors are computed from the viewport in `UpdateViewport@0x690198ee` (the
+variable `GLCOFORCECLIP` turns the factors off, `GLCOCLIPTOBIGFRUSTUM` copies them to a global table). Whether the engine
+clips when it transforms is not read; the hint above is the application's promise that nothing needs clipping.
+
+**Lighting: engine or host** (`__glCoValidateLighting@0x690269f6`, `__glCoValidateSoftLighting@0x6902702a`,
+`LoadLightPath@0x690267b4`, `__glCoPickSetMask@0x6902ddf8`, `GetBoardInfo`):
+
+1. Soft lighting. `gc+0x2d57e` is set at start-up when the context is colour-index (`gc+0x2459`) or the variable
+   `GLCOSOFTLIGHTING` is nonzero. Then `InitFnPtrs` (stores at `sgcoicd.dll@0x6901a668` and `0x6901a67e`) installs `__glCoValidateSoftLighting` and the generic
+   colour-material pick: the lighting-mode packet is sent with bit 23 clear, the path word is 2 (10 with `+0x3d80` bit
+   28), the host computes every colour and the vertex packets carry it. This is the only lighting the driver has for
+   colour-index contexts.
+2. Otherwise `__glCoValidateLighting` installs and runs. With `GL_LIGHTING` off the path word is 0 and no lighting
+   packet is sent (the vertex colour is sent, plus the secondary colour when `+0x3d80` bit 29 is set). With it on the
+   path word is 1 and the engine does the lighting for the lights it was given, lights loaded in order into at most four
+   slots (`LoadLightSource`). A light is left to the host, and the path word becomes 3 (engine lighting plus a host contribution), when any of:
+   - it is the fifth or later enabled light;
+   - one of its ambient, diffuse or specular colours is outside 0 to 1 (`IsColorOutOfRange@0x6902978c`, called by
+     `___glcoim_Lightfv` for each of the three, sets a bit in the flag word at light `+0x108`);
+   - it is positional, its constant attenuation is below 0.5 and either the variable `GLCOLIGHTINGWAR` is nonzero or its
+     linear and quadratic attenuation are both zero (the node fields `+0xf0`, `+0xf4`, `+0xf8` are the stores
+     `___glcoim_Lightfv` makes for `GL_CONSTANT_ATTENUATION`, `GL_LINEAR_ATTENUATION` and `GL_QUADRATIC_ATTENUATION`: the
+     base of the two structures is inferred, the offsets agree).
+3. Colour-material tracking also puts the colour on the host: when the tracked-material mask `gc+0x2d5a8 & 0x199` is
+   nonzero and the path word is above 0, `LoadLightPath` is called with the host flag, which clears bit 23 of the lighting
+   mode word, and `gc+0x2d608` becomes `__glCoCalcRGBColor` (the host computes the lit colour per vertex).
+4. With the engine path, the per-vertex helper in `gc+0x2d608` is picked from a table by a small index: 2 for a host
+   flag, 1 for local lights, 4 for `+0x3d80` bit 28 (index 1 `__glCoCalcLightVectors`, 2 `__glCoCalcExtraColor`, 4
+   `__glCoCalcSpecColor`, every combination `__glCoCalcAllCases`, 0 a no-op; `sgcoicd.dll@0x690f390c`). These produce the extra per-vertex packets the engine needs:
+   the light vector and scalar packets for positional lights (attribute-mask bit `0x08`), and a host colour contribution
+   (`0x02`) which matches the white paper's "accumulating a host-supplied contribution".
+5. `__glCoPickSetMask` turns the path word into the vertex attribute mask (`gc+0x2d91c`): position `0x01` always; colour
+   `0x02` when there is no lighting or a host colour; normal `0x04` when lighting is on; light vectors `0x08` for
+   positional lights; secondary colour `0x10` (`+0x3d80` bit 29 without lighting, bit 28 with it); texture coordinate
+   `0x20` (`+0x3d80` bit 3); fog `0x40` (`+0x3d80` bit 13, RGB mode); `0x80` calls the colour-material helper when colour
+   material is enabled with lighting.
+
+**Texture coordinates.** The variable `GLCOSIMFORCECHIPTEXXFORM` is read into `gc+0x2d584` and nothing reads it
+afterwards, so the decision between host and engine texture-coordinate generation is not seen; the texture coordinate
+the host sends (vertex +0x2c, +0x60) is already generated, and `__glCoPickCalcTextureProcs` stays unread.
+
+**Display lists and arrays.** `__glCoPickVertexProcs@0x6902e4ba` does not choose the engine or host path. In feedback
+mode it installs the colour-save routines; otherwise it indexes two tables (by lighting, colour-material and
+sphere-map texgen state) to pick which per-vertex attributes (`CoSaveN`, `CoSaveNT`, `CoSaveCNT` and the generic
+`__glSaveC` family) a compiled list records, and when `gc+0x3434` is nonzero it installs `CoValidateVertex2/3/4` as the
+per-vertex validators for glVertex2, 3 and 4. `__glCoPickOGVertexProcs@0x69030568` installs the run-time-generated
+`GenerateVertex2fv/3fv/4fv` as the dispatch-table targets of `glVertex2fv`, `glVertex3fv` and `glVertex4fv` when
+`GLCOUSEOG` is not zero (default 1); with it zero the generic functions stay. The generated handlers carry the same
+header constants; `GLCOFASTSETATTRIBS` (default 1) turns the generated attribute-set code on.
+
+The white paper lists vertex transform, frustum clip check, normal transform, lighting for up to four lights, face culling
+and set-up as engine functions, and the ICD matches: it sends the model-view-projection matrix (`A` = `0x002`), the
+normal matrix (`0x012`), the viewport (`0x01b`), material blocks, light blocks and the scene ambient, a cull field in the
+primitive mode word, and in display-list replay it sets bits 31 and 30 of the flags word (`A` = `0x001`) and replays
+recorded vertex packets (`__glCoDlistExecutePackets`, read in full).
+
 - The three coordinate modes in bits 31:30 of the flags word are, from which vertex words the packet routine copies:
-  `01` words 0 to 3 of the vertex record, `10` words 8 to 11, `00` the window x, y, z and the context's w; `11` is
-  the display-list replay mode. Which are object, eye and clip coordinates is inferred from the order the driver
-  computes them in.
+  `01` words 0 to 3 of the vertex record, `10` words 8 to 11, `00` the window x, y, z and the context's w; `11` reads as
+  `01`. Which are object, eye and clip coordinates is inferred from the order the driver computes them in.
 
 ## Primitive mode word
 
@@ -57,38 +119,45 @@ the number of vertices differ.
 
 ## Vertex packets
 
-Two ports, `0x18a33060` (`A` = `0x0c5`) and `0x18c33060` (`A` = `0x0c6`), each with count 3. The routine
-`__glCoSetVertexAttribsMask(vertex, mask, last)` builds them. Its steps, in the order it writes:
+Two ports, `0x18a33060` (`A` = `0x0c5`) and `0x18c33060` (`A` = `0x0c6`), each with count 3 and both register `B` =
+`0x33`. `__glCoSetVertexAttribsMask@0x6902d69e` builds them, read in full. Its steps, in the order it writes:
 
-1. For each attribute selected by `mask` and enabled in the context, a packet of its own: bit 7 (`0x80`) a call to a
+1. For each attribute selected by the mask and enabled in the context, a packet of its own: bit 7 (`0x80`) a call to a
    colour-material helper; bit 3 (`0x08`) the per-light vector packets for lights 0 to 3; bit 4 the secondary colour
    (`0x190b1020`); bit 5 the texture coordinate (`0x198da080`); bit 6 the fog value (`0x192b2020`); bit 1 the colour
    (`0x09280080` or the colour index `0x18e84020`); bit 2 the normal (`0x19a85060`).
-2. If bit 0 is set, the vertex itself: a header from the port table, `0x18a33060` or `0x18c33060` plus an
-   **attribute-presence mask in the instance field**, then the payload in this order: the colour (four dwords) if mask
-   bit 1, the normal (three dwords) if bit 2, a w dword if bit 4 (value `0x10`, set when bit 30 of the flags word is
-   clear), the x and y coordinates, the z coordinate for port B only, and the texture coordinate (two dwords) if bit 3.
-   A mask of zero means the coordinates only. The constants `0x18a33068`, `0x18c33062` and `0x18c33070` that occur in
-   the ICD and the display driver are these sums (mask 8, 2 and `0x10`); the colour and normal combinations (`0x04`, and
-   with other bits) are only composed at run time. The count field stays 3 for both ports, so it
-   is not the payload length: port A sends two coordinates and port B three, and the extra dwords are implied by the
-   instance bits. Checked in disassembly (`__glCoSetVertexAttribsMask`, the stores after the header); the engine's
-   parser is unknown.
-3. Port A (`0x18a33060`) is chosen when bits 19:18 of the vertex record's clip word (offset `0x30`) equal `01` and,
-   in addition, either a context bit (`+0x2db9f` bit 5) is clear or the flags word has bit 30 set; otherwise port B.
-   What the clip-word bits are, and why port A drops the z coordinate, is not known. The fill routines call the
-   routine in pairs that suggest "vertex that continues the primitive" and "vertex that completes a triangle", but no
-   routine states it.
-4. A call with `last` set marks the end of a primitive; the routine avoids closing a packet node inside a primitive
-   (it checks the context's no-break flag before it calls the overflow routine).
+2. If bit 0 is set, the vertex itself: a header from the port table plus an **attribute-presence mask in the instance
+   field**, then the payload in this order: the colour (four dwords) if instance bit 1, the normal (three dwords) if bit 2,
+   a w dword if bit 4 (set when bit 30 of the draw flags is clear), the x and y coordinates, the z coordinate for port B
+   only, and the texture coordinate (two dwords) if bit 3. With mask bit 0 set, the colour (RGB mode, when `gc+0x2d620` is nonzero) and the
+   normal go into the vertex packet instead of a packet of their own, and so does the texture coordinate when its fourth
+   word equals the context constant at `gc+0x250c`; otherwise each has its own packet. A colour index always has its own
+   packet. A mask of zero means the
+   coordinates only. The header count stays 3 for both ports whatever the mask adds, so it is not the payload length.
+3. **The ports differ in the vertex's component count, and so in whether z is sent.** The routine chooses port A when
+   bits 19:18 of the vertex record's clip word (offset `0x30`) are `01` and either depth test is off in the pixel-pipe
+   mode word (bit 29 clear) or bit 30 of the draw flags is set; otherwise port B. Those two bits are set by the
+   immediate-mode entry points: `0x40000` by `glVertex2*`, `0x80000` by `glVertex3*` and `0xc0000` by `glVertex4*`
+   (`___glim_Vertex2fv@0x690b391e`, `___glim_Vertex3fv@0x690b398e`, `___glim_Vertex4fv@0x690b3a03`). Port A therefore
+   carries only x and y and is used for a two-component vertex when z is not needed (the engine transforms it, or no
+   depth test uses it); port B carries x, y and z. The display driver and the miniport's copy use port A only, with
+   instance 8 for the texture coordinate (`CoCopyRect` sends four dwords per vertex: x, y, then s and t equal to x and
+   y). Established as the driver's rule; what the engine does with the missing z is unknown (inferred: z is 0 and w is 1
+   when the engine transforms a two-component vertex).
+4. A four-component vertex (clip-word bits 19:18 both set) sent while bit 30 of the draw flags is set is the one case
+   where the routine changes the coordinate set: it clears bit 30, sends `0x00210020` with the new flags, sends the vertex
+   from the other coordinate words, then sets bit 30 again and resends the flags at the end
+   (`sgcoicd.dll@0x6902da62`..`0x6902da7c`, `0x6902dd8e`..`0x6902ddf1`).
+5. A call with `last` set marks the end of a primitive; the routine avoids closing a packet node inside a primitive (it
+   checks the context's no-break flag before it calls the overflow routine and holds the final dword back).
 
 The fill routines call it with a fixed mask pattern. A smooth-shaded triangle calls the "send everything" entry
-(`__glCoSetVertexAttribs`, mask `0xff`) for each of the three vertices. A flat-shaded triangle sends the attribute
-bits `0x9e` once for the provoking vertex (colour, normal, lights, secondary colour) and then mask `0x61` (position,
-texture coordinate, fog) for each of the three. Read in full for `__glCoFillFlatTriangle` and
-`__glCoFillSmoothTriangle`; the mask bits are read from `__glCoSetVertexAttribsMask`. Clearing a buffer, writing a
-pixel in the software span stores and copying a rectangle in the miniport use the same ports, so even 2D drawing is
-vertex packets (`CoCopyRect` sends `0x18002020` and `0x18a33068` vertices).
+(`__glCoSetVertexAttribs`, mask `0xff`) for each of the three vertices. A flat-shaded triangle sends the attribute bits
+`0x9e` once for the provoking vertex (colour, normal, lights, secondary colour) and then mask `0x61` (position, texture
+coordinate, fog) for each of the three. Read in full for `__glCoFillFlatTriangle` and `__glCoFillSmoothTriangle`.
+Clearing a buffer, writing a pixel in the software span stores and, in the display driver, every 2D fill, copy, glyph
+and line is drawn with these ports (`CoCopyRect` sends `0x18002020` with type 4 and four `0x18a33068` vertices in strip
+order; `vFillSolid` sends the fill colour to `0x18e84020`, `0xa0000000` to the primitive mode and `0x18a33060` vertices).
 
 ## Lighting and material state
 
@@ -138,7 +207,8 @@ and fog colour are per-state registers; their layouts are in [packet-set.md](pac
   `0x0fff0fff`, plus and minus 4096, which matches "addressing up to 4k x 4k" in the white paper.
 - Window clipping ("screen masks and window clip IDs" in the white paper) is the miniport's work: it builds three
   window parameter packets (`0x98250160`, `0x9845b020`, `0x9865c020`) from the window record for each context switch
-  and for GDI and pixel-transfer packets. The ICD never writes them. What the parameters are is not read.
+  and for GDI and pixel-transfer packets. The ICD never writes them. What the parameters are is in
+  [packet-set.md](packet-set.md#window-parameter-packets): a valid mask, five clip rectangles and the window origin.
 - Face culling is a field in the mode word; frustum clipping is on the host (`__glDrawVertexes_*`).
 
 ## Clears
@@ -193,16 +263,14 @@ meanings are inferred.
 - **Texture memory and unified memory addressing.** Buffers and textures sit in 4 KB-multiple pages named through the
   engine's translation table, 2048 entries of 8 bytes at `0x8000` ([graphics-engine.md](graphics-engine.md)), with
   the per-context base-pointer table at `0xc000`. The white paper says the pages are "organized linearly (without
-  tiles)". The entry format, page size and which addresses go through the table are not determined.
+  tiles)". An entry is a 4 KB page frame number and the base-pointer entry carries the buffer's first slot
+  ([packet-set.md](packet-set.md#texture-table-packets-class-11)); which addresses go through the table is not determined.
 
 ## Unknown, with the route
 
-- What the engine does with the attribute-presence mask in the vertex header, and the difference between ports `0xc5`
-  and `0xc6`. Route: the miniport's use of `0x18a33068` in `CoCopyRect` (only its header constants were read) and the
-  display driver `sgcodd.dll`, which draws 2D with the same ports.
-- The `B` field of every header. Route: all three binaries use it consistently; a table of (A, B) pairs is in
-  [packet-set.md](packet-set.md#header-word-layout) and a relation between them across the whole register file is
-  the next thing to look for.
-- Bits of the pixel-pipe mode word (`0x80003020`) other than 13, 22 to 25. Route: the Enable* routines for each
-  GL capability set one bit; the remaining ones are in `GenerateSetAttribs`.
-- The window parameter packets. Route: `CoBuildWinparamsPacket` and the window record it reads.
+- What the engine does with the attribute-presence mask in the vertex header, and with a port A vertex that has no z.
+  The drivers' side is read ([packet-set.md](packet-set.md#instance-bits-per-block)); the engine's side has no source.
+- What mode-word bits 28, 26, 19 and 12:0 select, and what the flush marker does.
+- The lighting rule is read; the texture-coordinate rule (`GLCOSIMFORCECHIPTEXXFORM`, `__glCoPickCalcTextureProcs`) and
+  `__glCoPickPhase1Procs` are not.
+- The two record fields `pCoMakeTlbDesc` shifts into a base-pointer entry (bits 18:14 and 13, 9).
