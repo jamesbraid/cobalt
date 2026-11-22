@@ -25,7 +25,7 @@ loader and kernel use it in place of the stock VGA `bootvid.dll`. Its own messag
   apart from a CRT by what the firmware left behind: the flat-panel horizontal drive's low 12 bits equal `0x640` (1600) and the vertical drive's `0x401`. With the
   panel it uses the 1600 by 1024 timing (1670 by 1080 total); otherwise 640 by 480 (800 by 525 total). The text is drawn into a 640 by 480 virtual screen
   and scaled to the mode by an integer factor, centred.
-- The sequence it writes is the one [the display page](../../devices/cobalt-graphics/display-engine.md) lists for the NT 4.0 miniport and Linux, and adds three things
+- The sequence it writes is close to the one [the display page](../../devices/cobalt-graphics/display-engine.md) lists for the NT 4.0 miniport and Linux (the differences, re-read from the disassembly, are in [the status section of the frame-buffer page](../../devices/cobalt-graphics/framebuffer-driver-floor.md#5-status-what-must-be-bit-exact-and-what-may-be-approximated): it writes `ctrlstat` first, not last, and writes `0xffffffff` to the three start-position registers), and adds three things
   neither of those did: it sets the "linear" bit (bit 1) of the frame control with a 64 KiB-aligned physical address, writes the window table at `+0x48000` (all 32 words `3`), and
   writes an identity ramp (`i * 0x01010100`) into the gamma map at `+0x60000`. It loads 16 palette entries (the VGA colours, scaled to six-bit components) through the
   colour map at `+0x50000`, waiting until the FIFO status at `+0x58000` shows its low six bits above `0x30` ("Setting color map" on timeout). It waits 20 ms between its first writes

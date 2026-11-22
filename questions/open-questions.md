@@ -49,3 +49,19 @@ Status: **unknown** for everything below. What is established and what software 
 - **Pixel order.** Whether 32-bit pixels are red-first in memory (Linux) or red in the top byte of the word (NT's
   `ArsenicPixelFormats`), and what the config bit `LENDIAN` does. Route: a Linux boot of the real hardware, or the
   pixel-format table's users in `sgcodd.dll`.
+- **Frame-buffer floor: what the hardware does that the five boot-time writers cannot show.** The writers (the NT 4.0 miniport and
+  HAL, the Windows 2000 boot video driver and frame buffer miniport, the firmware) accept different orders and waits, so the
+  contract is written ([framebuffer-driver-floor.md](../devices/cobalt-graphics/framebuffer-driver-floor.md#5-status-what-must-be-bit-exact-and-what-may-be-approximated)).
+  Open, each with the route tried (every shipped writer read from the disassembly) and what would settle it:
+  - What `ctrlstat` bit 25 is and when it reads set. Settles it: a software reader of the bit other than the firmware's
+    one test, or a published chip description.
+  - What clearing `dotclock` `RUN` does. The NT 4.0 HAL clears it and writes the new value with `RUN` set in the next
+    store with no wait; the miniport waits 40 ms to 1 s around the same pair. Settles it: a chip description, or a shipped
+    routine that depends on the blanking.
+  - The live-copy delay (the vertical-blank rule is inferred from the O2's display back end) and why the firmware waits for the
+    live bits to read set when it stops the display. Settles it: a chip description.
+  - The pitch of the linear form (`frm_control` bit 1) for widths that are not a multiple of 512 bytes. The firmware and the
+    boot video driver round the pitch up, the frame buffer miniport's own surface pitch was not read. Settles it:
+    `sglfb.dll`'s surface setup read for 32 bits per pixel, a width of 640 and the pitch it reports.
+  - The write semantics of the register at `0xca000000` (write-0-to-clear is inferred from the complement write) and what its other
+    bits are. Settles it: the Cobalt interrupt code in the Windows 2000 HAL for pin 24, or a chip description.
