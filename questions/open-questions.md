@@ -8,31 +8,28 @@ Status: **unknown** for everything below. What is established and what software 
 
 - **Packet semantics.** The headers are catalogued ([packet-set.md](../devices/cobalt-graphics/packet-set.md)): 52
   constant values in the OpenGL driver plus one in the display driver, each with its emitting routine and payload layout,
-  and the computed forms. The `B` field is the register's index in the engine's own file, the vertex ports, window
-  parameters, table entries and mode-word bits are decoded as the drivers write them
-  ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md)). Open: what the engine does with each (the
+  and the computed forms; the payload words carry the vendor's own field names from the drivers' program databases
+  ([the register definitions](../devices/rendering-engine/registers.md)). Open: what the engine does with each (the
   arithmetic of set-up, interpolation, texturing, blending, depth and stencil formats and the tile layout), what
-  `0x98804000` does, mode-word bits 28, 19 and 12:0, the instance flag on the diffuse blocks, the third word of the
-  long chain packet, the miniport's window record fields at `+0x194` and the two record fields in the base-pointer entry,
-  and the register at `B` = `0xa3` (`A` = `0x490`), which no binary writes. Routes tried: the OpenGL driver (every
-  constant header and its routine), the display driver and miniport (the packet builders read in disassembly, 2D routines
-  and their mode words), the Windows 2000 packs, the April 1999 display driver and miniport, SGI's graphics white paper
-  (features only), a registry export (identity only).
-  The April 1999 OpenGL driver is read too: same headers minus two, no others.
+  `0x98804000` (the flush marker) does, what the `0x06c6d081` instance flag on the diffuse blocks does, whether
+  `0x91ca1020` is the colour of the cleared pixels (inferred from the opaque-stipple bit) and which of the two cause bits
+  the link word's interrupt and sync flags raise. Routes tried: the OpenGL driver in all three builds (every constant
+  header and its routine), the display driver and miniport, the program databases of the OpenGL driver and the miniport, SGI's graphics
+  white paper (features only), a registry export (identity only). Next: nothing in the shipped software decides these; a
+  model chooses and documents a value.
 - **Host setup versus engine setup.** Answered for the driver's side
   ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md#who-does-what)): transform is the engine's only
   when the clip-volume hint is `GL_FASTEST`, the user enables it or a variable forces it, and the primitive is not drawn by
   a host fill routine; lighting is the engine's for up to four lights unless a light, colour material or the soft-lighting
-  switch puts it on the host. Open: whether the engine clips when it transforms, the texture-coordinate rule
-  (`GLCOSIMFORCECHIPTEXXFORM` is read and never used, `__glCoPickCalcTextureProcs` unread), and `__glCoPickPhase1Procs`.
-- **Engine register window.** The `0x08000` entries (a 4 KB page frame number) and `0x0c000` entries (the buffer's
-  first translation slot in 31:21, a size class in 12:10) are decoded as the miniport writes them
-  ([packet-set.md](../devices/cobalt-graphics/packet-set.md#texture-table-packets-class-11)). Open: the meaning of the
-  `0x10000` write fields, `0x10008`, the two interrupt causes and `0x18800`; contents of `0x00000` to `0x07fff` and
-  `0x0c200` to `0x17fff`. Route: `pCoContextSwitch` and `CoProcessCobaltEvent` read in full, and the Windows 2000
-  miniport as a cross-check (its names need the program-database file).
-- **Second interrupt register.** The 32-bit register at `0xca000000` that the retrace handler reads and complements, and
-  the register at `0xc0000020`. Route: the Linux Cobalt interrupt code (`visws_quirks.c` and the Lithium and PIIX4
+  switch puts it on the host; texture coordinates are always the host's. Open: whether the engine clips when it transforms
+  (the transform word has a clip-check bit that no routine sets).
+- **Engine register window.** The `0x08000` entries (a 4 KB page frame number) and `0x0c000` entries (buffer descriptors),
+  the `0x10000` start word (idle count, bit 11, node position), `0x10008`, the two interrupt causes, `0x185d0` and
+  `0x18800` are decoded as the drivers use them ([graphics-engine.md](../devices/cobalt-graphics/graphics-engine.md)).
+  Open: what the engine writes at the dump offset it is given through `0x18800`; what separates the two causes in
+  hardware; the idle count's effect; contents of `0x00000` to `0x07fff` and `0x0c200` to `0x17fff`.
+- **Second interrupt register.** The 32-bit register at `0xca000000` that the retrace handler reads and complements (the
+  miniport names the pointer `CAI_InterruptReg`), and the register at `0xc0000020`. Route: the Linux Cobalt interrupt code (`visws_quirks.c` and the Lithium and PIIX4
   paths) and the HAL image for the PROM's use.
 - **Which ASIC.** The kernel's notes name Cobalt, Lithium and Arsenic; the rendering engine is in Cobalt and the display
   back end is inferred to be Arsenic (NT's `as` routine prefix and `ArsenicPixelFormats`). Unconfirmed: which chip
