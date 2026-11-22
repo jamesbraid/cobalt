@@ -37,12 +37,13 @@ Status: **unknown** for everything below. What is established and what software 
   a board photograph with chip markings, the PROM's device tables, or a boot log naming the resources.
 - **Reset values.** For every register. Neither driver reads one before writing, and the PROM reads only
   the revision nibble of `+0x000`, the ID and `bist` before it writes ([prom-init.md](../devices/cobalt-graphics/prom-init.md)). Route: a hardware read, which needs the repository owner's approval and a read-only plan.
-- **Cursor, gamma and video capture.** The `0x70000` cursor block, the `0x60000` and `0x68000` gamma maps and
-  the `0x80000` capture words are named by Linux and untouched by Linux and by the NT miniport routines read (the PROM
-  writes an identity gamma, a cursor glyph left disabled, and read-back tests the capture words; see
-  [prom-init.md](../devices/cobalt-graphics/prom-init.md)). Where NT
-  puts gamma and how the 2D cursor is drawn is unresolved. Route: the display driver `sgcodd.dll` (it may draw the
-  cursor itself and send gamma as engine packets) and the Windows 2000 driver.
+- **Cursor, gamma and video capture.** The NT miniport writes the `0x60000` and `0x68000` gamma maps and the NT display
+  driver programs the `0x70000` cursor block (position, control, three colours, a 32 by 32 two-bit glyph; see
+  [display-engine.md](../devices/cobalt-graphics/display-engine.md#colour-map-gamma-cursor-video-capture)). Open: the hardware's
+  reading of the cursor words (inferred from the O2's GBE layout), what the 10-bit gamma map's entries mean, and the
+  `0x80000` capture words, which Linux names and neither NT driver touches (the PROM writes an identity gamma, leaves a
+  cursor glyph disabled and read-back tests the capture words; see [prom-init.md](../devices/cobalt-graphics/prom-init.md)).
+  Route: the Windows 2000 drivers' own cursor use, and the video capture software on the OEM discs.
 - **PLL and clock.** The `sysclk` register (`+0x0c`), the purpose of the one-second PLL restart in NT's mode set, and
   `ctrlstat` bit 25.
 - **Pixel order.** Whether 32-bit pixels are red-first in memory (Linux) or red in the top byte of the word (NT's

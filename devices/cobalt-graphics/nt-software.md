@@ -61,11 +61,14 @@ press says. How the firmware picks the split (a "profile") and where it keeps it
 | Palette | `0x50000` colour map with FIFO at `0x58000` | same |
 | Flip | rewrite tile lists, then `0x3000c` | same |
 | Power (DPMS) | `0x10018` bits 1 and 3 | same |
+| Gamma | `0x60000` and `0x68000` | same |
 | Context switch and kick | engine `0x10000`, `0x10008` | [graphics-engine.md](graphics-engine.md) |
 | Interrupts | engine `0x10018`, `0x10020`; retrace `0xca000000` | same |
 
-The miniport does not program the hardware cursor, the video capture block, the gamma tables in the routines read, or
-the system clock PLL at `+0x0c`; the 2D path draws the cursor in software or through the engine, which is unknown.
+The miniport does not program the hardware cursor, the video capture block or the system clock PLL at `+0x0c`. It does write
+the gamma maps (`+0x60000` and `+0x68000`, from the `GammaData` registry value and from video IOCTL `0x23208c`), and the display driver programs the
+hardware cursor block and the overlay fetch ([display-engine.md](display-engine.md#colour-map-gamma-cursor-video-capture)); a pointer that does not fit the
+hardware cursor is drawn in software in the overlay plane.
 
 ### Commands from the display driver and the ICD
 

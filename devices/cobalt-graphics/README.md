@@ -101,7 +101,7 @@ Support Folio, the original host, is gone. The driver symbols ship in the packag
 | `0xc4000000` | Cobalt interrupt controller ("APIC" in Linux). Graphics pins below | Linux `cobalt.h` | established |
 | `0xc8000000`, `0x19000` bytes | Rendering engine register window | `sgcomp.sys` `CobaltInitialize` maps exactly this length | inferred |
 | `0xca000000`, 4 bytes | Vertical-retrace interrupt register, read and then rewritten with its complement in the retrace handler. Mapped only if the display back end's ID register reads `0x666` | `sgcomp.sys` `CoVRetraceHandler` | inferred |
-| `0xc0000020`, 4 bytes | Mapped on the same condition; its value is copied into a command packet by `CobaltStartIO` and nothing else reads it. Purpose unknown | `sgcomp.sys` | unknown |
+| `0xc0000020`, 4 bytes | Mapped on the same condition. The mapped kernel address (`FlushKvAddr`) is returned to the display driver in word 15 of the global-information reply of `CobaltStartIO`, and the display driver stores it as `ulFlushAddr` in its shared device record; no routine read by name uses it afterwards. Purpose unknown | `sgcomp.sys`, `sgcodd.dll` | unknown |
 | `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes | `sgivwfb.h`, `sgcomp.sys`, a real machine's resource list ([board-data.md](board-data.md)) | established (base; the claim, as listed by a Windows 2000 or later install) |
 | Top of RAM, 8 MB default | Linux frame buffer. NT takes its own bank list from the loader | `visws_quirks.c`, `sgcomp.sys` | inferred |
 
@@ -143,8 +143,8 @@ Enough to run the NT display driver's 2D and the OpenGL driver:
    blending and the memory layout of the buffers) is **unknown**: no source describes it and no public code drives the
    engine other than SGI's own driver.
 
-Not needed to show a console: video capture and video out, the cursor (neither driver programs the hardware cursor in
-the routines read), I2C, flat-panel logic, DDC, the audio, 1394 and USB blocks.
+Not needed to show a console: video capture and video out, the cursor (the miniport does not program it; the NT display driver does,
+[display-engine.md](display-engine.md#colour-map-gamma-cursor-video-capture)), I2C, flat-panel logic, DDC, the audio, 1394 and USB blocks.
 
 ## Open
 

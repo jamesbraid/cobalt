@@ -43,7 +43,7 @@ writes the register; the PROM writes that value ([prom-init.md](prom-init.md)). 
 **What the two Windows 2000 drivers add (`sgibvid.dll`, `sglfb.sys`; established as their code, inferred as hardware).** Both are described in
 [NT drivers](../../software/windows/w2k-display-drivers.md). They write the same timing, tile and PLL registers in the same order as the SGI
 5.2.4 miniport above, and both (and the earlier Linux driver) set the linear bit. Both find a flat panel by reading back what the firmware left in the panel drive registers:
-`fp_hdrv` low 12 bits `0x640` and `fp_vdrv` low 12 bits `0x401` (1600 columns, 1025 rows). That the firmware leaves those two registers set for the 1600 by 1024 panel before the OS starts is established: the PROM's mode set writes `0x640` and `0x1401` for panel id 5 ([prom-init.md](prom-init.md#flat-panel-registers)); the SGI miniport writes the row end as `H`, 1024, a different value from the one these drivers test for. Both require `id` (`+0x14`) to read `0x666`. The boot video driver's own table has two timing records, 640 by 480 (800 by 525 total) and the 1600 by 1024 panel (1670 by 1080
+`fp_hdrv` low 12 bits `0x640` and `fp_vdrv` low 12 bits `0x401` (1600 columns, 1025 rows). That the firmware leaves those two registers set for the 1600 by 1024 panel before the OS starts is established: the PROM's mode set writes `0x640` and `0x1401` for panel id 5 ([prom-init.md](prom-init.md#flat-panel-registers)); the SGI miniport writes the row end as `H + 1`, 1025, and so leaves the same `0x401` in the low 12 bits that these drivers test for (an earlier version of this page had it write `H` and called the value different; the disassembly of `asSetConfigAndTiming` increments the row count before the mask). Both require `id` (`+0x14`) to read `0x666`. The boot video driver's own table has two timing records, 640 by 480 (800 by 525 total) and the 1600 by 1024 panel (1670 by 1080
 total), in the same record layout as `cobaltVTimings`; it is the only place a Windows driver programs the display with no SGI pack present, so a model that satisfies it
 satisfies the Windows 2000 setup display path.
 
@@ -66,7 +66,7 @@ same layout as Linux's `dbe_timing_info`). Linux differs only where noted. All e
 | `0x10020` | vt_intr01 | scanline interrupts 1 (`[11:0]`) and 0 (`[23:12]`). NT parks both at `0xfff` (`0xffffff` written) |
 | `0x10024` | vt_intr23 | the same for interrupts 3 and 2 |
 | `0x10028` | fp_hdrv | flat-panel horizontal drive; NT sets `OFF = W` when a panel is present |
-| `0x1002c` | fp_vdrv | `ON = 1`, `OFF = H` (NT sets `0x1000 \| H`) |
+| `0x1002c` | fp_vdrv | `ON = 1`, `OFF = H + 1` (NT writes `0x1000 \| ((H + 1) & 0xfff)`, that is `0x1401` for the 1024-row panel; with no panel `OFF` is 0). The disassembly increments the row count before the mask |
 | `0x10030` | fp_de | flat-panel data enable; NT writes `0xffffff` |
 | `0x10034` | vt_hpixen | `ON = hblank_end - 19` (wrapped by `Ht`), `OFF = (ON + W - 2) mod Ht`. Same in Linux |
 | `0x10038` | vt_vpixen | `ON = vblank_end`, `OFF = vblank_start`. Same in Linux |
@@ -91,7 +91,7 @@ instead sets the panel's power-save bit over I2C.
 |---|---|---|---|
 | `0x20000` | ovr_width_tile | overlay plane width: whole 512-byte tile columns in `[12:5]`, remainder in 32-byte units in `[4:0]`, `FIFO_RESET` `[13]` pulsed set then clear (NT and Linux). Overlay is always 8 bits per pixel | N, L: inferred |
 | `0x20004` | ovr_inhwctrl | live copy; bit 0 is the DMA-enable that NT polls until it reads clear | inferred |
-| `0x20008` | ovr_control | shadow; bit 0 DMA enable, rest the overlay's tile-list pointer. NT clears bit 0 to stop and writes the list pointer to start | inferred |
+| `0x20008` | ovr_control | shadow; bit 0 DMA enable, rest the overlay's tile-list pointer. The miniport's `asStartFrm` loads the list pointer without bit 0; the display driver's `vSetOvrFetch` writes the pointer with bit 0 set to start the fetch and the pointer alone to stop it | inferred |
 | `0x30000` | frm_size_tile | normal plane. `[12:5]` whole tile columns, `[4:0]` remainder in 32-byte units, `[14:13]` depth (0 = 8 bpp, 1 = 16, 2 = 32), `[15]` `FIFO_RESET` pulsed. A tile is 512 bytes by 128 lines, so a 32-bit mode has 128 pixels per tile column and a 16-bit mode 256. NT computes exactly this and writes the register twice around the reset pulse | established (Linux and NT agree, GBE page agrees) |
 | `0x30004` | frm_size_pixel | height in `[31:16]` | established |
 | `0x30008` | frm_inhwctrl | live copy; bit 0 live DMA enable, polled by NT | inferred |
@@ -99,6 +99,20 @@ instead sets the panel's power-save bit over I2C.
 | `0x40000` | did_inhwctrl | live copy; NT tests bit 16 (byte at `+0x40002`, bit 0) | inferred |
 | `0x40004` | did_control | shadow. NT writes 0 at mode set and clears bit 16 to stop. Linux names bit 0 and writes 0 | inferred; Linux's bit looks wrong, NT and the O2's GBE use bit 16 |
 | `0x48000` | mode_regs[32] | per-DID window table: buffer mode `[1:0]` (3 = both), type `[4:2]` (0 = 8-bit index, 1 = 12-bit index, 2 = RG3B2, 3 = RGB4, 4 = ARGB5, 5 = RGB8, 6 = RGBA5, 7 = RGB10). Linux fills all 32 identically (8 bpp = index, 16 bpp = RGBA5, 32 bpp = RGB8). The SGI 5.2.4 miniport's mode-set code does not write this table. Windows 2000's boot video driver writes `3` into all 32 words, and its `sglfb.sys` writes only the first word: `3` for 8 bits per pixel and `0x17` for 32 (buffer mode 3, type 5 = RGB8) | L, W2K: inferred; SGI miniport: not touched in the routines read |
+
+**The cursor, as the NT display driver drives it.** `sgcodd.dll` (not `sgcomp.sys`) writes the cursor block through its `gberegs`
+pointer: `vMovePointer` and `DrvSetPointerShape` set `crs_pos` to `((y - hotY) & 0xfff) << 16 | ((x - hotX) & 0xfff)` and `crs_ctl` to 1
+to show it, and to `0x0fe00fe0` and 0 to hide it (`ulCursorState` bit 0 means the hardware cursor holds the pointer, bit 1 that it is shown, bit 2 that
+a software pointer is in use); `bEnablePointer` sets `crs_cmap[1]` to 0 and
+`crs_cmap[2]` to `0xffffff00`; `bCopyColorPointerIntoHardware` rewrites all 64 glyph dwords and the 3 colour dwords for a pointer of at most 32 by 32
+pixels and three colours (the routine tests both limits at its top; the bodies of those tests are empty in the decompile and are read as a return
+to the software path), packing each pixel into 2 bits from the top of the dword, two dwords per row (0 for a transparent pixel, 1 to 3 for the
+colour list's entry), and writing the colours as `R<<24 | G<<16 | B<<8`. Any other pointer is drawn in software: the driver keeps three 32 by 32
+bitmaps (the pointer and two save-unders) and blits them into the 8-bit overlay plane. Established (`vMovePointer`, `DrvSetPointerShape`,
+`bEnablePointer` and `bCopyColorPointerIntoHardware` read in the typed decompile; the colour-list index that the 2-bit value selects, and what the
+hardware does with the hot-spot-adjusted position, are inferred from the GBE's cursor). The display driver also starts and stops the overlay plane
+itself: `vSetOvrFetch` writes `ovr_control` with the overlay's tile list and bit 0 to start the fetch (for a software pointer or an OpenGL window)
+and with the tile list alone to stop it.
 
 **Frame buffer memory.** Both the live and the shadow word are read by software; the engine takes the shadow at the
 start of vertical blank. This is how NT page-flips (`asFlipTiles`, `asFlipFrontBack`): it rewrites the tile list or the
@@ -115,9 +129,9 @@ for a tile that is not contiguous is unknown but follows the GBE's.
 |---|---|---|---|
 | `0x50000` | colour map, 6144 dwords in Linux's declaration (the GBE specification says 4608), one dword per entry, written as `R<<24 \| G<<16 \| B<<8` (both drivers). NT's `asSetColorRegisters` takes a count, a first index and four-byte entries whose first three bytes go to bits `[31:24]`, `[23:16]` and `[15:8]` | L, N | inferred |
 | `0x58000` | colour-map FIFO status. Linux waits until it reads non-zero, then writes that many entries. NT before every 32nd entry spins until the low six bits read zero or the value reaches `0x30`. A model that returns `0x40` satisfies both. Meaning inferred as a free-entry count | L, N | inferred |
-| `0x60000` | gamma map, 256 dwords. Linux writes identity (`i<<24 \| i<<16 \| i<<8`). NT's gamma path (`GammaDataCallback`, `CO_CMD_SET_GAMMA`) was not found writing this range in the miniport; where NT puts gamma is unresolved. Windows 2000's boot video driver writes the identity ramp (`i * 0x01010100`, 256 words) here | L, W2K boot video | inferred (Linux, Windows 2000 boot video), unknown (SGI miniport) |
-| `0x68000` | 10-bit gamma map, 1024 dwords | L (name only) | unknown |
-| `0x70000` to `0x78100` | hardware cursor: position, control (Linux writes 0 to turn it off), 3 colours at `0x70008`, 64-dword glyph at `0x78000`; same offsets as the GBE's cursor | L (names) | unknown for programming (inferred from the GBE layout); neither driver enables it |
+| `0x60000` | gamma map, 256 dwords. Linux writes identity (`i<<24 \| i<<16 \| i<<8`). NT's miniport copies dwords straight into it, from the registry value `GammaData` (`GammaDataCallback`, 0x400 bytes, skipped when `BaseVideo` is set) and from the private video IOCTL `0x23208c` (input and output 0x1008 bytes: direction 0 reads the table back, 1 writes it; size selector 8 picks this table, 10 the next). An earlier version of this page said the miniport was not found writing this range; it is. Windows 2000's boot video driver writes the identity ramp (`i * 0x01010100`, 256 words) here | L, N, W2K boot video | established (NT miniport writes), inferred (what the hardware does with the words) |
+| `0x68000` | 10-bit gamma map, 1024 dwords. The same two NT paths write it when the selector is 10 or the registry value is 0x1000 bytes long | L (name), N | established (NT miniport writes), inferred (meaning) |
+| `0x70000` to `0x78100` | hardware cursor: position (`crs_pos`), control (`crs_ctl`), 3 colours at `0x70008`, 64-dword glyph at `0x78000`; same offsets as the GBE's cursor. Programmed by the NT display driver, not the miniport (below) | L (names), N (display driver) | established (display driver writes), inferred (meaning, from the GBE layout) |
 | `0x80000` to `0x80020` | video capture control words (9 dwords, as in the GBE). Neither driver touches them. The video in and out ports raise Cobalt interrupt pins 16 to 19 | L (names), Linux `cobalt.h` | unknown |
 
 The NT miniport also claims exactly `0xd0000000` to `0xd008001f`, ending at the last video-capture word, which agrees with
@@ -164,7 +178,7 @@ in kHz, `Ht`/`Vt` are totals, `M N P` are the PLL values before the `-1`.
 | 1280 x 1024 | 60 | 108 000 | 1688 x 1066 | 4 1 0 | |
 | 1280 x 1024 | 75 | 135 000 | 1688 x 1066 | 5 1 0 | |
 | 1280 x 1024 | 85 | 157 500 | 1728 x 1072 | 35 6 0 | |
-| 1376 x 768 | 59.94 | 162 000 | 1560 x 805 | 11 2 1 | clock column is wrong for this row: the totals and the PLL values both give about 74 MHz |
+| 1376 x 768 | 59.94 | 162 000 | 1560 x 805 | 11 2 1 | clock column is wrong for this row: the PLL values give 74.25 MHz and the totals at the table's own 59.94 Hz give 75.3 MHz |
 | 1600 x 1000 | 75 | 171 000 | 2160 x 1050 | 19 3 0 | |
 | 1600 x 1000 | 85 | 193 500 | 2160 x 1050 | 36 5 0 | |
 | 1600 x 1024 | 53 | 107 447 | 1900 x 1067 | 4 1 0 | flat panel, magic key (flags `0x3000`) |
