@@ -1,11 +1,11 @@
 // generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 2278550c741eff795377f04f5ce76c5bad098885f91f150094890a4234fcfd28
+// input sha256 381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2
 // Rendering engine register window
 #![allow(dead_code)]
 
-/// Translation table: one entry per 4 KB page of the pool the engine addresses. Only the low dword is ever written, with a page frame number masked to 24 (inferred)
+/// Translation table: one entry per tile of the buffers the engine addresses. A tile is 1, 4, 16, 64 or 256 pages of 4 KB, as the buffer's descriptor say (inferred)
 pub mod tlb_entry {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x8000;
@@ -114,7 +114,7 @@ pub mod exec_ctl {
         }
     }
 }
-/// Written with a single bit after work is appended to the node the engine is running, or a suspended context is resumed, when the scheduler is in its se (inferred)
+/// Written with a single bit from three routines. Two write it when work is appended to a non-deferred node or a timer event fires, with the current queu (inferred)
 pub mod doorbell {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x10008;
@@ -189,7 +189,7 @@ pub mod int_enable {
         }
     }
 }
-/// Scissor minimum corner, read back into the packet that restores a context. The window offset follows from the scissor packet's address field. (inferred)
+/// Scissor minimum corner, read into the window-parameter packet when the node already in the hardware is restarted. The window offset follows from the s (inferred)
 pub mod scissor_min {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x18138;

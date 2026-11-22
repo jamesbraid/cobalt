@@ -18,9 +18,9 @@ count = 2048
 stride = 8
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets"
-doc = "Translation table: one entry per 4 KB page of the pool the engine addresses. Only the low dword is ever written, with a page frame number masked to 24 bits; entries not in use hold the first entry's value. The packet pool, the display buffers and the textures are named through these entries, so the engine fetches packets through this table rather than by physical address."
+doc = "Translation table: one entry per tile of the buffers the engine addresses. A tile is 1, 4, 16, 64 or 256 pages of 4 KB, as the buffer's descriptor says; the packet pool is 16 tiles of 256 pages, so it fills 16 entries. Only the low dword is ever written, with the tile's first 4 KB page frame number masked to 24 bits; entries not in use hold the first entry's value. The packet pool, the display buffers and the textures are named through these entries, so the engine fetches packets through this table rather than by physical address."
 [registers.tlb_entry.fields]
-page_frame = { bits = [23, 0], grade = "inferred" }
+page_frame = { bits = [23, 0], grade = "inferred", doc = "4 KB page frame number of the first page of the tile" }
 
 [registers.tlb_desc]
 offset = 0xc000
@@ -56,7 +56,7 @@ width = 32
 access = "w"
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routines that queue work or resume a suspended context"
-doc = "Written with a single bit after work is appended to the node the engine is running, or a suspended context is resumed, when the scheduler is in its second mode and the running node has no pending chunks."
+doc = "Written with a single bit from three routines. Two write it when work is appended to a non-deferred node or a timer event fires, with the current queue at 2, a node in the hardware and that node's chunk count 0. The third, which suspends a node, writes it when the node's status bits 3:1 are clear, its chunk count is below 1, status bit 9 is clear and the status byte above bit 7 is non-zero."
 [registers.doorbell.fields]
 kick = { bits = [10, 10], grade = "inferred" }
 
@@ -89,7 +89,7 @@ width = 32
 access = "r"
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routine that builds the window-parameter packet; the OpenGL driver's scissor packet"
-doc = "Scissor minimum corner, read back into the packet that restores a context. The window offset follows from the scissor packet's address field."
+doc = "Scissor minimum corner, read into the window-parameter packet when the node already in the hardware is restarted. The window offset follows from the scissor packet's address field."
 [registers.scissor_min.fields]
 x = { bits = [15, 0], grade = "inferred" }
 y = { bits = [31, 16], grade = "inferred" }

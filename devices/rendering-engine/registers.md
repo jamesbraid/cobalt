@@ -1,7 +1,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 2278550c741eff795377f04f5ce76c5bad098885f91f150094890a4234fcfd28 -->
+<!-- input sha256 381b48b41836ead813fb65135c2c193c3da7f4a19e19ffe6aabe06c7f0fadfa2 -->
 
 # Rendering engine register window
 
@@ -31,13 +31,13 @@ Every item has a grade: established, inferred or unknown. A grade says how the i
 
 ### Register `tlb_entry`
 
-Translation table: one entry per 4 KB page of the pool the engine addresses. Only the low dword is ever written, with a page frame number masked to 24 bits; entries not in use hold the first entry's value. The packet pool, the display buffers and the textures are named through these entries, so the engine fetches packets through this table rather than by physical address.
+Translation table: one entry per tile of the buffers the engine addresses. A tile is 1, 4, 16, 64 or 256 pages of 4 KB, as the buffer's descriptor says; the packet pool is 16 tiles of 256 pages, so it fills 16 entries. Only the low dword is ever written, with the tile's first 4 KB page frame number masked to 24 bits; entries not in use hold the first entry's value. The packet pool, the display buffers and the textures are named through these entries, so the engine fetches packets through this table rather than by physical address.
 
 Array of 2048 registers, stride 8.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 23:0 | `page_frame` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets |  |
+| 23:0 | `page_frame` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets | 4 KB page frame number of the first page of the tile |
 
 ### Register `tlb_desc`
 
@@ -65,7 +65,7 @@ Starts the engine on a packet position and reports where it is. A write is the p
 
 ### Register `doorbell`
 
-Written with a single bit after work is appended to the node the engine is running, or a suspended context is resumed, when the scheduler is in its second mode and the running node has no pending chunks.
+Written with a single bit from three routines. Two write it when work is appended to a non-deferred node or a timer event fires, with the current queue at 2, a node in the hardware and that node's chunk count 0. The third, which suspends a node, writes it when the node's status bits 3:1 are clear, its chunk count is below 1, status bit 9 is clear and the status byte above bit 7 is non-zero.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
@@ -92,7 +92,7 @@ Written once, with both cause bits set.
 
 ### Register `scissor_min`
 
-Scissor minimum corner, read back into the packet that restores a context. The window offset follows from the scissor packet's address field.
+Scissor minimum corner, read into the window-parameter packet when the node already in the hardware is restarted. The window offset follows from the scissor packet's address field.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|

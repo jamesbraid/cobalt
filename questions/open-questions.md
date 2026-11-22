@@ -23,7 +23,7 @@ Status: **unknown** for everything below. What is established and what software 
   a host fill routine; lighting is the engine's for up to four lights unless a light, colour material or the soft-lighting
   switch puts it on the host; texture coordinates are always the host's. Open: whether the engine clips when it transforms
   (the transform word has a clip-check bit that no routine sets).
-- **Engine register window.** The `0x08000` entries (a 4 KB page frame number) and `0x0c000` entries (buffer descriptors),
+- **Engine register window.** The `0x08000` entries (the first 4 KB page frame number of a tile, the tile size coming from the buffer's descriptor) and `0x0c000` entries (buffer descriptors),
   the `0x10000` start word (idle count, bit 11, node position), `0x10008`, the two interrupt causes, `0x185d0` and
   `0x18800` are decoded as the drivers use them ([graphics-engine.md](../devices/cobalt-graphics/graphics-engine.md)).
   Open: what the engine writes at the dump offset it is given through `0x18800`; what separates the two causes in
