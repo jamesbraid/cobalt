@@ -9,11 +9,12 @@ result is not claimed here.
 
 ## Symbols
 
-The `.dbg` file that ships next to it holds the vendor's own names twice: a COFF symbol table (8,663 symbols, each
-with a section and an offset from the image base) and a reference to a CodeView `.pdb` (`NB10`, Microsoft program
-database version 2.00). The COFF table was parsed directly (the layout is the Windows `.dbg` header, the debug
-directory, and the table with its string pool) and 3,693 functions, labelled with their stdcall and fastcall
-decorations, were applied in Ghidra before analysis; the 4.2 MB `.pdb` was not needed for names. The `.pdb` carries
+The `.dbg` file that ships next to it holds the vendor's own names twice: a COFF symbol table and a reference to a
+CodeView `.pdb` (`NB10`, Microsoft program database version 2.00). The COFF table was parsed directly (the layout is the
+Windows `.dbg` header, the debug directory, and the table with its string pool). It has 13,109 records, of which 8,883
+are symbols and the rest are auxiliary records; 3,929 are function-typed symbols in `.text`, at 3,633 distinct
+addresses (some routines carry two names). Those names, with their stdcall and fastcall decorations, were applied in
+Ghidra before analysis; the 4.2 MB `.pdb` was not needed for names. The `.pdb` carries
 types and local variable names the project has not used. Any claim about a routine therefore cites a vendor name and an
 address, for example `__glCoSetScissor` at `0x69018ebe`.
 
@@ -25,7 +26,7 @@ rasteriser (inferred, from the names). The brief's `__glGenerateSetup` therefore
 
 ## Shape of the driver
 
-3,693 functions in these families (by symbol prefix):
+3,633 distinct function addresses, in these families (by symbol prefix):
 
 | Family | Count | Role |
 |---|---|---|
@@ -33,16 +34,16 @@ rasteriser (inferred, from the names). The brief's `__glGenerateSetup` therefore
 | `___gllc_*` and `___glcolc_*` | 321 | display-list compile entry points |
 | `___glcoim_*` | 114 | the Cobalt versions of the immediate calls; they set the context's state and call a `__glCoPass*` routine to write the packet |
 | `__glCo*`, `co*`, `Co*` | 572 | the Cobalt back end: begin and restart routines, fill and render routines, buffer and texture management, pixel transfer, display-list conversion, validation |
-| `Generate*`, `__glCoGenerate*`, `__glGenerate*` | 33 | run-time code generators for vertex handling (below) |
-| span, store and image-pipe routines | 285 | the generic OpenGL span and pixel path from the vendor's base code, used for fallbacks |
-| the rest | about 2,070 | the generic OpenGL machinery: evaluators, texture state, clipping, lighting maths, colour tables |
+| `Generate*` and `__glGenerate*` (the `__glCoGenerate*` ones are in the row above) | 19 | run-time code generators for vertex handling (below) |
+| the rest | 2,297 | the generic OpenGL machinery from the vendor's base code, including the span, store and image-pipe routines used for fallbacks: evaluators, texture state, clipping, lighting maths, colour tables |
 
 **The driver compiles code at run time.** `__glCoGeneratePrimitiveHandler`, `GenerateSetAttribs`,
 `GenerateTransformer` (and a Pentium III `KNI` version of each), `GenerateHostCullHandler`,
 `__glCoGenerateNoXformHandler`, `GenerateQuadsHandler`, `__glCoGeneratePolygonMode`, `GenerateCalcLightVectors` and
 the others write x86 machine code into a code cache (`__glCoCreateVertexCodeCache`) for each combination of state and
-attributes, through a small emit helper (`emit_code`, `_value_8`). The packet headers that code writes are immediates in
-the generators, which is why a scan of the generators' bytes finds them. The generated code itself is data in memory
+attributes, through a small emit helper (`emit_code`, `_value_8`). The generators emit code that stores the packet
+headers: each header is an immediate in the generator, which is why a scan of the generators' bytes finds them, and the
+store happens when the generated code runs. The generated code itself is data in memory
 and is not in the image.
 
 `__glDrawVertexes_*` (point, line, line strip, line loop, triangle, quad, polygon, triangle strip, triangle fan and
@@ -72,6 +73,6 @@ chain and window-parameter packets, the texture table loads and the hardware cle
 ## How a header scan was done
 
 The ICD's `.text` and `.data` sections were read as raw bytes and every aligned or unaligned dword with a target field
-from the known list collected, then looked up in the function table. Unaligned hits in data (jump tables, the import
-table) occur: one such was the earlier `0x9400014f`, which is why every row also rests on a routine whose decompiled C
-was read. The scan is repeatable with any script that does the same arithmetic; no scanner or listing is committed.
+from the known list collected, then looked up in the function table. Unaligned hits in data occur: one such was the
+earlier `0x9400014f`, which sits in the export address table at `0x690f2681`, straddling two of its 15 entries, which is
+why every row also rests on a routine whose decompiled C was read. The scan is repeatable with any script that does the same arithmetic; no scanner or listing is committed.

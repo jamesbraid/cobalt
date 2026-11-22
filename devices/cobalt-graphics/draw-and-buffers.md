@@ -68,8 +68,9 @@ Two ports, `0x18a33060` (`A` = `0x0c5`) and `0x18c33060` (`A` = `0x0c6`), each w
    **attribute-presence mask in the instance field**, then the payload in this order: the colour (four dwords) if mask
    bit 1, the normal (three dwords) if bit 2, a w dword if bit 4 (value `0x10`, set when bit 30 of the flags word is
    clear), the x and y coordinates, the z coordinate for port B only, and the texture coordinate (two dwords) if bit 3.
-   A mask of zero means the coordinates only. The headers `0x18a33068`, `0x18c33062` and `0x18c33070` that occur in
-   the ICD and the display driver are these sums (mask 8, 2 and `0x10`). The count field stays 3 for both ports, so it
+   A mask of zero means the coordinates only. The constants `0x18a33068`, `0x18c33062` and `0x18c33070` that occur in
+   the ICD and the display driver are these sums (mask 8, 2 and `0x10`); the colour and normal combinations (`0x04`, and
+   with other bits) are only composed at run time. The count field stays 3 for both ports, so it
    is not the payload length: port A sends two coordinates and port B three, and the extra dwords are implied by the
    instance bits. Checked in disassembly (`__glCoSetVertexAttribsMask`, the stores after the header); the engine's
    parser is unknown.

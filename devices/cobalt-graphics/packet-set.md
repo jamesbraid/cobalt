@@ -10,7 +10,8 @@ names were applied is in [nt-opengl-icd.md](../../software/windows/nt-opengl-icd
 
 - **Header and emitting routine: established.** Every dword in the ICD's `.text` and `.data` whose bits 31:12 equal a
   known target was collected from the raw image (not from a disassembly), then attributed to the routine that contains
-  it by the vendor's own function names (symbols from the `.dbg` file). Decompiled C of each routine was read in full
+  it by the vendor's own function names (symbols from the `.dbg` file; the symbol counts are in
+  [nt-opengl-icd.md](../../software/windows/nt-opengl-icd.md#symbols)). Decompiled C of each routine was read in full
   to see the payload; the headers' bytes were spot-checked in disassembly (`__glCoSetDrawBuffer`, `__glCoSetSzBuffer`,
   `__glCoPassPolygonOffset`, `__glcoim_PolygonOffset`).
 - **Payload layout: inferred.** Read from decompiled C, not from a complete disassembly, so a layout is inferred
@@ -19,10 +20,15 @@ names were applied is in [nt-opengl-icd.md](../../software/windows/nt-opengl-icd
   register (the engine-register rows) and where the SGI white paper names the function. A white paper feature that
   matches a row is cited as agreement, never as the meaning.
 - Names in the "Name" column are mine; function names are the vendor's.
+- Binaries: the SGI Cobalt Graphics 5.2.4 driver pack for Windows NT 4.0 (the files in
+  [windows-files.md](../../references/windows-files.md)). The April 1999 `sgcodd.dll` and `sgcomp.sys` on disc 1 of the
+  NT 4.0 OEM set and on Silicon Graphics Recovery CD-1 v1.1 were checked for the same headers in round 2.
 
 ## Header word layout
 
-A packet is one header dword followed by the payload dwords. The driver pads each packet to 32 bytes.
+A packet is one header dword followed by the payload dwords. Packets are written back to back (the scissor packet is
+three dwords); only a node that is being closed is padded to a 32-byte boundary with zero dwords, by `ClosePacket` and
+by the miniport's builders, which end with a chain packet and then pad.
 
 | Bits | Field | Grade |
 |---|---|---|
@@ -32,12 +38,14 @@ A packet is one header dword followed by the payload dwords. The driver pads eac
 | 11:5 | payload dword count `n` (0 to 127) | inferred; checked against 17 of 18 shadow-table entries earlier, and by every row below whose routine writes exactly `n` dwords (the vertex ports are the exception) |
 | 4:0 | instance (see the rows: light index, attribute-presence mask, or a variant flag) | inferred |
 
-**`A` is an address, and a block's count is the step to the next block.** Taking the blocks in `A` order, `A` of the
-next block equals `A` plus `n` of the previous: `0x023`+6 = `0x029`, `0x2d`+3 = `0x30`, `0x30`+3 = `0x33`,
+**Inside a run of blocks, a block's count is the step to the next block.** Taking the blocks in `A` order, `A` of the
+next block equals `A` plus `n` of the previous, for these blocks: `0x023`+6 = `0x029`, `0x2d`+3 = `0x30`, `0x30`+3 = `0x33`,
 `0x36`+4 = `0x3a`, `0x45`+4 = `0x49`, and in the register-file class `0x491`+1, `0x492`+2, `0x494`+2, `0x496`+1,
 `0x497`+1, `0x498`+1, `0x499`+2, `0x49b`+1, `0x49c`+2 = `0x49e`. The big shadow packets are bulk loads over a range:
 `0x00210440` (`n` = 34) covers `0x001` to `0x022`, which is exactly the union of the smaller blocks at `0x001`,
-`0x002` (16), `0x012` (9), `0x01b` (6) and `0x021` (2). Established as arithmetic over the headers listed here.
+`0x002` (16), `0x012` (9), `0x01b` (6) and `0x021` (2). Established as arithmetic over the headers listed here. The rule does not hold across the whole file. The `0x023`,
+`0x024` and `0x025` blocks end at `0x027`, which no class-`00` block starts, and the next block is `0x029`; `0x4c1`
+(`n` = 11) overlaps `0x4c2` to `0x4c4`; and `0x4f3` (`n` = 5) overlaps `0x4f6`.
 
 **Instance banks.** The light blocks come in four copies with the instance field 0 to 3 (the context shadow table has
 all four). The step from the first light block (`0x4d`, `n` = 6) to the next (`0x65`) is 24, four copies of six; from
@@ -65,7 +73,9 @@ class `11`; the miniport builds it into the texture table packets the ICD chains
 
 ## The table
 
-`n` is the count field. "ICD" means `sgcoicd.dll` 5.2.4; "miniport" means `sgcomp.sys` 5.2.4; the display driver
+The Generate* routines (`GenerateSetAttribs`, `__glCoGenerateNoXformHandler`, `__glCoGeneratePrimitiveHandler` and the
+others) emit x86 code that stores the headers; the constants are immediates in the generator, and the stores happen when
+the generated code runs. `n` is the count field. "ICD" means `sgcoicd.dll` 5.2.4; "miniport" means `sgcomp.sys` 5.2.4; the display driver
 `sgcodd.dll` 5.2.4 uses the same ICD headers for 2D work (a scan for the listed headers found them there; other headers
 were not searched for in it). Address rows are in `A` order; payload text
 is inferred unless marked.
@@ -78,7 +88,7 @@ is inferred unless marked.
 | `0x00411200` | `0x002` | 16 | model-view-projection matrix | `__glCoPassMVPMatrix` | 16 floats copied from the transform stack, column by column |
 | `0x02421120` | `0x012` | 9 | normal matrix | `__glCoPassNormalMatrix` | 3 by 3 floats |
 | `0x0362a0c0` | `0x01b` | 6 | viewport | `__glCoSetViewMatrix` | three scale floats then three offsets; the x and y offsets have a sub-pixel constant subtracted |
-| `0x04230040` | `0x021` | 2 | x and y bias | `coLoadLinearTlb`, `coSetupTileToTile` | two floats; the pixel-transfer set-up adds a constant to both |
+| `0x04230040` | `0x021` | 2 | x and y bias | `coLoadLinearTlb`, `coSetupTileToTile`, `coSetTexParam` | two floats; the pixel-transfer set-up adds a constant to both |
 | `0x04640020` | `0x023` | 1 | line stipple repeat | `__glCoBeginLStrip`, `__glCoBeginLLoop`, `__glCoRenderAliasLine`, `__glCoRenderBitmap`, `__glCoWideStippledAliasLine`, `FillAASubTriangle` | the GL repeat factor, expanded |
 | `0x04841020` | `0x024` | 1 | line stipple pattern | same as above | the 16-bit GL pattern in both halves |
 | `0x04a42040` | `0x025` | 2 | polygon stipple | `__glCoConvertStipple`, `__glCoFillStippledTriangle` | an 8 by 8 bit pattern. `__glCoConvertStipple` reverses the bits of each byte of the 32 by 32 GL pattern and sends this only if the pattern is the same 8 by 8 block repeated; otherwise it falls back to host stippling (read in full) |
@@ -97,8 +107,8 @@ is inferred unless marked.
 | `0x0ca96120` \| `i` | `0x065` | 9 | light colours, light `i` | `LoadLightSource` | ambient, diffuse and specular RGB of GL light `i` |
 | `0x1129f020` \| `i` | `0x089` | 1 | light scalar, light `i` | `LoadLightSource`, `__glCoSetVertexAttribsMask`, `GenerateSetAttribs` | 1.0 for a directional light, otherwise a spot or attenuation term; sent per vertex for local lights |
 | `0x18002020` | `0x0c0` | 1 | primitive mode | every `__glCoBegin*`, `RestartDispatch*`, `__glCoFill*Triangle`, `__glCoRenderPoint` and the display driver | see [draw-and-buffers.md](draw-and-buffers.md#primitive-mode-word) |
-| `0x18a33060` + mask | `0x0c5` | 3 (sends 2 coordinates) | vertex port, variant A | `__glCoSetVertexAttribsMask`, `GenerateSetAttribs`, the span-store routines, `FillAASubTriangle`, `CoCopyRect` in the miniport | see [draw-and-buffers.md](draw-and-buffers.md#vertex-packets). Seen with masks 0 and `0x08` |
-| `0x18c33060` + mask | `0x0c6` | 3 | vertex port, variant B | same, plus `__glCoRenderBitmap`, `__glCoRenderAAPoint`, `__glCoDlistToPackets` | as above. Seen with masks 0, 2 and `0x10` |
+| `0x18a33060` + mask | `0x0c5` | 3 (sends 2 coordinates) | vertex port, variant A | `__glCoSetVertexAttribsMask`, `GenerateSetAttribs`, the span-store routines, `FillAASubTriangle`, `CoCopyRect` in the miniport | see [draw-and-buffers.md](draw-and-buffers.md#vertex-packets). Constants in the binaries: mask 0 (`0x18a33060`) and mask `0x08` (`0x18a33068`); computed: the port plus any combination of `0x02`, `0x04`, `0x08`, `0x10` as `__glCoSetVertexAttribsMask` composes it |
+| `0x18c33060` + mask | `0x0c6` | 3 | vertex port, variant B | same, plus `__glCoRenderBitmap`, `__glCoRenderAAPoint`, `__glCoDlistToPackets` | as above. Constants: mask 0 (`0x18c33060`), `0x02` (`0x18c33062`), `0x10` (`0x18c33070`); computed as for port A |
 | `0x18e84020` | `0x0c7` | 1 | colour index | `__glCoSetVertexAttribsMask`, `__glCoClearBuffers`, the span stores | the colour index (low 8 bits) in colour-index mode, 0 otherwise |
 | `0x190b1020` | `0x0c8` | 1 | secondary colour | `__glCoSetVertexAttribsMask`, `GenerateSetAttribs` | three bytes packed in bits 31:8 |
 | `0x192b2020` | `0x0c9` | 1 | fog value | same, `__glCoRenderBitmap` | integer (the float converted) |
@@ -110,12 +120,12 @@ is inferred unless marked.
 | Header | `A` | Window offset | `n` | Name | Written by | Payload |
 |---|---|---|---|---|---|---|
 | `0x80003020` | `0x400` | `0x18000` | 1 | pixel-pipe mode word | `__glCoEnableDither`, `__glCoEnableLogicOp`, `__glCoEnableBlend`, the span stores, `__glCoClearBuffers`, `__glCoDlistExecutePackets` and the miniport | one flag word kept in the context. Bits seen set by name: 13 line stipple, 25 dither, bits 24 and 23 a two-bit mode (logic operation or blend, one at a time), 22 alpha test. The rest not decoded |
-| `0x84e44040` | `0x427` | `0x18138` | 2 | scissor box | `__glCoSetScissor`, `__glCoDrawBufferRegion`, the transfer routines, the miniport | low 16 bits x, high 16 bits y; first word the minimum corner, second the inclusive maximum (decompiled C only, the window origin and a vertical flip are folded in). An empty box is minimum one past maximum. The miniport uses `0xf000f000` and `0x0fff0fff` for "everything" (signed 16-bit, plus or minus 4096) |
-| `0x91aa0020` | `0x48d` | `0x18468` | 1 | draw-buffer descriptor | `__glCoSetDrawBuffer`, `__glCoLinearToTileXfer`, `__glCoTileToTileXfer`, `coTileToLinearSpans`, the miniport | checked in disassembly: bits 24:19 are the low six bits of the first dword of the buffer's record; bits 31:25 hold the colour format (below). Always follows a `0x98804000` |
+| `0x84e44040` | `0x427` | `0x18138` | 2 | scissor box | `__glCoSetScissor`, `__glCoDrawBufferRegion`, `__glCoFillStippledTriangle`, the transfer routines, the miniport | low 16 bits x, high 16 bits y; first word the minimum corner, second the inclusive maximum (decompiled C only, the window origin and a vertical flip are folded in). An empty box is minimum one past maximum. The miniport uses `0xf000f000` and `0x0fff0fff` for "everything" (signed 16-bit, plus or minus 4096) |
+| `0x91aa0020` | `0x48d` | `0x18468` | 1 | draw-buffer descriptor | `__glCoSetDrawBuffer`, `__glCoLinearToTileXfer`, `__glCoTileToTileXfer`, `coTileToLinearSpans`, the miniport | checked in disassembly: bits 24:19 are the low six bits of the first dword of the buffer's record; bits 30:25 hold the colour format (below); bit 31 is preserved by `__glCoInitRGB` and never set by it. Always follows a `0x98804000` |
 | `0x91ea2040` | `0x48f` | `0x18478` | 2 | transfer parameters 2 | `__glCoSetXferParam`, `__glCoRestoreXferParam`, `coSetTexParam` | word 1 is `(0x30 + (f & 0xf)) << 25`: bits 30:29 set and a four-bit context field `f` in 28:25; the second word is 0 |
 | `0x922a4020` | `0x491` | `0x18488` | 1 | fog colour | `__glCoPassFog` | three bytes in 31:8 |
 | `0x924a5040` | `0x492` | `0x18490` | 2 | alpha test | `__glCoPassAlphaFunc` | word 1: bit 31 set, function in 27:25; word 2: reference in 7:0 |
-| `0x928a7040` | `0x494` | `0x184a0` | 2 | blend | `__glCoPassBlend` | word 1: destination factor 23:20, source 27:24, equation 31:28; word 2: constant colour, alpha in 7:0 |
+| `0x928a7040` | `0x494` | `0x184a0` | 2 | blend | `__glCoPassBlend` | word 1: equation 23:20 (from `+0x1c78`), source factor 27:24 (from `+0x1c70`), destination factor 31:28 (from `+0x1c74`), read in disassembly at `sgcoicd.dll@0x6902c8f3`..`0x6902c919`; `___glcoim_BlendFunc@0x690289d0` stores the source to `+0x1c70` and the destination to `+0x1c74`; word 2: constant colour, alpha in 7:0 |
 | `0x92ca9020` | `0x496` | `0x184b0` | 1 | logic operation | `__glCoPassLogicOp` | operation in 31:28 (GL enum minus `0x1500`) |
 | `0x92eaa020` | `0x497` | `0x184b8` | 1 | colour write mask | `__glCoPassColorMask`, the transfer and alpha-bit routines | 32-bit mask, red in the top byte |
 | `0x930ab020` | `0x498` | `0x184c0` | 1 | depth and stencil buffer descriptor | `__glCoSetSzBuffer` | checked in disassembly: bits 28:23 are the low six bits of the first dword of the buffer's record; bits 31:29 select the depth format (below). Always follows a `0x98804000` |
@@ -131,9 +141,9 @@ is inferred unless marked.
 | `0x98250160` | `0x4c1` | `0x18608` | 11 | window parameters | miniport (`CoBuildWinparamsPacket`) | an id word and five pairs from the window record |
 | `0x9845b020` | `0x4c2` | `0x18610` | 1 | window parameter | miniport | read from the window record |
 | `0x9865c020` | `0x4c3` | `0x18618` | 1 | window parameter | miniport | read from the window record |
-| `0x98804000` | `0x4c4` | `0x18620` | 0 | flush marker | `DispatchCurrentPkt`, every descriptor and mode write, the span stores | no payload; a write to a register that takes none. Meaning (pipeline flush before a descriptor changes) inferred from where it is placed |
+| `0x98804000` | `0x4c4` | `0x18620` | 0 | flush marker | `DispatchCurrentPkt`, every descriptor and mode write, the span stores | no payload. The meaning is unknown: the miniport never touches `0x18620`. It is placed before every descriptor or mode write, which says where software wants it, not what the engine does with it |
 | `0x99ce00a0` | `0x4ce` | `0x18670` | 5 | clear rectangle | `coClearBuffers`, miniport `CoClearRect` | see [draw-and-buffers.md](draw-and-buffers.md#clears) |
-| `0x9e7200a0` | `0x4f3` | `0x18798` | 5 | clear rectangle, second bank | `coClearBuffers` (as `0x99ce00a0` plus `0x04a40000`, when the context has a second buffer) | as above |
+| `0x9e7200a0` | `0x4f3` | `0x18798` | 5 | clear rectangle, second bank | `coClearBuffers`: computed as `0x99ce00a0 + 0x04a40000` when the context byte at `+0x2e2cc` is set (`sgcoicd.dll@0x6904770f`..`0x69047714`) | as above |
 | `0x9ed380e0` | `0x4f6` | `0x187b0` | 7 | image transfer | `coVhdlTexImage` | three caller words, a pixel count (width times height), a width, then the minimum and maximum corner packed y:x as 16 bits each |
 
 ## Coverage
@@ -147,8 +157,8 @@ ICD but by the miniport: `0x97000020`, `0x97000060`, `0x98250160`, `0x9845b020`,
 earlier list of 20 headers is superseded.
 
 **Withdrawn.** The earlier page listed `0x9400014f` as a span header written by `__glStoreSpanARGB8`. The bytes occur
-once in the image, at a place past the last function (in the import tables), and no routine stores that value, so it
-is not a header the driver emits. Also `0x04a40000` is not a header: the clear routine adds it to `0x99ce00a0` to pick
+once in the image, at `sgcoicd.dll@0x690f2681`, in the export address table (they straddle two of its 15 entries), not
+in the import tables, and no routine stores that value, so it is not a header the driver emits. Also `0x04a40000` is not a header: the clear routine adds it to `0x99ce00a0` to pick
 the second bank.
 
 ## Another emulator's model
