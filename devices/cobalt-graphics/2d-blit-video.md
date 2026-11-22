@@ -283,12 +283,14 @@ packet is skipped for index 13 and the mode word's bit 24 (logic operation) is s
   `DDERR_WASSTILLDRAWING` until they agree. Established.
 - **Video input and output.** The graphics blocks have none of it in the display back end. The Livid driver `sgilivid.sys` (disk 2 of the SGI
   digital media pack 5.2.2 for NT 4.0, 17,648 bytes, build 2001-10-29) maps four windows of `0x80` bytes each, at
-  physical `0xf8000000`, `0xf9000000`, `0xfa000000` and `0xfb000000`, each with a second 8-byte mapping, and shares one 8-byte block at
-  `0xff001200`, and creates four devices named `sgilivideoin1`, `sgilivideoin2`, `sgilivideoout1`, `sgilivideoout2` in the order
+  physical `0xf8000000`, `0xf9000000`, `0xfa000000` and `0xfb000000`, each with a second 8-byte mapping (that channel's time-stamp and counter pair at `0xff001340` to `0xff001358`) and a third 8-byte mapping at `0xff001200`
+  (mapped again for each channel, read only), and creates four devices named `sgilivideoin1`, `sgilivideoin2`, `sgilivideoout1`, `sgilivideoout2` in the order
   `0xfa000000`, `0xfb000000` (flag 0) then `0xf8000000`, `0xf9000000` (flag 1). It locks user pages with an MDL and reads their
   physical addresses (`MmProbeAndLockPages`, `MmGetPhysicalAddress`), so the ports DMA to host memory by physical address.
   Established for the addresses, sizes and calls (the driver's init at `0x10d68`, image base `0x10000`); that the flag is
-  direction and that the interrupts are Cobalt pins 16 to 19 are inferred. **The `0xd0080000` capture words of the display back end are not this
+  direction and that the interrupts are Cobalt pins 16 to 19 are inferred. The pair and the `0xff001200` block are not video registers: they lie in the Lithium audio engine's
+  page (`0xff001000`, the pair array from `+0x300` and the 64-bit system time counter at `+0x200`), which the video driver reads to time-stamp frames; the Lithium pages
+  in the chips repository own them. **The `0xd0080000` capture words of the display back end are not this
   hardware's registers**: neither this driver nor the NT or Windows 2000 display drivers touch them. The register layout of the four ports was not decoded
   ([questions](../../questions/open-questions.md)).
 

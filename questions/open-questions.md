@@ -82,8 +82,8 @@ driver. Written up in [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-vide
 - **The map of the CPU window.** The display driver writes the screen with a row pitch of `0x2000` bytes; the miniport routine that
   builds that mapping (video IOCTL `0x230458` and the display driver's `ulScreenBase`) was not read for the way it lays 64 KiB tiles
   into 8 KiB rows. Next: read `CobaltStartIO` and the map-memory path with this in mind.
-- **Video input and output.** Four windows (`0xf8000000` to `0xfb000000`, `0x80` bytes mapped each, plus an 8-byte block each and
-  one at `0xff001200`) are driven by `sgilivid.sys` (digital media pack 5.2.2, NT 4.0 and Windows 2000 builds). The register
+- **Video input and output.** Four windows (`0xf8000000` to `0xfb000000`, `0x80` bytes mapped each, plus an 8-byte pair each and
+  the 8-byte system time counter at `0xff001200`, both in the Lithium audio page) are driven by `sgilivid.sys` (digital media pack 5.2.2, NT 4.0 and Windows 2000 builds). The register
   layout, the DMA descriptor format, the 10-bit field table at `.data` `0x135e0`, the interrupt pins and the video formats were not
   decoded; `viddiag.exe` and `sgivcp.cpl` use the same windows through the driver. Settles it: reading `sgilivid.sys` entry points and
   its IOCTL table in Ghidra.
