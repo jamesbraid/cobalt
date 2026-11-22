@@ -105,8 +105,22 @@ Support Folio, the original host, is gone. The driver symbols ship in the packag
 | `0xc8000000`, `0x19000` bytes | Rendering engine register window | `sgcomp.sys` `CobaltInitialize` maps exactly this length | inferred |
 | `0xca000000`, 4 bytes | Vertical-retrace interrupt register, read and then rewritten with its complement in the retrace handler. Mapped only if the display back end's ID register reads `0x666` | `sgcomp.sys` `CoVRetraceHandler` | inferred |
 | `0xc0000020`, 4 bytes | Mapped on the same condition. The mapped kernel address (`FlushKvAddr`) is returned to the display driver in word 15 of the global-information reply of `CobaltStartIO`, and the display driver stores it as `ulFlushAddr` in its shared device record; no routine read by name uses it afterwards. Purpose unknown | `sgcomp.sys`, `sgcodd.dll` | unknown |
-| `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes. Mapping extent by software, each read from the disassembly: NT 4.0 HAL `0xa0` pages (`halborg.dll@0x8002d39c`, largest offset used `+0x70004`); NT miniport `sgcomp.sys` `0x80020` bytes (`@0x1175b`, largest `+0x68ffc`: the 0x1000-byte gamma-table copy at `+0x68000`); NT display driver `sgcodd.dll` maps nothing, it uses the miniport's kernel mapping returned in the global-information reply (`sgcomp.sys@0x13215`), largest `+0x780fc` (cursor glyphs); Windows 2000 boot video `sgibvid.dll` `0x80020` (`@0x800106a6`, largest `+0x70004`); `sglfb.sys` `0x80020` for itself (`@0x10561`) and `0x80100` only for the public-access-ranges reply to its display driver (`@0x109f1`, `@0x109f8`; largest `+0x70004`); the SGI 5.2.4 Windows 2000 `sgcomp.sys` `0x80020` (`@0x111aa`); PROM 1.1005 main module `0x81` pages (`1.1005@0x1103892`, largest `+0x780fc`); Linux `DBE_REG_SIZE` `0x01000000` (`include/video/sgivw.h`, `drivers/video/sgivwfb.c`) | `sgivwfb.h`, `sgcomp.sys`, a real machine's resource list ([board-data.md](board-data.md)) | established (base; the claim, as listed by a Windows 2000 or later install) |
+| `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes. Mapping extents per driver are listed [below](#dbe-mapping-extents) | `sgivwfb.h`, `sgcomp.sys`, a real machine's resource list ([board-data.md](board-data.md)) | established (base; the claim, as listed by a Windows 2000 or later install) |
 | Top of RAM, 8 MB default | Linux frame buffer. NT takes its own bank list from the loader | `visws_quirks.c`, `sgcomp.sys` | inferred |
+
+### DBE mapping extents
+
+Software expectation (inferred under this page's three ratings): what each driver maps and the largest offset it was seen to use, read from the disassembly. The offsets are uses found by scanning explicit displacements, not hardware limits; indexed accesses (for example `sgcomp.sys@0x1c401` writes `+0x50000 + index * 4` with a 16-bit index from the caller whose bound was not traced) can reach further, so `+0x68ffc` below is the largest constant offset, not a bound.
+
+- NT 4.0 HAL `halborg.dll` (Recovery CD-1 v1.1 build): `0xa0` pages, call at `0x8002d39c`; largest use `+0x70004`.
+- NT 4.0 miniport `sgcomp.sys`, April 1999 build (Recovery CD-1): `0x80020` bytes, `MmMapIoSpace` at `0x1175b`; largest constant offset `+0x68ffc` (the 0x1000-byte table copy at `+0x68000`).
+- The same miniport in the 5.2.4 NT 4.0 pack (patch SG0020054): `0x80020` bytes, call at `0x11951`.
+- The 5.2.4 Windows 2000 pack's `sgcomp.sys`: `0x80020` bytes, call at `0x111aa`.
+- NT display driver `sgcodd.dll` maps nothing: it uses the miniport's kernel mapping, returned in the global-information reply (April 1999 `sgcomp.sys@0x13215`); largest use `+0x780fc` (cursor glyphs).
+- Windows 2000 `sgibvid.dll`: `0x80020`, call at `0x800106a6`; largest use `+0x70004`.
+- Windows 2000 `sglfb.sys`: `0x80020` for itself (`0x10561`) and `0x80100` in its public-access-ranges reply to the display driver (`0x109f1`, `0x109f8`); largest use `+0x70004`.
+- PROM 1.1005 main module: `0x81` pages, call at `0x1103892`; largest use `+0x780fc`.
+- Linux: `DBE_REG_SIZE` `0x01000000` (`include/video/sgivw.h`, used as `.mmio_len` in `drivers/video/sgivwfb.c`).
 
 Interrupt pins on the Cobalt controller (numbering from Linux `cobalt.h`): 16 and 17 video out, 18 and 19 video in, 22
 audio, 24 "AS", 25 "RE", 28 CPU timer and cache. The NT miniport asks the HAL for the vectors of pins 24 and 25 and
