@@ -147,7 +147,8 @@ are `GraphicsMemory` and `GraphicsMemorySize` only (no bank list).
    path must supply two or more banks.
 4. HAL: an SGI HAL answering `HalQuerySystemInformation(0x8100001)`.
 5. Engine window `0xc8000000`, `0x19000` bytes: accept writes everywhere, return zero on reads except `+0x10000` (the
-   running context), `+0x10018` (cause) and `+0x185c0`..`+0x185d0`, and reflect the context word the driver writes.
+   node position the engine is at; a write sets it), `+0x10018` (cause) and `+0x185c0`..`+0x185d0`, and keep what the driver writes to the chain
+   registers and the texture id.
    That is enough for NT's miniport to attach, init, and schedule; it is not enough to draw.
 6. Interrupt pins 24 and 25 with the register at `0xca000000`.
 7. For hardware rendering, the packet formats the driver writes are catalogued ([packet-set.md](packet-set.md)); what the engine does with them is not specified: see the open question on packet semantics.

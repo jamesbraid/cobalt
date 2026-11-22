@@ -1,7 +1,7 @@
 // generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 79cce65d709c28941340affc1289b539c5f1ca3e48631d4ac89646f02493ab78
+// input sha256 2278550c741eff795377f04f5ce76c5bad098885f91f150094890a4234fcfd28
 // Rendering engine register window
 #![allow(dead_code)]
 
@@ -143,7 +143,7 @@ pub mod int_cause {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod stop { // bits 30:30, inferred
+    pub mod cause_30 { // bits 30:30, inferred
         pub const SHIFT: u32 = 30;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -153,7 +153,7 @@ pub mod int_cause {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod done { // bits 29:29, inferred
+    pub mod cause_29 { // bits 29:29, inferred
         pub const SHIFT: u32 = 29;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -168,7 +168,7 @@ pub mod int_cause {
 pub mod int_enable {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x10020;
-    pub mod en_stop { // bits 30:30, inferred
+    pub mod en_30 { // bits 30:30, inferred
         pub const SHIFT: u32 = 30;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -178,7 +178,7 @@ pub mod int_enable {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_done { // bits 29:29, inferred
+    pub mod en_29 { // bits 29:29, inferred
         pub const SHIFT: u32 = 29;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {

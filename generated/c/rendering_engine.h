@@ -1,7 +1,7 @@
 /* generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 79cce65d709c28941340affc1289b539c5f1ca3e48631d4ac89646f02493ab78 */
+/* input sha256 2278550c741eff795377f04f5ce76c5bad098885f91f150094890a4234fcfd28 */
 /* Rendering engine register window */
 #ifndef RENG_GEN_H
 #define RENG_GEN_H
@@ -21,7 +21,7 @@
 #define RENG_TLB_ENTRY_PAGE_FRAME_INPLACE            (RENG_TLB_ENTRY_PAGE_FRAME_MASK << RENG_TLB_ENTRY_PAGE_FRAME_SHIFT)
 
 /*
- * Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 alone (tiles_per_row 32) and the packet pool sets page_type and tiles_per_row 1.
+ * Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.
  */
 /* tlb_desc: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database */
 #define RENG_TLB_DESC_OFFSET                         0xc000u /* inferred */
@@ -75,24 +75,24 @@
 #define RENG_INT_CAUSE_CTX_WAIT_SHIFT                31 /* inferred */
 #define RENG_INT_CAUSE_CTX_WAIT_MASK                 0x1u
 #define RENG_INT_CAUSE_CTX_WAIT_INPLACE              (RENG_INT_CAUSE_CTX_WAIT_MASK << RENG_INT_CAUSE_CTX_WAIT_SHIFT)
-#define RENG_INT_CAUSE_STOP_SHIFT                    30 /* inferred */
-#define RENG_INT_CAUSE_STOP_MASK                     0x1u
-#define RENG_INT_CAUSE_STOP_INPLACE                  (RENG_INT_CAUSE_STOP_MASK << RENG_INT_CAUSE_STOP_SHIFT)
-#define RENG_INT_CAUSE_DONE_SHIFT                    29 /* inferred */
-#define RENG_INT_CAUSE_DONE_MASK                     0x1u
-#define RENG_INT_CAUSE_DONE_INPLACE                  (RENG_INT_CAUSE_DONE_MASK << RENG_INT_CAUSE_DONE_SHIFT)
+#define RENG_INT_CAUSE_CAUSE_30_SHIFT                30 /* inferred */
+#define RENG_INT_CAUSE_CAUSE_30_MASK                 0x1u
+#define RENG_INT_CAUSE_CAUSE_30_INPLACE              (RENG_INT_CAUSE_CAUSE_30_MASK << RENG_INT_CAUSE_CAUSE_30_SHIFT)
+#define RENG_INT_CAUSE_CAUSE_29_SHIFT                29 /* inferred */
+#define RENG_INT_CAUSE_CAUSE_29_MASK                 0x1u
+#define RENG_INT_CAUSE_CAUSE_29_INPLACE              (RENG_INT_CAUSE_CAUSE_29_MASK << RENG_INT_CAUSE_CAUSE_29_SHIFT)
 
 /*
  * Written once, with both cause bits set.
  */
 /* int_enable: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up */
 #define RENG_INT_ENABLE_OFFSET                       0x10020u /* inferred */
-#define RENG_INT_ENABLE_EN_STOP_SHIFT                30 /* inferred */
-#define RENG_INT_ENABLE_EN_STOP_MASK                 0x1u
-#define RENG_INT_ENABLE_EN_STOP_INPLACE              (RENG_INT_ENABLE_EN_STOP_MASK << RENG_INT_ENABLE_EN_STOP_SHIFT)
-#define RENG_INT_ENABLE_EN_DONE_SHIFT                29 /* inferred */
-#define RENG_INT_ENABLE_EN_DONE_MASK                 0x1u
-#define RENG_INT_ENABLE_EN_DONE_INPLACE              (RENG_INT_ENABLE_EN_DONE_MASK << RENG_INT_ENABLE_EN_DONE_SHIFT)
+#define RENG_INT_ENABLE_EN_30_SHIFT                  30 /* inferred */
+#define RENG_INT_ENABLE_EN_30_MASK                   0x1u
+#define RENG_INT_ENABLE_EN_30_INPLACE                (RENG_INT_ENABLE_EN_30_MASK << RENG_INT_ENABLE_EN_30_SHIFT)
+#define RENG_INT_ENABLE_EN_29_SHIFT                  29 /* inferred */
+#define RENG_INT_ENABLE_EN_29_MASK                   0x1u
+#define RENG_INT_ENABLE_EN_29_INPLACE                (RENG_INT_ENABLE_EN_29_MASK << RENG_INT_ENABLE_EN_29_SHIFT)
 
 /*
  * Scissor minimum corner, read back into the packet that restores a context. The window offset follows from the scissor packet's address field.
@@ -121,7 +121,7 @@
 /*
  * The first word of the chain packet. The stop-event routine reads it: the low 12 bits are the high half of a 24-bit sequence number and bits 31:12 a node position, which it falls back to when the execution register reads zero.
  */
-/* chain_next: rw32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, stop-event routine, and the chain packet the OpenGL driver ends a node with */
+/* chain_next: r32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, stop-event routine, and the chain packet the OpenGL driver ends a node with */
 #define RENG_CHAIN_NEXT_OFFSET                       0x185c0u /* inferred */
 #define RENG_CHAIN_NEXT_NODE_POS_SHIFT               12 /* inferred */
 #define RENG_CHAIN_NEXT_NODE_POS_MASK                0xfffffu
@@ -131,7 +131,7 @@
 #define RENG_CHAIN_NEXT_SEQ_HI_INPLACE               (RENG_CHAIN_NEXT_SEQ_HI_MASK << RENG_CHAIN_NEXT_SEQ_HI_SHIFT)
 
 /*
- * The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when no context was running.
+ * The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when the incoming node is already the one in hardware.
  */
 /* chain_this: rw32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch and stop-event routines */
 #define RENG_CHAIN_THIS_OFFSET                       0x185c8u /* inferred */

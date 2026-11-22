@@ -103,7 +103,7 @@ full; the offsets match the routines cited in [draw-and-buffers.md](../../device
 |---|---|---|
 | `+0x2d578` | `modes` (16 bytes of flags) | `+6` `softLighting`, `+7` `useOG`, `+8` `forceClip`, `+9` `clipToBigFrustum`, `+0xa` `forceChipXForm` (`GLCOSIMFORCECHIPXFORM`), `+0xb` `allowChipXForm` (`GLCOALLOWCHIPXFORM`, at `+0x2d583`), `+0xc` `forceChipTexXForm` (`GLCOSIMFORCECHIPTEXXFORM`, at `+0x2d584`), `+0xd` `fastSetAttribs`, `+0xe` `objectClipCheck`, `+0xf` `hardwareDisplayListsEnabled` |
 | `+0x2d5a0` | `light` | `lightingMode` at `+0x2d5c0`, `controlWord` (the lighting-mode packet's word) at `+0x2d5cc`, `lightModeReg` at `+0x2d5e4` |
-| `+0x2d60c` | `vertex` (868 bytes) | `noNeedToClip` at `+0x2d960` (a four-byte word: bit 0 from `GLCOSIMFORCECHIPXFORM`, bit 1 while the clip-volume hint is `GL_FASTEST`); `allTuples` `+0x2d964`; `hostCulling` `+0x2d968`; `enableTexMatrix` byte at `+0x2d96e` |
+| `+0x2d60c` | `vertex` (868 bytes) | `noNeedToClip` at `+0x2d960` (a four-byte word: bit 0 `forceChipXForm` from `GLCOSIMFORCECHIPXFORM`, bit 1 the clip-volume hint while it is `GL_FASTEST`, bit 2 lock-array, bit 3 display list); `allTuples` `+0x2d964`; `hostCulling` `+0x2d968`; `enableTexMatrix` byte at `+0x2d96e` |
 | `+0x2d9b0` | `texture` (204 bytes) | `coParam` (the four texture-format words) `+0x2d9b0`, `coEnv` `+0x2d9c0`; `controlWord` at `+0x2da78` is the texture-generation state word of `__glCoPickCalcTextureProcs` |
 | `+0x2da7c` | `pixel` (284 bytes) | `yCrCbToRGBA` `+0xc`, `RGBAToyCrCb` `+0xd`, `enableHwCM` (colour-matrix flag) `+0xd6`, `xferParam` `+0x104` (the five words `descId`, `pixDepth`, `pixType`, `pixMode`, `linear`), `colorFormat` `+0x118` |
 | `+0x2db98` | `displayBank` | |
@@ -138,11 +138,13 @@ names `+0x108` `savedPktOffset`, `+0x4e0` `currentTexId`, `+0x4e4` to `+0x4f0` t
 `+0xbd8` `CAI_InterruptReg` (the register at the second interrupt address), `+0xbdc` `coBase` and `+0xbe0` `asBase`.
 Established (declarations).
 
-**The engine register words.** The program database declares twenty-three word types for the registers the packets
+**The engine register words.** The program database declares 28 `Co*` types: 23 whose names end in `Reg`, and `CoColor4i`, `CoRgbaType`, `CoFbAddrType`,
+`CoPktDescType` and `CoPktRespType`. The 23 are the word types for the registers the packets
 load (`CoDrawModeReg`, `CoPrimModeReg`, `CoXformModeReg`, `CoColorFormatReg`, `CoSzFormatReg`, `CoTlbDescReg`,
 `CoBlendReg`, `CoColorTestReg`, `CoDepthTestReg`, `CoStencilModeReg`, `CoLogicOpReg`, `CoLightModeReg`, `CoTexGenParamReg`,
-`CoTexEnvParamReg`, `CoClearModeReg`, `CoPktDescType` and the rest), with bit-field names and positions. They are compared
-with every writer in [packet-set.md](../../devices/cobalt-graphics/packet-set.md).
+`CoTexEnvParamReg`, `CoClearModeReg` and the rest), with bit-field names and positions. They are compared
+with every writer in [packet-set.md](../../devices/cobalt-graphics/packet-set.md). The register definitions carry 18 words;
+`CoColor4i`, `CoPktRespType`, `CoStippleModeReg` and `CoClearModeReg` are not in them yet.
 
 ## The April 1999 build
 
@@ -156,7 +158,7 @@ opens; an earlier note that no tool opened it had the wrong archive in mind.
   such as the material and light loaders have no public record, so 1999 routine names are those of the nearest public,
   not the routine's own. The counts are not comparable with the 3,633 of 5.2.4. Established (the table read in full).
 - **Header scan.** The 5.2.4 scan found 57 distinct immediates in the known set (52 base headers and their instance
-  variants); the Windows 2000 build gives the same 57. The 1999 build gives 56. It has no `0x97400020` (the packet-pointer
+  variants); the Windows 2000 build gives the same 57. The 1999 build gives 56. It has no `0x97400020` (the texture-id
   reset) and no `0x99ce00a0` (the rectangle clear), and it sends the vertex port `0x18c33068`, which 5.2.4 does not
   (a texture-coordinate mask on a port known already). No header outside the known 52 plus `0x91ca1020` occurs as an
   immediate in `.text`. The 25 dwords in 5.2.4 and 43 in 1999 whose top 20 bits match a known address and register but
@@ -166,10 +168,10 @@ opens; an earlier note that no tool opened it had the wrong archive in mind.
   computes is not found by it.
 - **Clears.** `__glCoClearBuffers@0x6904fcb0` in the 1999 build never writes the rectangle clear: every header it stores is
   among `0x18e84020`, `0x936ae020`, `0x938af040`, `0x98804000`, `0x80003020`, `0x18002020` and the vertex port
-  `0x18c33060`, so a clear is always a drawn rectangle. Established (routine read for its stores). The engine's
+  `0x18c33060`, plus the lighting mode word `0x05260020` (`@0x69050413`, `@0x6905093a`) and the draw flags `0x00210020` (`@0x69050657`, `@0x690508ef`), so a clear is always a drawn rectangle. Established (routine read for its stores). The engine's
   rectangle clear exists for the miniport's own clears in the 1999 pack.
-- **Packet-pointer reset.** Without `0x97400020` the 1999 `__glCoCreateTexLevel` has no pointer reset before it frees a
-  bound texture's pages. The 1999 `__glCoCreateTexLevel@0x69021f60` and `@0x690220c1` instead call `__glCoExtEscape`
+- **Texture-id reset.** Without `0x97400020` the 1999 `__glCoCreateTexLevel@0x690219a0` has no texture-id reset before it frees a
+  bound texture's pages. Its call sites at `0x69021f60` and `0x690220c1` instead call `__glCoExtEscape`
   with code `0x64`, a 0x20-byte input and a 4-byte output, a code the 1999 display driver's table (`0x40` to `0x63`) does
   not contain; the caller prints its "glCoExtEscape failed" message when the call fails. What the call is for is unknown.
 - **The escape call sites.** All 31 call sites of `__glCoExtEscape` in the 1999 ICD were read; the code and the input size

@@ -1,7 +1,7 @@
 # generated from devices/ and formats/ by defs-gen - do not edit, change the source
 # SPDX-License-Identifier: BSD-3-Clause
 # defs-gen 2
-# input sha256 79cce65d709c28941340affc1289b539c5f1ca3e48631d4ac89646f02493ab78
+# input sha256 2278550c741eff795377f04f5ce76c5bad098885f91f150094890a4234fcfd28
 [package]
 name = "cobalt-defs"
 version = "0.1.0"

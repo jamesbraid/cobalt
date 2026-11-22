@@ -2,7 +2,7 @@ unit = "rendering_engine"
 prefix = "RENG"
 block = "RENG"
 title = "Rendering engine register window"
-doc = "The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Nothing here is a reset value, and no register is read before it is written."
+doc = "The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is \"r\" for that reason). Nothing here is a reset value, and no register is read before it is written."
 from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
 public_from = ["SGI Cobalt Graphics Driver 5.2.4"]
 name_source = "ours"
@@ -30,7 +30,7 @@ count = 64
 stride = 8
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
-doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 alone (tiles_per_row 32) and the packet pool sets page_type and tiles_per_row 1."
+doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1."
 [registers.tlb_desc.fields]
 offset = { bits = [31, 21], grade = "inferred" }
 tiles_per_row = { bits = [20, 14], grade = "inferred" }
@@ -69,8 +69,8 @@ from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, conte
 doc = "The interrupt handler treats a read of zero as not its own, masks the value with the two cause bits, writes zero and waits for the masked bits to change. The context switch waits for bit 31 to read set and then writes every bit but 31 set."
 [registers.int_cause.fields]
 ctx_wait = { bits = [31, 31], grade = "inferred", doc = "polled after the outgoing context's dump offset is written, before the next context starts" }
-stop = { bits = [30, 30], grade = "inferred", doc = "second cause bit: the event routine reads the stop position and sequence from the chain registers and wakes the waiters" }
-done = { bits = [29, 29], grade = "inferred", doc = "first cause bit: queues the same event and wakes the waiters; no stop position is read" }
+cause_30 = { bits = [30, 30], grade = "inferred", doc = "second cause bit: gates status bit 5 of the stopped node, the chunk decrement and the wake of waiter kind 8 in the event routine" }
+cause_29 = { bits = [29, 29], grade = "inferred", doc = "first cause bit: queues the same event and wakes the same waiters bar kind 8" }
 
 [registers.int_enable]
 offset = 0x10020
@@ -80,8 +80,8 @@ grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up"
 doc = "Written once, with both cause bits set."
 [registers.int_enable.fields]
-en_stop = { bits = [30, 30], grade = "inferred" }
-en_done = { bits = [29, 29], grade = "inferred" }
+en_30 = { bits = [30, 30], grade = "inferred" }
+en_29 = { bits = [29, 29], grade = "inferred" }
 
 [registers.scissor_min]
 offset = 0x18138
@@ -108,7 +108,7 @@ y = { bits = [31, 16], grade = "inferred" }
 [registers.chain_next]
 offset = 0x185c0
 width = 32
-access = "rw"
+access = "r"
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, stop-event routine, and the chain packet the OpenGL driver ends a node with"
 doc = "The first word of the chain packet. The stop-event routine reads it: the low 12 bits are the high half of a 24-bit sequence number and bits 31:12 a node position, which it falls back to when the execution register reads zero."
@@ -122,7 +122,7 @@ width = 32
 access = "rw"
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch and stop-event routines"
-doc = "The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when no context was running."
+doc = "The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when the incoming node is already the one in hardware."
 [registers.chain_this.fields]
 node_pos = { bits = [31, 12], grade = "inferred" }
 seq_lo = { bits = [11, 0], grade = "inferred" }

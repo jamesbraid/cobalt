@@ -1,11 +1,11 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 79cce65d709c28941340affc1289b539c5f1ca3e48631d4ac89646f02493ab78 -->
+<!-- input sha256 2278550c741eff795377f04f5ce76c5bad098885f91f150094890a4234fcfd28 -->
 
 # Rendering engine register window
 
-The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Nothing here is a reset value, and no register is read before it is written.
+The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is "r" for that reason). Nothing here is a reset value, and no register is read before it is written.
 
 Unit `rendering_engine`, macro prefix `RENG`, register block `RENG`.
 Default source: SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database.
@@ -24,7 +24,7 @@ Every item has a grade: established, inferred or unknown. A grade says how the i
 | `int_enable` | 0x10020 | w | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up |
 | `scissor_min` | 0x18138 | r | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routine that builds the window-parameter packet; the OpenGL driver's scissor packet |
 | `scissor_max` | 0x18140 | r | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routine that builds the window-parameter packet; the OpenGL driver's scissor packet |
-| `chain_next` | 0x185c0 | rw | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, stop-event routine, and the chain packet the OpenGL driver ends a node with |
+| `chain_next` | 0x185c0 | r | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, stop-event routine, and the chain packet the OpenGL driver ends a node with |
 | `chain_this` | 0x185c8 | rw | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch and stop-event routines |
 | `tex_id` | 0x185d0 | rw | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch, stop-event and bind routines; the OpenGL driver's texture-free packet |
 | `ctx_dump` | 0x18800 | w | 32 |  |  | unknown | inferred | SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch |
@@ -41,7 +41,7 @@ Array of 2048 registers, stride 8.
 
 ### Register `tlb_desc`
 
-Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 alone (tiles_per_row 32) and the packet pool sets page_type and tiles_per_row 1.
+Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.
 
 Array of 64 registers, stride 8.
 
@@ -78,8 +78,8 @@ The interrupt handler treats a read of zero as not its own, masks the value with
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
 | 31 | `ctx_wait` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, context switch and stop-event routines | polled after the outgoing context's dump offset is written, before the next context starts |
-| 30 | `stop` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, context switch and stop-event routines | second cause bit: the event routine reads the stop position and sequence from the chain registers and wakes the waiters |
-| 29 | `done` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, context switch and stop-event routines | first cause bit: queues the same event and wakes the waiters; no stop position is read |
+| 30 | `cause_30` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, context switch and stop-event routines | second cause bit: gates status bit 5 of the stopped node, the chunk decrement and the wake of waiter kind 8 in the event routine |
+| 29 | `cause_29` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, interrupt handler, context switch and stop-event routines | first cause bit: queues the same event and wakes the same waiters bar kind 8 |
 
 ### Register `int_enable`
 
@@ -87,8 +87,8 @@ Written once, with both cause bits set.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 30 | `en_stop` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up |  |
-| 29 | `en_done` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up |  |
+| 30 | `en_30` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up |  |
+| 29 | `en_29` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up |  |
 
 ### Register `scissor_min`
 
@@ -119,7 +119,7 @@ The first word of the chain packet. The stop-event routine reads it: the low 12 
 
 ### Register `chain_this`
 
-The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when no context was running.
+The second word of the chain packet. Bits 31:12 are the position of the node the engine stopped in and bits 11:0 the low half of the sequence number. The context switch writes zero to it when the incoming node is already the one in hardware.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|

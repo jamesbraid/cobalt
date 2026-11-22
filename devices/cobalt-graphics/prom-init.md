@@ -23,8 +23,9 @@ Every path first writes `ctrlstat` (`+0x000`) = `0x20000000`.
 
 ## Register writes, in order (graphics console)
 
-Offsets are from `0xd0000000`; all accesses are 32-bit. 1.0006 and 1.1005 write the same values in the same order; the compiler
-reordered some operands. The mode record `R` is the one chosen by the probe in step 2 ([layout below](#the-mode-records)).
+Offsets are from `0xd0000000`; all accesses are 32-bit. 1.0006 and 1.1005 write the same values in the same order (the 1.1005 timing routine makes the same 29 stores in
+the same order, but its generated code differs by more than operand reordering). The console start-up also calls `0xf3e770`,
+which computes the frame-buffer stride, and `0xf3e7f0`, which is a bare `ret`. The mode record `R` is the one chosen by the probe in step 2 ([layout below](#the-mode-records)).
 
 | Step | Routine (1.0006) | Writes | What |
 |---|---|---|---|

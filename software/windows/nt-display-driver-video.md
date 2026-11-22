@@ -13,7 +13,7 @@ target the driver last asked for (`ppdev+0x60c`) with the live copy of the displ
 the surfaces:
 
 - the colour-fill flag (`0x400`) goes to `CoRectFill@0x1f25a`;
-- a source surface whose pixel format carries the FOURCC flag (surface `+0x28` bit 2) goes to `CoYUVBlt_S2S@0x1f7f3` when the
+- a source surface whose pixel format carries the FOURCC flag (surface `+0x28` bit 2) goes to `CoYUVBlt_S2S@0x1e54a` (called at `0x1f7f3`) when the
   destination's flag word has bit 14 set, and otherwise returns `DDERR_INVALIDPARAMS` (`0x80070057`);
 - other surfaces go to the 2D copy and stretch routines (`vCopyBlt@0x12e30`, `EngStretchBlt` fall-backs).
 
@@ -76,8 +76,7 @@ Words a routine builds in a register were followed only in `vFillStip` (the logi
 three statements cover the immediates and that routine, not every computed word. Inferred.
 
 `0x91ca1020` is sent by five routines: `vFillStip@0x1229c`, `vXfer1bpp@0x15443`, `bFillSetup`, `DrvFillPath` and
-`bPutGlyphInCache`. In each it comes first, the second colour goes to `0x18e84020` right after the stipple or transfer
-set-up, and the mode word has bit 15 and bit 14 or 13. The colour is the brush's or translation's first colour, expanded
+`bPutGlyphInCache`. At the stipple and transfer sites the second colour goes to `0x18e84020` right after the set-up, and the mode word has bit 15 and bit 14 or 13. The colour is the brush's or translation's first colour, expanded
 for pixel-format code 4 (RGBA5551) to red in 31:27, green in 23:19 and blue in 15:11. With bit 15 named as the opaque-stipple
 enable by the vendor's mode type, the register is read as the colour of the pixels the pattern or the 1-bit source leaves
-clear. Inferred (the sites read; the pairing of the two colours with the pattern's set and clear bits is not).
+clear. The glyph-cache site (`bPutGlyphInCache@0x2da2a`) sends `0x18e84020` with 0 first and `0x91ca1020` with `0xff` after it, and does not obviously fit the cleared-pixel inference. Inferred (the sites read; the pairing of the two colours with the pattern's set and clear bits is not).
