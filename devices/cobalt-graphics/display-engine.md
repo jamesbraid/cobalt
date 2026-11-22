@@ -25,7 +25,7 @@ any register: neither driver reads one before writing, and both only ever see a 
 | `0x010` | i2cfp | flat-panel I2C lines, bit-banged. See below | L, N | inferred |
 | `0x014` | id | NT refuses to attach unless it reads `0x666` | N | inferred |
 | `0x018` | config | see below | L, N | inferred |
-| `0x01c` | bist | internal self-test status; neither driver reads it | L (name only) | unknown |
+| `0x01c` | bist | internal self-test. Neither driver reads it; the PROM's self-test writes 0 and polls bit 31 for completion, then reports a failure when bits 27:24 are set ([prom-init.md](prom-init.md#the-id-check-and-the-register-self-test)) | L (name only), PROM | inferred |
 
 **Dot clock start sequence (NT `asSetConfigAndTiming`).** Clear everything above bit 15, wait 40 ms, write `0x4101`
 (`M=2, N=2, P=1`), wait 40 ms, write `0x104101` (adds `RUN`), wait one second, write `0x4101`, wait 100 ms. Then, after
@@ -38,12 +38,12 @@ blank, `0x08` flat-panel enable, `0x20` little-endian pixel memory, `0x40` tile 
 NT writes `0xe5` (all of `0x80`, `0x40`, `0x20`, `0x04`, `0x01`), adds `0x02` when the mode asks for sync on green or a
 boot option says so, always adds `0x08`, and clears `0x01` when a flat panel answered the probe unless the mode carries
 the "magic key" flag (`0x2000`). Linux defines a frame-buffer value of `0xa7` (`0x80`, `0x20`, `0x04`, `0x02`, `0x01`) but its mode-set code never
-writes the register, so only NT's usage is seen. Inferred (driver behaviour); a model should accept any value. Windows 2000's `sglfb.sys` writes `0xa5` (`0xad` with a flat panel, adding bit 3 and keeping the DAC on) and its boot video driver `0xad` with a CRT and `0xac` with a panel, so a third and fourth value are seen; none writes bit 6 (tile history) or bit 1.
+writes the register; the PROM writes that value ([prom-init.md](prom-init.md)). Inferred (driver behaviour); a model should accept any value. Windows 2000's `sglfb.sys` writes `0xa5` (`0xad` with a flat panel, adding bit 3 and keeping the DAC on) and its boot video driver `0xad` with a CRT and `0xac` with a panel, so a third and fourth value are seen; none writes bit 6 (tile history) or bit 1.
 
 **What the two Windows 2000 drivers add (`sgibvid.dll`, `sglfb.sys`; established as their code, inferred as hardware).** Both are described in
 [NT drivers](../../software/windows/w2k-display-drivers.md). They write the same timing, tile and PLL registers in the same order as the SGI
 5.2.4 miniport above, and both (and the earlier Linux driver) set the linear bit. Both find a flat panel by reading back what the firmware left in the panel drive registers:
-`fp_hdrv` low 12 bits `0x640` and `fp_vdrv` low 12 bits `0x401` (1600 columns, 1025 rows). That the firmware or the loader leaves those two registers set up for the 1600 by 1024 panel before the OS starts is inferred from the test (the SGI miniport writes the row end as `H`, 1024, a different value from the one tested for). Both require `id` (`+0x14`) to read `0x666`. The boot video driver's own table has two timing records, 640 by 480 (800 by 525 total) and the 1600 by 1024 panel (1670 by 1080
+`fp_hdrv` low 12 bits `0x640` and `fp_vdrv` low 12 bits `0x401` (1600 columns, 1025 rows). That the firmware leaves those two registers set for the 1600 by 1024 panel before the OS starts is established: the PROM's mode set writes `0x640` and `0x1401` for panel id 5 ([prom-init.md](prom-init.md#flat-panel-registers)); the SGI miniport writes the row end as `H`, 1024, a different value from the one these drivers test for. Both require `id` (`+0x14`) to read `0x666`. The boot video driver's own table has two timing records, 640 by 480 (800 by 525 total) and the 1600 by 1024 panel (1670 by 1080
 total), in the same record layout as `cobaltVTimings`; it is the only place a Windows driver programs the display with no SGI pack present, so a model that satisfies it
 satisfies the Windows 2000 setup display path.
 
@@ -121,7 +121,10 @@ for a tile that is not contiguous is unknown but follows the GBE's.
 | `0x80000` to `0x80020` | video capture control words (9 dwords, as in the GBE). Neither driver touches them. The video in and out ports raise Cobalt interrupt pins 16 to 19 | L (names), Linux `cobalt.h` | unknown |
 
 The NT miniport also claims exactly `0xd0000000` to `0xd008001f`, ending at the last video-capture word, which agrees with
-the block's extent. Inferred (driver behaviour).
+the block's extent. Inferred (driver behaviour). The miniport's program database declares the whole block as `gberegs`
+(`0x80024` bytes): a 6144-dword colour map, a 256-dword gamma map and a 1024-dword 10-bit gamma map, the cursor position,
+control and three colour words with a 64-dword glyph, and nine capture words `vc_0` to `vc_8`, under the Linux names. That fixes
+the array sizes (declared by the vendor); what the registers do stays as above. Established (declaration), the rest as before.
 
 ## I2C and the flat panel
 

@@ -141,7 +141,7 @@ are `GraphicsMemory` and `GraphicsMemorySize` only (no bank list).
 
 1. `0xd0000000` DBE window with the register behaviour above, enough for Windows 2000's `sgibvid` and `sglfb` too (they use the same registers); a scan-out that follows `frm_control`, `frm_size_*`
    and honours either the linear or the tile-list form. Enough for Linux's console and for NT's VGA-class use before the
-   Cobalt driver loads (the PROM's own display path is unknown).
+   Cobalt driver loads. The firmware's own display path is read ([prom-init.md](prom-init.md)): it programs the block itself as an 8-bit linear frame buffer in main memory, with no engine involvement.
 2. `0xc2000000` Cobalt CPU block with a revision byte in `0xa1`..`0xa7`, `0xa9`..`0xaf` at `+8`.
 3. Memory-bank registry values: NT reads them from its own registry, which the PROM and loader fill; an emulated PROM
    path must supply two or more banks.
