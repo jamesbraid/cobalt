@@ -18,19 +18,19 @@ any register: neither driver reads one before writing, and both only ever see a 
 
 | Offset | Name (Linux) | What | Evidence | Grade |
 |---|---|---|---|---|
-| `0x000` | ctrlstat | chip ID in `[3:0]` (read by Linux as a constant field), `SENSE_N` `[4]`, `PCLKSEL` `[29:28]`. NT writes `0x30000000` as the last step of every mode set; Linux writes `0x20000000` before programming and `0x30000000` afterwards if bit 25 reads set. Linux treats `PCLKSEL` below 2 as "not scanning out from the internal dot clock". Meaning of bit 25 unknown | L, N | software expectation |
-| `0x004` | dotclock | PLL: `M` `[7:0]`, `N` `[13:8]`, `P` `[15:14]`, `RUN` `[20]`. Both drivers write `M-1` and `N-1`. Output is 27 MHz times `M` over `N`, divided by 2 to the `P`; reproduces the clock column of 26 of the 27 NT table rows to within 1.4 percent (see below) | L, N | software expectation (fields), inferred (formula) |
+| `0x000` | ctrlstat | chip ID in `[3:0]` (read by Linux as a constant field), `SENSE_N` `[4]`, `PCLKSEL` `[29:28]`. NT writes `0x30000000` as the last step of every mode set; Linux writes `0x20000000` before programming and `0x30000000` afterwards if bit 25 reads set. Linux treats `PCLKSEL` below 2 as "not scanning out from the internal dot clock". Meaning of bit 25 unknown | L, N | inferred |
+| `0x004` | dotclock | PLL: `M` `[7:0]`, `N` `[13:8]`, `P` `[15:14]`, `RUN` `[20]`. Both drivers write `M-1` and `N-1`. Output is 27 MHz times `M` over `N`, divided by 2 to the `P`; reproduces the clock column of 26 of the 27 NT table rows to within 1.4 percent (see below) | L, N | inferred (fields), inferred (formula) |
 | `0x008` | i2c | CRT I2C lines (DDC). NT's `CoDDC_GetEDID` reads an EDID over it. Bit 0 SDA, bit 1 SCL, 1 pulls the line low (see below) | L, N | established (NT) |
 | `0x00c` | sysclk | system clock PLL. Neither driver touches it | L (name only) | unknown |
-| `0x010` | i2cfp | flat-panel I2C lines, bit-banged. See below | L, N | software expectation |
-| `0x014` | id | NT refuses to attach unless it reads `0x666` | N | software expectation |
-| `0x018` | config | see below | L, N | software expectation |
+| `0x010` | i2cfp | flat-panel I2C lines, bit-banged. See below | L, N | inferred |
+| `0x014` | id | NT refuses to attach unless it reads `0x666` | N | inferred |
+| `0x018` | config | see below | L, N | inferred |
 | `0x01c` | bist | internal self-test status; neither driver reads it | L (name only) | unknown |
 
 **Dot clock start sequence (NT `asSetConfigAndTiming`).** Clear everything above bit 15, wait 40 ms, write `0x4101`
 (`M=2, N=2, P=1`), wait 40 ms, write `0x104101` (adds `RUN`), wait one second, write `0x4101`, wait 100 ms. Then, after
 the timing registers below, write the real value without `RUN`, wait 40 ms, set `RUN`, wait 200 ms. No lock bit is
-read. Observed behaviour of the driver; the purpose of the one-second dance is unknown. Linux writes the real value
+read. What the driver does; the purpose of the one-second dance is unknown. Linux writes the real value
 with `RUN` and waits 11 ms.
 
 **Config register (`0x018`).** Bits from Linux names: `0x01` video DAC enable, `0x02` sync on green, `0x04` pixel
@@ -38,9 +38,9 @@ blank, `0x08` flat-panel enable, `0x20` little-endian pixel memory, `0x40` tile 
 NT writes `0xe5` (all of `0x80`, `0x40`, `0x20`, `0x04`, `0x01`), adds `0x02` when the mode asks for sync on green or a
 boot option says so, always adds `0x08`, and clears `0x01` when a flat panel answered the probe unless the mode carries
 the "magic key" flag (`0x2000`). Linux defines a frame-buffer value of `0xa7` (`0x80`, `0x20`, `0x04`, `0x02`, `0x01`) but its mode-set code never
-writes the register, so only NT's usage is observed. Software expectation; a model should accept any value. Windows 2000's `sglfb.sys` writes `0xa5` (`0xad` with a flat panel, adding bit 3 and keeping the DAC on) and its boot video driver `0xad` with a CRT and `0xac` with a panel, so a third and fourth value are seen; none writes bit 6 (tile history) or bit 1.
+writes the register, so only NT's usage is seen. Inferred (driver behaviour); a model should accept any value. Windows 2000's `sglfb.sys` writes `0xa5` (`0xad` with a flat panel, adding bit 3 and keeping the DAC on) and its boot video driver `0xad` with a CRT and `0xac` with a panel, so a third and fourth value are seen; none writes bit 6 (tile history) or bit 1.
 
-**What the two Windows 2000 drivers add (`sgibvid.dll`, `sglfb.sys`; established as their code, software expectation as hardware).** Both are described in
+**What the two Windows 2000 drivers add (`sgibvid.dll`, `sglfb.sys`; established as their code, inferred as hardware).** Both are described in
 [NT drivers](../../software/windows/w2k-display-drivers.md). They write the same timing, tile and PLL registers in the same order as the SGI
 5.2.4 miniport above, and both (and the earlier Linux driver) set the linear bit. Both find a flat panel by reading back what the firmware left in the panel drive registers:
 `fp_hdrv` low 12 bits `0x640` and `fp_vdrv` low 12 bits `0x401` (1600 columns, 1025 rows). That the firmware or the loader leaves those two registers set up for the 1600 by 1024 panel before the OS starts is inferred from the test (the SGI miniport writes the row end as `H`, 1024, a different value from the one tested for). Both require `id` (`+0x14`) to read `0x666`. The boot video driver's own table has two timing records, 640 by 480 (800 by 525 total) and the 1600 by 1024 panel (1670 by 1080
@@ -51,7 +51,7 @@ satisfies the Windows 2000 setup display path.
 
 Every window register is `ON` in bits `[23:12]` and `OFF` in bits `[11:0]`. The right-hand column gives what NT
 writes from its mode record (width `W`, height `H`, totals `Ht` and `Vt`, blank, sync and PLL fields; the record is the
-same layout as Linux's `dbe_timing_info`). Linux differs only where noted. All entries: software expectation.
+same layout as Linux's `dbe_timing_info`). Linux differs only where noted. All entries: inferred.
 
 | Offset | Name | NT writes |
 |---|---|---|
@@ -78,7 +78,7 @@ same layout as Linux's `dbe_timing_info`). Linux differs only where noted. All e
 
 The NT code writes `vt_hpixen`, `vt_vpixen` first as `0xffffff` (off), starts the PLL, then writes the real values
 last. The scanline-interrupt registers are written only through `asSetInterrupt(n, y)`, which accepts `n` below 4 and
-`y` below 4096. Software expectation.
+`y` below 4096. Inferred (driver behaviour).
 
 **Blanking and power (DPMS).** NT's `asSetPowerState` takes states 1 to 6 and edits bits `[3]` and `[1]` of `vt_flags`:
 state 1 (on) clears both, 2 (standby) sets `[1]`, 3 (suspend) sets `[3]`, 4 to 6 set both. Which signal each bit
@@ -89,20 +89,20 @@ instead sets the panel's power-save bit over I2C.
 
 | Offset | Name | What | Grade |
 |---|---|---|---|
-| `0x20000` | ovr_width_tile | overlay plane width: whole 512-byte tile columns in `[12:5]`, remainder in 32-byte units in `[4:0]`, `FIFO_RESET` `[13]` pulsed set then clear (NT and Linux). Overlay is always 8 bits per pixel | N, L: software expectation |
-| `0x20004` | ovr_inhwctrl | live copy; bit 0 is the DMA-enable that NT polls until it reads clear | software expectation |
-| `0x20008` | ovr_control | shadow; bit 0 DMA enable, rest the overlay's tile-list pointer. NT clears bit 0 to stop and writes the list pointer to start | software expectation |
+| `0x20000` | ovr_width_tile | overlay plane width: whole 512-byte tile columns in `[12:5]`, remainder in 32-byte units in `[4:0]`, `FIFO_RESET` `[13]` pulsed set then clear (NT and Linux). Overlay is always 8 bits per pixel | N, L: inferred |
+| `0x20004` | ovr_inhwctrl | live copy; bit 0 is the DMA-enable that NT polls until it reads clear | inferred |
+| `0x20008` | ovr_control | shadow; bit 0 DMA enable, rest the overlay's tile-list pointer. NT clears bit 0 to stop and writes the list pointer to start | inferred |
 | `0x30000` | frm_size_tile | normal plane. `[12:5]` whole tile columns, `[4:0]` remainder in 32-byte units, `[14:13]` depth (0 = 8 bpp, 1 = 16, 2 = 32), `[15]` `FIFO_RESET` pulsed. A tile is 512 bytes by 128 lines, so a 32-bit mode has 128 pixels per tile column and a 16-bit mode 256. NT computes exactly this and writes the register twice around the reset pulse | established (Linux and NT agree, GBE page agrees) |
 | `0x30004` | frm_size_pixel | height in `[31:16]` | established |
-| `0x30008` | frm_inhwctrl | live copy; bit 0 live DMA enable, polled by NT | software expectation |
-| `0x3000c` | frm_control | shadow. Bit 0 DMA enable, bit 1 "linear" (Linux and both Windows 2000 drivers set it, the SGI 5.2.4 miniport does not), `[31:9]` pointer: Linux gives the frame buffer's physical address shifted right 9, NT gives its tile list. Both stop DMA by clearing bit 0 and wait up to 20 000 ten-microsecond steps for the live copy to follow | software expectation |
-| `0x40000` | did_inhwctrl | live copy; NT tests bit 16 (byte at `+0x40002`, bit 0) | software expectation |
-| `0x40004` | did_control | shadow. NT writes 0 at mode set and clears bit 16 to stop. Linux names bit 0 and writes 0 | software expectation; Linux's bit looks wrong, NT and the O2's GBE use bit 16 |
-| `0x48000` | mode_regs[32] | per-DID window table: buffer mode `[1:0]` (3 = both), type `[4:2]` (0 = 8-bit index, 1 = 12-bit index, 2 = RG3B2, 3 = RGB4, 4 = ARGB5, 5 = RGB8, 6 = RGBA5, 7 = RGB10). Linux fills all 32 identically (8 bpp = index, 16 bpp = RGBA5, 32 bpp = RGB8). The SGI 5.2.4 miniport's mode-set code does not write this table. Windows 2000's boot video driver writes `3` into all 32 words, and its `sglfb.sys` writes only the first word: `3` for 8 bits per pixel and `0x17` for 32 (buffer mode 3, type 5 = RGB8) | L, W2K: software expectation; SGI miniport: not touched in the routines read |
+| `0x30008` | frm_inhwctrl | live copy; bit 0 live DMA enable, polled by NT | inferred |
+| `0x3000c` | frm_control | shadow. Bit 0 DMA enable, bit 1 "linear" (Linux and both Windows 2000 drivers set it, the SGI 5.2.4 miniport does not), `[31:9]` pointer: Linux gives the frame buffer's physical address shifted right 9, NT gives its tile list. Both stop DMA by clearing bit 0 and wait up to 20 000 ten-microsecond steps for the live copy to follow | inferred |
+| `0x40000` | did_inhwctrl | live copy; NT tests bit 16 (byte at `+0x40002`, bit 0) | inferred |
+| `0x40004` | did_control | shadow. NT writes 0 at mode set and clears bit 16 to stop. Linux names bit 0 and writes 0 | inferred; Linux's bit looks wrong, NT and the O2's GBE use bit 16 |
+| `0x48000` | mode_regs[32] | per-DID window table: buffer mode `[1:0]` (3 = both), type `[4:2]` (0 = 8-bit index, 1 = 12-bit index, 2 = RG3B2, 3 = RGB4, 4 = ARGB5, 5 = RGB8, 6 = RGBA5, 7 = RGB10). Linux fills all 32 identically (8 bpp = index, 16 bpp = RGBA5, 32 bpp = RGB8). The SGI 5.2.4 miniport's mode-set code does not write this table. Windows 2000's boot video driver writes `3` into all 32 words, and its `sglfb.sys` writes only the first word: `3` for 8 bits per pixel and `0x17` for 32 (buffer mode 3, type 5 = RGB8) | L, W2K: inferred; SGI miniport: not touched in the routines read |
 
 **Frame buffer memory.** Both the live and the shadow word are read by software; the engine takes the shadow at the
 start of vertical blank. This is how NT page-flips (`asFlipTiles`, `asFlipFrontBack`): it rewrites the tile list or the
-list pointer, writes `frm_control`, and relies on the copy. Software expectation.
+list pointer, writes `frm_control`, and relies on the copy. Inferred (driver behaviour).
 
 **Tile lists.** NT keeps its lists in main memory as arrays of 16-bit entries, one per 64 KB tile, built by copying a
 list of dwords from the memory manager shifted right 4. If those dwords are 4 KB page-frame numbers, the entry is the
@@ -113,15 +113,15 @@ for a tile that is not contiguous is unknown but follows the GBE's.
 
 | Offset | What | Evidence | Grade |
 |---|---|---|---|
-| `0x50000` | colour map, 6144 dwords in Linux's declaration (the GBE specification says 4608), one dword per entry, written as `R<<24 \| G<<16 \| B<<8` (both drivers). NT's `asSetColorRegisters` takes a count, a first index and four-byte entries whose first three bytes go to bits `[31:24]`, `[23:16]` and `[15:8]` | L, N | software expectation |
+| `0x50000` | colour map, 6144 dwords in Linux's declaration (the GBE specification says 4608), one dword per entry, written as `R<<24 \| G<<16 \| B<<8` (both drivers). NT's `asSetColorRegisters` takes a count, a first index and four-byte entries whose first three bytes go to bits `[31:24]`, `[23:16]` and `[15:8]` | L, N | inferred |
 | `0x58000` | colour-map FIFO status. Linux waits until it reads non-zero, then writes that many entries. NT before every 32nd entry spins until the low six bits read zero or the value reaches `0x30`. A model that returns `0x40` satisfies both. Meaning inferred as a free-entry count | L, N | inferred |
-| `0x60000` | gamma map, 256 dwords. Linux writes identity (`i<<24 \| i<<16 \| i<<8`). NT's gamma path (`GammaDataCallback`, `CO_CMD_SET_GAMMA`) was not found writing this range in the miniport; where NT puts gamma is unresolved. Windows 2000's boot video driver writes the identity ramp (`i * 0x01010100`, 256 words) here | L, W2K boot video | software expectation (Linux, Windows 2000 boot video), unknown (SGI miniport) |
+| `0x60000` | gamma map, 256 dwords. Linux writes identity (`i<<24 \| i<<16 \| i<<8`). NT's gamma path (`GammaDataCallback`, `CO_CMD_SET_GAMMA`) was not found writing this range in the miniport; where NT puts gamma is unresolved. Windows 2000's boot video driver writes the identity ramp (`i * 0x01010100`, 256 words) here | L, W2K boot video | inferred (Linux, Windows 2000 boot video), unknown (SGI miniport) |
 | `0x68000` | 10-bit gamma map, 1024 dwords | L (name only) | unknown |
 | `0x70000` to `0x78100` | hardware cursor: position, control (Linux writes 0 to turn it off), 3 colours at `0x70008`, 64-dword glyph at `0x78000`; same offsets as the GBE's cursor | L (names) | unknown for programming (inferred from the GBE layout); neither driver enables it |
 | `0x80000` to `0x80020` | video capture control words (9 dwords, as in the GBE). Neither driver touches them. The video in and out ports raise Cobalt interrupt pins 16 to 19 | L (names), Linux `cobalt.h` | unknown |
 
 The NT miniport also claims exactly `0xd0000000` to `0xd008001f`, ending at the last video-capture word, which agrees with
-the block's extent. Software expectation.
+the block's extent. Inferred (driver behaviour).
 
 ## I2C and the flat panel
 
@@ -143,7 +143,7 @@ one or two blocks is accepted; the flat-panel status device is at write address 
 
 NT's table `cobaltVTimings` (27 rows of `0x30` bytes at `sgcomp.sys` data offset `0xd4a0`) holds one record per
 resolution and refresh, in the same layout as Linux's `dbe_timing_info` (Linux's header calls it the O2's video timing
-structure). Software expectation for the contents; the 27 rows cover everything in the datasheet's mode list. Clock is
+structure). Inferred (driver behaviour) for the contents; the 27 rows cover everything in the datasheet's mode list. Clock is
 in kHz, `Ht`/`Vt` are totals, `M N P` are the PLL values before the `-1`.
 
 | Mode | Hz | Clock | Ht x Vt | M N P | Note |
@@ -181,4 +181,4 @@ exact width and height and a refresh rounded to whole hertz (`asMapModeToVTP`). 
 (`0x8`) sync on green, bit 4 (`0x10`) invert hsync, bit 5 (`0x20`) invert vsync, `0x1000` flat-panel timing, `0x2000` a
 key that keeps the DAC on with a panel attached. The user can also supply timings under a registry key
 (`...\Silicon Graphics\Control Panel\Display\Timings`, and a "Video Format Creator" key whose records carry a CRC);
-`VTableValidateMode` checks them. Software expectation.
+`VTableValidateMode` checks them. Inferred (driver behaviour).

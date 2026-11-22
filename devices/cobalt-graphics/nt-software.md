@@ -12,11 +12,11 @@ for coordinates above 2 to the 24th, a point light above a plane lit the plane b
 wider than 640 pixels were corrupted when loaded into texture memory. It supersedes 4.1.2 to 4.1.4 and 5.2.1 to 5.2.3,
 and an earlier "MR software 1.8". A Windows 2000 build with the same version number ships separately (different binaries: `sgcomp.sys` 65,808 bytes against 62,992,
 `sgcodd.dll` 339,040 against 299,696, `sgcoicd.dll` 1,120,336 against 1,069,328); the NT 4.0 build is the one read in full, and the
-Windows 2000 display driver's OpenGL escape table was read and matches it. Observed (release note); the file list is established.
+Windows 2000 display driver's OpenGL escape table was read and matches it. Inferred (release note); the file list is established.
 
 | File | What it is | Grade |
 |---|---|---|
-| `sgcomp.sys` (62 992 bytes, linker timestamp 13 Dec 2001) | kernel-mode graphics driver. Imports `VIDEOPRT.SYS`, `ntoskrnl.exe` and `HAL.dll`. It does the mapping, the interrupt handlers, the scheduler and the display back-end programming | established (imports), software expectation (behaviour) |
+| `sgcomp.sys` (62 992 bytes, linker timestamp 13 Dec 2001) | kernel-mode graphics driver. Imports `VIDEOPRT.SYS`, `ntoskrnl.exe` and `HAL.dll`. It does the mapping, the interrupt handlers, the scheduler and the display back-end programming | established (imports), inferred (behaviour) |
 | `sgcodd.dll` (299 696) | GDI display driver (`WIN32K.SYS` imports: `EngBitBlt`, `EngCopyBits`, `EngStretchBlt`, `EngCreateDeviceSurface`, `WNDOBJ_*`, `EngDeviceIoControl`, ...). Names the commands it sends to the kernel driver: see below | established |
 | `sgcoicd.dll` (1 069 328) | OpenGL 1.1 installable client driver. Exports the standard `Drv*` ICD entry points (`DrvCreateContext`, `DrvSetContext`, `DrvSwapLayerBuffers`, `DrvDescribeLayerPlane`, layer palette calls, `DrvShareLists`, `DrvGetProcAddress`, `DrvValidateVersion`). Advertises the WGL extensions `make_current_read`, `pbuffer`, `pixel_format` and `swap_interval`, plus the SGIX pbuffer and instruments extensions (`glStartInstrumentsSGIX`, `glReadInstrumentsSGIX`, ...) | established |
 | `sgcotab.cpl` (94 992) | the extra Display Properties tabs (colour, graphics, stereo, power) | established (existence) |
@@ -31,12 +31,12 @@ names quoted in these pages are the vendor's own.
 `DriverEntry` first asks the HAL for system information through the HAL dispatch table, class `0x8100001`, 16 bytes
 back. If the answer is not success it prints "cobalt: Not an SGI HAL" and does not attach. So the NT HAL on these
 machines is SGI's, and answers a query no stock HAL answers. What it returns is read in the HAL: three cache-flush
-routine pointers and the cache-operation-invalidate flag ([nt-hal.md](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md#the-sgi-specific-hal-interface)). Established for the HAL's side, software expectation for the driver's use.
+routine pointers and the cache-operation-invalidate flag ([nt-hal.md](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md#the-sgi-specific-hal-interface)). Established for the HAL's side, inferred for the driver's use.
 
 `CobaltFindAdapter` then claims `0xd0000000` to `0xd008001f` with `IoAssignResources`, reads the chip revision at
 `0xc2000008` (accepted if the high nibble is `0xa` and the low nibble is neither 0 nor 8), and stores it. The revision
 names the chip set as "Cobalt Graphics ChipSet A0" to "AF" in the registry's `HardwareInformation.ChipType`. The
-adapter string is "Cobalt Graphics", the DAC "Cobalt Graphics Backend". Software expectation.
+adapter string is "Cobalt Graphics", the DAC "Cobalt Graphics Backend". Inferred (driver behaviour).
 
 `CobaltInitialize` runs once (it counts calls and returns the first status after that) and does, in order: reads the
 memory-bank list; maps the engine window `0xc8000000` and the display back end `0xd0000000`; reads the ID at `+0x14`
@@ -50,7 +50,7 @@ tree, the values `NumberOfBanks` and `BankSize00` to `BankSize31` and `BankAddr0
 fewer than two are present it prints "GRAPHICS: no preallocated memory" through the HAL's display routine and bug-checks
 (`0x5a`). So the loader, or the firmware through it, must hand NT a list of graphics banks by address and size; the
 graphics memory is carved out of RAM ahead of the OS, as it is for Linux. The extent is a static split, as the trade
-press says. How the firmware picks the split (a "profile") and where it keeps it is unknown. Software expectation.
+press says. How the firmware picks the split (a "profile") and where it keeps it is unknown. Inferred (driver behaviour).
 
 ### What is programmed where
 
@@ -108,7 +108,7 @@ DirectDraw or Direct3D calls the hardware accelerates is unknown.
 Linux has a frame buffer driver, `drivers/video/sgivwfb.c`, written by SGI (Jeffrey Newquist, 1999), and the platform
 code in `arch/x86/kernel/visws_quirks.c` and `arch/x86/pci/visws.c`. It is the only open driver and uses only the
 display back end. It does not use the rendering engine: the Linux 3D acceleration SGI demonstrated in 1999
-was never published (SGI engineers' Usenet posts, 2004). Observed.
+was never published (SGI engineers' Usenet posts, 2004). Inferred (trade press).
 
 - Reserves the top 8 MB of RAM (`sgivwfb_mem_phys = mem_size - 8 MB`, size defaulted to 8 MB and trimmed to a megabyte)
   and tells the kernel it is reserved. The memory-size boot value is "alt_mem_k" from the loader.

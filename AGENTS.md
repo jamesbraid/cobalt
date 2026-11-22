@@ -10,7 +10,7 @@ Out of scope here, covered in the sibling [chips](https://github.com/jamesbraid/
 
 Facts are labelled with one of three ratings. **established**: read in full from a shipped binary (the whole function, table or code path), a published document, or a public driver, cited with the release, function, page or file. **inferred**: a reasoned reading, with the reasoning. A reading built from call lists, store summaries, a name, a sibling chip or a partial read is inferred, and so is any approximation, with its limit stated. An emulator run is inferred, never established: it shows model behaviour, not hardware. **unknown**: nothing published or shipped decides it. Anything unlabelled is unknown. Do not fill gaps from memory, other graphics boards or other emulators.
 
-The pages moved in from chips were written with five grades (established, software expectation, observed, inferred, unknown); [their overview](devices/cobalt-graphics/README.md#grades) says how those map. New and revised text uses the three above. Regrading the moved pages is listed in [COVERAGE.md](COVERAGE.md).
+The pages moved in from chips were written with five grades (established, software expectation, observed, inferred, unknown) and have been regraded to the three above; [their overview](devices/cobalt-graphics/README.md#grades) says how. New and revised text uses the three. The regrade by mapping is listed in [COVERAGE.md](COVERAGE.md).
 
 ## 2. Binaries
 

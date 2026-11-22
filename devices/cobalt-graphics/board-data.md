@@ -6,8 +6,9 @@ Two sources that were not in the first round. Back to the [overview](README.md).
   Silicon Graphics, form J10043 (2351 6/99), five pages. Facts it states are **established** for the document.
   It is a marketing white paper: features and peak numbers, no registers, packets or formats.
 - **A registry export of `HKEY_LOCAL_MACHINE\HARDWARE`** from a running install on a 320 (the machine is
-  not identified; the 5.00 export format and a PnP resource map mean Windows 2000 or later). What it shows is **observed on a real machine**, rated *inferred* or better only as noted: a
-  registry reports what the firmware and the drivers told Windows, not what the chips do.
+  not identified; the 5.00 export format and a PnP resource map mean Windows 2000 or later). What it lists is **established** as published output from a real machine: it is what
+  that machine's registry held. What it implies about the hardware is **inferred**, because a registry reports what the
+  firmware and the drivers told Windows, not what the chips do.
 
 Neither source is copied here; the facts are in my words, with the page or key.
 
@@ -41,7 +42,7 @@ Keys are given relative to `HKEY_LOCAL_MACHINE\HARDWARE`. The text is Windows re
 decoded by hand and checked against the resource-list layout (a count, then per list the interface type, bus number,
 version, revision and descriptor count, then 16-byte descriptors).
 
-**Identity of the machine (observed).**
+**Identity of the machine (established as listed).**
 
 - `DESCRIPTION\System`: identifier `SGI-320_ARCx86_mp`; firmware ("SystemBiosVersion") `PROM Version 1.1005.SGI`,
   date `07/06/00`; "VideoBiosVersion" strings `Main BIOS*v1.0` and `005.SGI`, date `01/01/99`. One processor, x86 Family 6
@@ -49,7 +50,7 @@ version, revision and descriptor count, then 16-byte descriptors).
 - `DESCRIPTION\System\MultifunctionAdapter\4` ("SGI REV INFO") carries the revision text the firmware passes to
   Windows: `Motherboard: 320 fab 006 rev F (100MHz CPU Bus)`, `Cobalt:a4`, `Cobalt I/O: 005`, `PCI Bridge: 01`,
   `Serial I/O: 366c3dfb`, `1394: 00000001`, `Display Engine: 002`. Its children repeat the numbers as dwords:
-  `SYS TYPE` 0, `BOARD REV` `0x11`, `COBALT` `0xa4`, `COBALT I/O` 5, `DISPLAY ENGINE` 2. Observed on this machine.
+  `SYS TYPE` 0, `BOARD REV` `0x11`, `COBALT` `0xa4`, `COBALT I/O` 5, `DISPLAY ENGINE` 2. Established as what this machine reported.
 
 **Reconciliation with the existing pages.**
 
@@ -57,11 +58,11 @@ version, revision and descriptor count, then 16-byte descriptors).
 |---|---|---|
 | The Cobalt CPU block's revision register (`0xc2000008`) has high nibble `0xa`; NT names the part "Cobalt Graphics ChipSet A0" to "AF" ([README](README.md#physical-map-graphics-related-windows-only)) | `Cobalt:a4` | **A real machine carries Cobalt revision A4.** The same value is what a public emulator's model of the machine returns for that register (it also accepts A5). |
 | The display back end (Arsenic) exposes an ID register that reads `0x666` and NT refuses to attach otherwise | `Display Engine: 002` | The firmware names the display back end a "Display Engine", revision 2. A relation between that revision and anything the driver reads is not known. |
-| The NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes (software expectation) | the resource list of the device the miniport owns: one memory range, start `0xd0000000`, length `0x80020`, interface type "processor internal", raw and translated alike (`RESOURCEMAP\PnP Manager\PnpManager`, the `\Device\Resource…` value) | **The claim is observed**, so the extent `0x80020` is now more than a software expectation for the driver that this install ran (the export is not from NT 4.0; the NT 4.0 miniport's own claim was read in the binary). The engine window at `0xc8000000` is not in the list: the miniport maps it without claiming it, as the first round read. |
-| The graphics is in the chip set, not on a PCI card | `DESCRIPTION\System\MultifunctionAdapter\1` is `Internal` with `DisplayController` "Cobalt Graphics" and a monitor peripheral `1024x 768`; the PCI adapters (`2`, `3`) list only the network controller; no PCI display device appears in the resource map | Observed. The only graphics resource is the internal-bus one above. |
+| The NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes (inferred) | the resource list of the device the miniport owns: one memory range, start `0xd0000000`, length `0x80020`, interface type "processor internal", raw and translated alike (`RESOURCEMAP\PnP Manager\PnpManager`, the `\Device\Resource…` value) | **The claim is established for this install**, so the extent `0x80020` is now more than an inference for the driver that this install ran (the export is not from NT 4.0; the NT 4.0 miniport's own claim was read in the binary). The engine window at `0xc8000000` is not in the list: the miniport maps it without claiming it, as the first round read. |
+| The graphics is in the chip set, not on a PCI card | `DESCRIPTION\System\MultifunctionAdapter\1` is `Internal` with `DisplayController` "Cobalt Graphics" and a monitor peripheral `1024x 768`; the PCI adapters (`2`, `3`) list only the network controller; no PCI display device appears in the resource map | Established as listed; inferred as a statement about the wiring. The only graphics resource is the internal-bus one above. |
 | One video device | `DEVICEMAP\VIDEO`: `\Device\Video0` is service `Sgcomp` (the SGI miniport) and `\Device\Video1` is service `mnmdd`; the second claims only the legacy VGA ranges (ports `0x3b0` to `0x3bb`, `0x3c0` to `0x3df`, `0x1ce`, `0x1cf`, `0x2e8` to `0x2ef`, memory `0xa0000` to `0xbffff`) | A second video device exists on this install and is not SGI's. It does not tell anything about the Cobalt hardware. |
 
-**Physical memory as Windows saw it (observed).** `RESOURCEMAP\System Resources\Physical Memory` lists twelve ranges
+**Physical memory as Windows saw it (established as listed).** `RESOURCEMAP\System Resources\Physical Memory` lists twelve ranges
 of RAM, 455.1 MiB in all; `Reserved` lists nine more ranges of 4, 12, 12, 8, 4, 4, 4, 4 and 4 MiB, 56 MiB in all.
 Together they make 511 MiB, so the install had 512 MiB less the legacy hole below 1 MiB and one 512 KiB gap above
 `0x1100000`. RAM runs from 0 to `0x10000000` and again from `0x20000000` to `0x30000000`, with nothing in between.

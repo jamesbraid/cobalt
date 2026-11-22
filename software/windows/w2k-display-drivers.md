@@ -44,7 +44,7 @@ CPU block revision at `0xc2000000`. The miniport:
   HAL that wrote only the first two would satisfy this driver and fail the SGI one.
 - offers only 8 and 32 bits per pixel, filtered by how many 64 KiB tiles fit in the graphics memory; the 32-bit mode reports colour masks `0xff000000`, `0xff0000` and
   `0xff00`: **red in the top byte of the pixel**, and the window table value for 32 bpp is `0x17` (RGB8 type, both buffers). This is a second NT driver agreeing with the
-  `ArsenicPixelFormats` table's byte order, against Linux's low-byte red ([nt-software.md](../../devices/cobalt-graphics/nt-software.md)). Software expectation.
+  `ArsenicPixelFormats` table's byte order, against Linux's low-byte red ([nt-software.md](../../devices/cobalt-graphics/nt-software.md)). Inferred (driver behaviour).
 - sets the mode with the display page's sequence, writing the frame control with the "linear" bit and a pointer from the tile list it is given, the window table at `+0x48000`
   (`3` for 8 bits per pixel, `0x17` for 32), the configuration word `0xa5` (`0xad` with a panel), and `0x30000000` into the control and status word last. It writes the colour map
   (`+0x50000`) with the same FIFO wait as the other drivers, and sets the chip name strings "Cobalt Graphics ChipSet" and "Cobalt Graphics Backend" with no revision letter.
@@ -53,5 +53,5 @@ CPU block revision at `0xc2000000`. The miniport:
   codes the SGI 5.2.4 miniport dispatches at the base `0x230400`.
 
 An emulator that provides the display back end of [display-engine.md](../../devices/cobalt-graphics/display-engine.md) and the two registry values gets a working Windows 2000 console from
-`sglfb` and `sgibvid` without any engine model. That is the smallest known Cobalt display path in any shipped binary. Software expectation (it is what the drivers do on real
+`sglfb` and `sgibvid` without any engine model. That is the smallest known Cobalt display path in any shipped binary. Inferred (driver behaviour) (it is what the drivers do on real
 hardware that was never traced).

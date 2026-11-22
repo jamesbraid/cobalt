@@ -9,7 +9,7 @@ quoted as a symbol. Grades: see the overview.
 **Short answer to "FIFO or DMA".** The engine fetches commands by DMA from packet buffers in main memory. The host
 builds packets in memory (the memory is the same SDRAM the processors use), links them, and tells the engine which
 context to run through one control register; completion and stalls come back as two interrupt causes. There is no
-register FIFO that the host pushes words into. Software expectation. The header-word count field and the chaining packet are now known ([below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)); the opcode set is only partly known (the constant headers are [listed below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)).
+register FIFO that the host pushes words into. Inferred (driver behaviour). The header-word count field and the chaining packet are now known ([below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)); the opcode set is only partly known (the constant headers are [listed below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)).
 
 ## Register window at `0xc8000000` (`0x19000` bytes)
 
@@ -19,12 +19,12 @@ at the display back end's ID. Accesses seen are 32-bit. Offsets are from the bas
 | Offset | Seen as | What software does | Grade |
 |---|---|---|---|
 | `0x00000` to `0x07fff` | nothing | the miniport never touches this range in the routines read | unknown |
-| `0x08000` to `0x0bfff` | 2048 entries of 8 bytes | `CoInitHw`, the tile and texture allocators and `CoBuildTlbPacket` write the low dword of an entry with a 24-bit value (`x & 0xffffff`); entry `i` is at `0x8000 + 8*i`. Entries not in use are filled with the value of the first | software expectation (access), inferred (a translation table from page numbers to memory pages) |
-| `0x0c000` to `0x0c1ff` | 64 entries of 8 bytes | at pool setup every entry gets the physical base of the context packet pool (`+4` of the pool descriptor). One entry per context; `0xc010` (context 2) is also rewritten with `(x & 0x1fffff) \| 0x4000000` while building texture-table packets | software expectation (access), inferred (per-context base pointers) |
-| `0x10000` | control and status | write: `mode \| (context << 12) \| 0x800` selects the context to run (`pCoContextSwitch`, the retrace and event paths). `CoInitHw` writes `0xfffff040`. Read: bits `[31:12]` are the context the engine is running; software shifts right 12 to get it and treats 0 as "none" | software expectation |
-| `0x10008` | doorbell | write `0x400` to restart the engine's scheduler after queuing work | software expectation |
-| `0x10018` | interrupt cause | read, mask `0x60000000`, write 0 to acknowledge, then re-read until the cause bits drop. Bit 31 is also polled by `pCoWaitForEvent`: wait for it set, then write `0x7fffffff` | software expectation |
-| `0x10020` | interrupt enable | `CoInitHw` writes `0x60000000` (both causes on) | software expectation |
+| `0x08000` to `0x0bfff` | 2048 entries of 8 bytes | `CoInitHw`, the tile and texture allocators and `CoBuildTlbPacket` write the low dword of an entry with a 24-bit value (`x & 0xffffff`); entry `i` is at `0x8000 + 8*i`. Entries not in use are filled with the value of the first | inferred (access and reading) (a translation table from page numbers to memory pages) |
+| `0x0c000` to `0x0c1ff` | 64 entries of 8 bytes | at pool setup every entry gets the physical base of the context packet pool (`+4` of the pool descriptor). One entry per context; `0xc010` (context 2) is also rewritten with `(x & 0x1fffff) \| 0x4000000` while building texture-table packets | inferred (access and reading) (per-context base pointers) |
+| `0x10000` | control and status | write: `mode \| (context << 12) \| 0x800` selects the context to run (`pCoContextSwitch`, the retrace and event paths). `CoInitHw` writes `0xfffff040`. Read: bits `[31:12]` are the context the engine is running; software shifts right 12 to get it and treats 0 as "none" | inferred |
+| `0x10008` | doorbell | write `0x400` to restart the engine's scheduler after queuing work | inferred |
+| `0x10018` | interrupt cause | read, mask `0x60000000`, write 0 to acknowledge, then re-read until the cause bits drop. Bit 31 is also polled by `pCoWaitForEvent`: wait for it set, then write `0x7fffffff` | inferred |
+| `0x10020` | interrupt enable | `CoInitHw` writes `0x60000000` (both causes on) | inferred |
 | `0x18138`, `0x18140` | read | read into the packet being built after a header word `0x84e44040`, which is the scissor box packet the OpenGL driver writes ([packet-set.md](packet-set.md)): the two registers are the scissor minimum and maximum corner, saved and restored across a context switch. The earlier reading as two instrument counters is withdrawn | inferred (header `A` = `0x427` maps to this offset; the miniport and the ICD agree on the packet) |
 | `0x185c0`, `0x185c8` | read | on a stop interrupt, read to find where the engine stopped: two 12-bit values combine into a position that is then converted to an offset in the context's packet buffer (low 20 bits). These are the two registers the chain packet `0x97000040` writes (next node, this node) | inferred |
 | `0x185d0` | write | the current-context packet pointer (written when the current context changes or is freed). The OpenGL driver writes 0 to it with packet `0x97400020` before it frees the pages of a texture that is bound | inferred |
@@ -45,18 +45,18 @@ The display back end also uses `0x10000`, `0x10018` and `0x10020` in its own blo
   deferred routine (`CoDPC`, `CoProcessCobaltEvent`). The event processor tests cause `0x40000000` first: if the current
   context was running it flags the context, then reads the running context from `0x10000` (falling back to `0x185c0`
   when that reads zero), and recovers the stop position from `0x185c0` and `0x185c8` to resume from. Cause `0x20000000`
-  also queues an event but does not take that path. Software expectation for the use; what each cause means in hardware
+  also queues an event but does not take that path. Inferred (driver behaviour) for the use; what each cause means in hardware
   terms is inferred (bit 30 a stop that needs a restart, bit 29 a completion), not published.
 - **Pin 24 (the "AS" pin): vertical retrace.** `CoVRetraceHandler` reads the 32-bit register at `0xca000000` and writes
   back its complement. If bit 1 of the value read was set it increments a frame counter and, in the stereo case, reads
   the display back end's `vt_f2rf_lock` and sets bit 6 of its `vt_flags`. It then queues a retrace event, which the
-  deferred routine uses to run the swaps and queued work that were waiting for retrace. Software expectation. The
+  deferred routine uses to run the swaps and queued work that were waiting for retrace. Inferred (driver behaviour). The
   write-back of the complement is the driver clearing set bits, so the register is write-one-to-clear or latching;
   which, is unknown.
 
 Both pins are on the Cobalt interrupt controller at `0xc4000000`. The miniport asks the HAL for the vector of internal
 level 25 and of level 24 (`HalGetInterruptVector`), then connects the engine handler to the first and the retrace
-handler to the second with `IoConnectInterrupt`. Software expectation.
+handler to the second with `IoConnectInterrupt`. Inferred (driver behaviour).
 
 ## Command interface in main memory
 
@@ -66,7 +66,7 @@ engine never needs the host's cache.
 - **Packet buffers.** The driver keeps a "render node" (RN) per drawing context, each with one or more packet buffers
   allocated by `pCoAllocatePacketPages` and growing by `pCoExpandPacketBuffer`. A single packet may not cross a
   `grmPacketSize` boundary, which is 128 dwords (512 bytes); the dispatcher chains buffers when a packet would.
-  Software expectation.
+  Inferred (driver behaviour).
 - **Alignment.** Software pads every packet with zero dwords up to a 32-byte boundary before dispatching it
   (`grmDispatchPacket`, `CoSetGrmPktHeader`). Size and position are counted in 32-byte units after that. Software
   expectation.
@@ -103,7 +103,7 @@ engine never needs the host's cache.
 
 Read in Ghidra from the shipped 5.2.4 NT 4.0 package with SGI's symbols (the ICD `sgcoicd.dll`, the display driver `sgcodd.dll`
 and `sgcomp.sys`), checked against the miniport reading above. Grades: *established* is what the driver code does, read in full for
-the routine named; the hardware's reading of any word is a software expectation, as above.
+the routine named; the hardware's reading of any word is inferred, as above.
 
 **The path, end to end. Established.**
 

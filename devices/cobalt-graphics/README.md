@@ -22,18 +22,21 @@ at the graphics blocks and says where it leans on them.
 
 ## Grades
 
-Every fact carries one of five grades. Nothing is unlabelled.
+Every fact carries one of the repository's three ratings ([AGENTS.md](../../AGENTS.md)). Nothing is unlabelled.
 
-- **established**: stated in a published SGI specification page, or read in full from a public driver and independently
-  agreed by a shipped binary's routine read in full.
-- **software expectation**: what one shipped driver does. It shows what software relies on, not what the hardware
-  allows. A register the driver never touches stays unknown however well the driver is understood.
-- **observed**: reported by trade press or a public post about the shipped system, not by a specification.
-- **inferred**: a reasoned reading; the reasoning is given.
-- **unknown**: not settled. The route that would settle it is given, and it is listed in
+- **established**: read in full from a shipped binary (the whole function, table or code path, cited as file and
+  address), or stated in a published SGI document or a public driver.
+- **inferred**: a reasoned reading, with the reasoning given. What a driver does is established; what the hardware does
+  in response is inferred, because the driver is the only witness. A reading from call lists, a name, trade press, a
+  sibling chip or a partial read is inferred. So is anything another project's model says.
+- **unknown**: nothing published or shipped decides it. The route that would settle it is given, and it is listed in
   [the open questions](../../questions/open-questions.md).
 
-The repository's rules use three ratings ([AGENTS.md](../../AGENTS.md)). Until these pages are regraded, read **software expectation** and **observed** as *inferred* when the claim is about what the hardware does, and as *established* only for the narrower claim that the named driver or article says so. **established** and **unknown** keep their meaning.
+These pages were first written with five grades (the two extra ones were *inferred*, what one shipped driver
+does, and *observed*, what trade press or a public post reports). Round 2 regraded them to the three above: both extra
+grades became **inferred** unless the entry says otherwise, and a statement of what a named routine does that cites a
+routine read in full is **established**. The regrade is by mapping, not a fresh reading of every row; a row that was
+**established** before is as it was.
 
 ## Sources
 
@@ -43,8 +46,9 @@ The repository's rules use three ratings ([AGENTS.md](../../AGENTS.md)). Until t
 | SGI 320 Visual Workstation Product Guide, Silicon Graphics 1999 | published brochure | architecture overview, chip names |
 | Microprocessor Report, 15 February 1999, "SGI Chip Set Powers NT Workstations" | trade press | bandwidth split, fill and triangle rates, UMA rationale |
 | Design News, "SGI reinvents NT workstations" (1999) | trade press | three-ASIC structure, static memory split |
-| SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 (patch SG0020054, 12 December 2001): `sgcomp.sys`, `sgcodd.dll`, `sgcoicd.dll`, `sgcotab.cpl`, with the matching `.dbg` symbol files | shipped binaries | everything marked software expectation |
-| Same driver for Windows 2000 (also v5.2.4; different binaries) | shipped binaries | the display driver's OpenGL escape table, read and identical; the rest cross-check only |
+| SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 (patch SG0020054, 12 December 2001): `sgcomp.sys`, `sgcodd.dll`, `sgcoicd.dll`, `sgcotab.cpl`, with the matching `.dbg` symbol files | shipped binaries | everything marked inferred |
+| Same driver for Windows 2000 (also v5.2.4; different binaries) | shipped binaries | the display driver's OpenGL escape table, read and identical; the OpenGL driver, display driver and miniport header scans, identical sets ([packet-set.md](packet-set.md#coverage)) |
+| Windows NT 4.0 OEM disc set, disc 1, and Silicon Graphics Recovery CD-1 v1.1: April 1999 `sgcodd.dll` and `sgcomp.sys` | shipped binaries | header scan only; same set as 5.2.4 |
 | Windows 2000 RTM `sgibvid.dll`, `sglfb.sys`, `sglfb.dll` | shipped binaries (the Windows 2000 CD) | the display back end as the OS's own drivers program it; the "Arsenic" naming |
 | Linux `drivers/video/sgivwfb.c`, `include/video/sgivw.h`, `arch/x86/kernel/visws_quirks.c`, `arch/x86/include/asm/visws/cobalt.h` (Linux history tree, 2.6.x era) | public driver | display back end registers, memory reservation |
 | Usenet posts in comp.sys.sgi.admin (2003 to 2004) | public posts | history, absence of Linux 3D support |
@@ -52,29 +56,30 @@ The repository's rules use three ratings ([AGENTS.md](../../AGENTS.md)). Until t
 | `HKEY_LOCAL_MACHINE\HARDWARE` export of a running 320 | published output from a real machine | firmware and chip revisions, resource claims, memory ranges ([board-data.md](board-data.md)) |
 | A public emulator's model of this machine (source history) | another project's code | cross-check only; it decodes no packet ([packet-set.md](packet-set.md#another-emulators-model)) |
 
-The NT driver package is on the Internet Archive as item `sgi_320_540_drivers` (file `SGICoGraphics524nt4.exe`). It is
-a self-extracting InstallShield archive; its `data1.cab` holds the files above. SGI Support Folio, the original host,
-is gone. The driver symbols ship in the package, so function and many variable names in `sgcomp.sys` are the
-vendor's own and are cited here by name.
+The NT driver package is the file `SGICoGraphics524nt4.exe` (SHA-256 `5097ff4e…`; the Windows 2000 one is
+`SGICoGraphics524w2k.exe`, `c09ea6c6…`; full hashes in [INDEX.md](../../references/documents/INDEX.md#software)). Each is a
+self-extracting InstallShield archive; its `data1.cab` holds the files above (`7z x`, then `unshield x data1.hdr`). SGI
+Support Folio, the original host, is gone. The driver symbols ship in the package, so function and many variable names in
+`sgcomp.sys` are the vendor's own and are cited here by name.
 
 ## What the subsystem is
 
 - **A graphics, memory and I/O chip set of three ASICs.** The Linux kernel's own Visual Workstation notes name them Cobalt,
   Lithium and Arsenic, with the 3D engine inside Cobalt (see [the Cobalt page](https://github.com/jamesbraid/chips/blob/main/devices/cobalt/README.md)). Design News counts
   the same three as a graphics engine, a display engine and an I/O engine, and the Product Guide names two custom parts, a
-  "graphics and memory controller" and an "I/O coprocessor". Observed. Mapping them: the rendering engine is in Cobalt
+  "graphics and memory controller" and an "I/O coprocessor". Inferred (trade press). Mapping them: the rendering engine is in Cobalt
   (established by the kernel notes); the display back end at `0xd0000000` is named Arsenic by SGI's own software (the Windows 2000 boot video driver prints "Failed to find SGI Arsenic chip ID" when the
   `0x666` ID does not read; established as the vendor's name for the chip), and the NT driver agrees by prefixing every display-back-end routine `as` (`asStartFrm`, `asSetConfigAndTiming`, `asSetInterrupt`) and
   names its pixel-format table `ArsenicPixelFormats`; Lithium is the I/O chip. Nothing states where the register
   blocks physically are, so the mapping of blocks to chips is inferred.
 - **Unified memory.** The memory array is 100 MHz, 256 bits wide and not interleaved, 3.2 GB/s in total. Per the trade
   press, up to 800 MB/s of that goes to the processors' front-side bus, up to 1.6 GB/s to the I/O side, and the rest,
-  plus whatever the others leave unused, to graphics. Observed. The datasheet states 256-bit, 3.2 GB/s, ECC SDRAM and up
+  plus whatever the others leave unused, to graphics. Inferred (trade press). The datasheet states 256-bit, 3.2 GB/s, ECC SDRAM and up
   to about 80 percent of system memory for textures. Established (published datasheet).
 - **Memory split is static.** Design News says the video share is fixed by a profile, not allocated on demand. The
   Linux driver agrees: it reserves the top 8 MB of RAM as the frame buffer and never tells the kernel about it
   (`visws_memory_setup`), and the NT miniport takes its bank list from the loader (see
-  [nt-software.md](nt-software.md)). Software expectation.
+  [nt-software.md](nt-software.md)). Inferred (driver behaviour).
 - **Pipeline stages the datasheet lists for the rendering engine.** Transform and lighting of vertices (up to four
   lights), culling, clipping to screen masks and clip IDs, setup of rasteriser and attribute interpolation, Gouraud
   shading, anti-aliased lines, point, line, triangle and rectangle rasterisation, stippling, scissor, texture mapping
@@ -84,7 +89,7 @@ vendor's own and are cited here by name.
   occlusion instruments, and frame-lock video sync. Established as a feature list (published datasheet); the order of
   the stages is **unknown**; what the OpenGL driver does on the host and what it leaves to the engine is in
   [draw-and-buffers.md](draw-and-buffers.md#who-does-what). Trade press quotes 7.4 Mtriangles/s and 176 Mpixels/s
-  with trilinear filtering as peaks. Observed.
+  with trilinear filtering as peaks. Inferred (trade press).
 - **Frame buffer formats.** The datasheet lists 8-, 16- and 32-bit colour, 16/16 and 32/32 double buffering, and
   1920 by 1200 at 66 Hz in 32-bit RGBA as the largest mode. Established. The display back end exposes three pixel depths
   (8, 16, 32 bits) as a two-bit field; see [display-engine.md](display-engine.md).
@@ -93,18 +98,18 @@ vendor's own and are cited here by name.
 
 | Physical range | What | Source | Grade |
 |---|---|---|---|
-| `0xc2000000` | Cobalt CPU block. Register `+0x08` is the revision (high nibble `0xa`). NT refuses the part if the low nibble is 0 or 8 and names it "Cobalt Graphics ChipSet A0" to "AF" from the low nibble. Also holds the timer (Linux) | `sgcomp.sys` `CobaltFindAdapter`, Linux `cobalt.h` | software expectation (revision), established (timer block exists) |
+| `0xc2000000` | Cobalt CPU block. Register `+0x08` is the revision (high nibble `0xa`). NT refuses the part if the low nibble is 0 or 8 and names it "Cobalt Graphics ChipSet A0" to "AF" from the low nibble. Also holds the timer (Linux) | `sgcomp.sys` `CobaltFindAdapter`, Linux `cobalt.h` | inferred (revision), established (timer block exists) |
 | `0xc4000000` | Cobalt interrupt controller ("APIC" in Linux). Graphics pins below | Linux `cobalt.h` | established |
-| `0xc8000000`, `0x19000` bytes | Rendering engine register window | `sgcomp.sys` `CobaltInitialize` maps exactly this length | software expectation |
-| `0xca000000`, 4 bytes | Vertical-retrace interrupt register, read and then rewritten with its complement in the retrace handler. Mapped only if the display back end's ID register reads `0x666` | `sgcomp.sys` `CoVRetraceHandler` | software expectation |
+| `0xc8000000`, `0x19000` bytes | Rendering engine register window | `sgcomp.sys` `CobaltInitialize` maps exactly this length | inferred |
+| `0xca000000`, 4 bytes | Vertical-retrace interrupt register, read and then rewritten with its complement in the retrace handler. Mapped only if the display back end's ID register reads `0x666` | `sgcomp.sys` `CoVRetraceHandler` | inferred |
 | `0xc0000020`, 4 bytes | Mapped on the same condition; its value is copied into a command packet by `CobaltStartIO` and nothing else reads it. Purpose unknown | `sgcomp.sys` | unknown |
-| `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes | `sgivwfb.h`, `sgcomp.sys`, a real machine's resource list ([board-data.md](board-data.md)) | established (base), observed (the claim, on a Windows 2000 or later install) |
-| Top of RAM, 8 MB default | Linux frame buffer. NT takes its own bank list from the loader | `visws_quirks.c`, `sgcomp.sys` | software expectation |
+| `0xd0000000`, 16 MB | Display back end (DBE). Linux reserves `0x01000000` bytes; the NT miniport claims `0xd0000000` to `0xd008001f` and maps `0x80020` bytes | `sgivwfb.h`, `sgcomp.sys`, a real machine's resource list ([board-data.md](board-data.md)) | established (base; the claim, as listed by a Windows 2000 or later install) |
+| Top of RAM, 8 MB default | Linux frame buffer. NT takes its own bank list from the loader | `visws_quirks.c`, `sgcomp.sys` | inferred |
 
 Interrupt pins on the Cobalt controller (numbering from Linux `cobalt.h`): 16 and 17 video out, 18 and 19 video in, 22
 audio, 24 "AS", 25 "RE", 28 CPU timer and cache. The NT miniport asks the HAL for the vectors of pins 24 and 25 and
 connects the engine's handler to pin 25 and the retrace handler to pin 24. So pin 25 carries the rendering engine's
-interrupt and pin 24 the display's vertical retrace. Software expectation. That "RE" stands for rendering engine and
+interrupt and pin 24 the display's vertical retrace. Inferred (driver behaviour). That "RE" stands for rendering engine and
 "AS" for Arsenic is inferred, not published: it agrees with the `as` prefix, the Arsenic pixel-format table above, the boot video driver's
 own naming of the chip at `0xd0000000` and the kernel notes naming Arsenic as the video chip.
 
@@ -113,11 +118,11 @@ own naming of the chip at `0xd0000000` and the kernel notes naming Arsenic as th
 Enough to show text and a desktop:
 
 1. **The DBE register window** at `0xd0000000`, 32-bit uncached accesses only. Reads must return the ID `0x666` at
-   `+0x14` (NT refuses to attach otherwise). Software expectation.
+   `+0x14` (NT refuses to attach otherwise). Inferred (driver behaviour).
 2. **A timing generator state machine** good enough that the status bits NT and Linux poll change: the live DMA-enable
    words (`+0x20004`, `+0x30008`, `+0x40000`) must follow the shadow words (`+0x20008`, `+0x3000c`, `+0x40004`)
    within a frame, and the colour map FIFO word (`+0x58000`) must report free entries. Both drivers spin on these
-   with a time limit and carry on regardless, so a fixed "ready" answer is enough to boot. Software expectation.
+   with a time limit and carry on regardless, so a fixed "ready" answer is enough to boot. Inferred (driver behaviour).
 3. **Scan-out from main memory.** Either a linear frame buffer (Linux: tile pointer is the physical address shifted
    right by 9, linear bit set, 8 MB at the top of RAM) or a tile list (NT: 64 KB tiles named by a list in memory).
    Both are needed. The pixel formats are 8-bit indexed through the colour map, 16-bit and 32-bit RGB. Both drivers
