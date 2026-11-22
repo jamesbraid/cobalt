@@ -21,14 +21,14 @@ same packet queue ([graphics-engine.md](graphics-engine.md#how-the-opengl-driver
 No register of the display back end takes a blit, and no packet outside the 53 headers of [packet-set.md](packet-set.md)
 appears in the display driver (`0x91ca1020` is its only header the OpenGL driver lacks). So the frame-buffer floor
 ([framebuffer-driver-floor.md](framebuffer-driver-floor.md)) is enough for a driver that never touches `0xc8000000`
-(`sgibvid.dll`, `sglfb.sys`, a replacement XP miniport), but SGI's `sgcodd.dll` cannot draw one pixel without the engine
-model. Established.
+(`sgibvid.dll`, `sglfb.sys`, a replacement XP miniport), but SGI's `sgcodd.dll` needs the engine model for every accelerated operation (its host-copy and fallback paths, `vXferNative*` and
+`bPuntBlt`, draw through the CPU window without it). Established.
 
 **Engine primitives the 2D code uses** (all from [packet-set.md](packet-set.md)): rectangles are four port-A vertices
 (`0x18a33060`, or `0x18a33068` with a texture coordinate) under primitive mode `0xa0000000` (type 5, a fan) or
 `0x80000000` (type 4, a strip); line segments are two port-A vertices under `0x20008000` (type 1, width field 1), polylines
 `0x40008000` (type 2), single points `0x8000` (type 0, one vertex per pixel; the brush cache fill) and `vFillRectSpans`
-uses `0xc0008000` (type 6, which nothing else sends; two vertices per span). A rectangle's x and y are integers converted to float; no 2D routine sends z. Fixed point
+uses `0xc0008000` (type 6; `bFillSetup@0x22b32` also stores it, at `0x22d71`, when its first argument exceeds the value at `0x340b8`, besides `0xa0000000` and the type 1 word `0x28008000` with bit 27 set at `0x22bfb`). A rectangle's x and y are integers converted to float; no 2D routine sends z. Fixed point
 GDI path coordinates (28.4) go through a table that divides by 16 exactly (`vInitFloatTable@0x1afd2`: entry `i` is the
 float `i` with `0x2000000` subtracted from its bit pattern, which lowers the exponent by 4). Established.
 
@@ -39,7 +39,7 @@ float `i` with `0x2000000` subtracted from its bit pattern, which lowers the exp
 | Item | 8 bpp | 16 bpp | 32 bpp |
 |---|---|---|---|
 | colour format word (base of `0x91aa0020` payload and of texture word 1) | `0` | `0x12000000` (type 2, depth 1) | `0x24000000` (type 4, depth 2) |
-| pixel layout GDI sees | index | red 15:11, green 10:6, blue 5:1, bit 0 unused (`ulWhitePixel` `0xfffe`, `ulColorMask` `0xf8f8f800`, test pixel `0x886`) | red in the top byte, low byte unused (`ulWhitePixel` `0xffffff00`, test pixel `0x12345600`) |
+| pixel layout GDI sees | index | red 15:11, green 10:6, blue 5:1, bit 0 unused (`ulWhitePixel` `0xfffe`, `0xf8f8f800` the mask of the engine-spread form, test pixel `0x886`) | red in the top byte, low byte unused (`ulWhitePixel` `0xffffff00`, test pixel `0x12345600`) |
 | tile width in pixels / 512-byte tile | 512 | 256 | 128 |
 | tile height | 128 lines | 128 lines | 128 lines |
 
@@ -52,7 +52,7 @@ value it first spreads it to the 32-bit form (`(((c & 0xf800) << 3 | c & 0x7c0) 
 the index, replicated to all four bytes for the clear packet.
 
 Descriptor ids (the six-bit field in 24:19 of every format word, the index of `0xc000 + 8 * id`): 2 front buffer and the
-GDI draw target (`ulFbDescId`, `ulGdiDescId`, format `base | 0x100000`), 3 back buffer (`| 0x180000`), 5 overlay plane
+GDI draw target by default (`ulFbDescId`, `ulGdiDescId`, format `base | 0x100000`; the duplicate-render fields at `+0x6c4` and `+0x6c8` get id 7 in stereo and id 3 when GDI draws on the overlay-double-buffered back buffer), 3 back buffer (`| 0x180000`), 5 overlay plane
 (`0x280000`, 8 bit) and 6 its back buffer (`0x300000`), 7 and 8 right-eye front and back (stereo only), 10 the clip-ID
 plane (`ulCidDescId`, `0x500000`), 11 the linear host-memory buffer used by pixel transfers (`ulLnDescId`, format
 `ulLnFormat | 0x80580000`: bit 31 "linear" set), 12 the texture used for pattern fills (`ulTexDescId`, `base | 0x600000`).
@@ -80,13 +80,14 @@ that mapping is in the miniport's map-memory IOCTL (not re-read for this page).
 - **Packets.** `pulGetPacket@0x27748` takes the next 4 KiB node of a ring (the data starts `0x2c` bytes in, after a pre-written chain
   packet `0x97000040` whose two words are the next node's and this node's positions in 32-byte units shifted left 12,
   OR-ed with serial bits), waiting until bit 0 of the node's first byte clears (calling the miniport's wait when the
-  GDI queue flag says to). `vDispatchPacket@0x2786c` zero-pads to 32 bytes, stores the link word
+  GDI queue flag says to). The callers zero-pad to 32 bytes (`vDispatchPacket@0x2786c` does not). It stores the link word
   `(next position << 9 | units - 1) << 3 | flags` at dword 2 and again at the flush offset (flags `1` ready; `3` ready and
   interrupt; `7` ready, interrupt and sync) and the running serial at dword 3. Read in full; the engine's side of the flags is inferred
   ([graphics-engine.md](graphics-engine.md#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)). The
-  routines pass `1` for the last packet of an operation: it requests the interrupt-and-sync form only when the GDI queue
-  flags ask for per-packet interrupts or the flush count has run out (`ulPktFlushCount`, reloaded from `ulPktChunkCount`), so
-  a model must not assume that every operation raises the engine interrupt.
+  flags come from the last-packet argument `a` (0, 1 or 2) and the GDI queue flags at `+0xc0`. Without per-packet interrupts (bit 0
+  clear): `7` when `a` is 2, or when `a` is 1 with flag `0x80` set and flag 4 clear; otherwise `1`. With them (bit 0 set): `3` when the
+  counter at `+0x8c` is 0, otherwise `1` for `a` 0 and `7` for the rest. So a model must not assume that every operation raises the
+  engine interrupt.
 - **Fence.** Each dispatch sets `bMustSynchronize`. `DrvSynchronize@0x2b2ea` (and `DdLock`, and every CPU access in `vXferNative*`)
   clears it as follows: send a flush marker dispatched with argument 2 (sync form, `7`), ask the miniport to wait for the serial
   of the last packet if that serial is not already the one the miniport has seen (event kind 3), then spin until bit 0 of the
@@ -101,7 +102,7 @@ that mapping is in the miniport's map-memory IOCTL (not re-read for this page).
 - **Clipping.** With a rectangular clip (`DC_RECT`) the driver loads the valid mask `0x08000000` and one rectangle,
   minimum `y << 16 | x`, maximum `(bottom - 1) << 16 | (right - 1)` (inclusive), built from the destination
   rectangle, and draws the clip's bounds. With a complex clip (`DC_COMPLEX`) it loads the same one-rectangle mask from the
-  destination rectangle and draws **one quad per clip rectangle** that `CLIPOBJ_bEnum` returns (up to 0x2c rectangles per packet; a
+  destination rectangle and draws **one quad per clip rectangle** that `CLIPOBJ_bEnum` returns (70 rectangles per enumeration for fills, 80 for clears and copies; a copy packet holds 0x2c quads; a
   new packet and window parameters after that). The copy, stretch and pixel-transfer routines load a valid mask of 0 and
   rely entirely on drawing exactly the clipped rectangles. The hardware's clip rectangles are therefore never needed to cut a
   rectangle that is already clipped; a model that treats the valid mask as "no clip at all" still gives the right pixels
@@ -114,7 +115,7 @@ Packet order is as the routine writes it. "Mode" is the payload of `0x80003020`.
 
 | Operation | Routine | Packets | Grade |
 |---|---|---|---|
-| Solid fill, rectangle, ROP2 `PATCOPY`, `BLACKNESS`, `WHITENESS`, no hardware clip needed | `vFillSolid@0x11cc6` calls `vClearSolid@0x1199a` | flush marker, then one `0x99ce00a0` per column group ([below](#rectangle-clear)) | established; engine inferred |
+| Solid fill, rectangle, ROP2 `PATCOPY`, `BLACKNESS`, `WHITENESS`, no hardware clip needed | `vFillSolid@0x11cc6` reaches `vClearSolid@0x1199a` for a trivial clip or one that the rectangle covers (a complex clip can also reach it) | flush marker, then one `0x99ce00a0` per column group ([below](#rectangle-clear)) | established; engine inferred |
 | Solid fill, any other ROP2 or a complex clip | `vFillSolid` | [draw buffer], flush marker + `0x92ca9020` (ROP2 unless copy), mode `0` or `0x1000000`, window params, `0x18002020` `0xa0000000`, `0x18e84020` colour, four port-A vertices | established |
 | Fill spans | `vFillSpans@0x11384`, `vFillRectSpans@0x1153e` | window params, prim `0x20008000` (type 1, width 1) with two port-A vertices (left, right, same y) per span and the colour in `ulColor4I`; the rect form uses `0xc0008000` | established (both read in full); what type 6 does is unknown |
 | Pattern fill (8 by 8 colour brush) | `vFillPat@0x12846`, `vTexRealize@0x1718c`, `vPatRealize@0x176a2` | brush drawn once into the brush cache as 64 points (colour to `0x18e84020`, vertex to `0x18a33060`, mode `0` and prim `0x8000`), then a copy of the pattern with the brush origin's `x & 7`, `y & 7` rotation into the texture area, then the fill as a textured quad per clip rect: mode `0x40000 (\| 0x1000000)`, `0x93cc0080` word 1 `ulTexFormat`, word 2 `0x330000` (map height 3 and width 3: 8 by 8 texels), `0x91ea2040` `0x62000000` 0, bias `0` `0`, prim `0x80000000`, port A with texture, texture coordinate `(2 * x + 1) / 16` | established |
@@ -133,7 +134,7 @@ Packet order is as the routine writes it. "Mode" is the payload of `0x80003020`.
 Operations the driver does not accelerate fall back to GDI's own code through `bPuntBlt@0x103d0`, which draws through the
 CPU window with `Eng*` calls: any ROP4 with a mask, any ROP3 that depends on both source and pattern, a copy of a
 format the screen does not have, `DrvPaint` with a mask, `DrvStrokePath` with geometric or complex-style lines. The display
-driver exports no alpha-blend, transparent-blit or gradient hook (the hook mask `flHooks` is `0x157b`), so those are software on
+driver exports no alpha-blend, transparent-blit or gradient hook so those are software on
 this driver (**established**, absence in the routine list of 344 functions). `DrvBitBlt` accepts hardware for: a destination
 fill with any source-independent ROP3, a screen copy with any source-and-destination ROP3, a 1-bit source with ROP `0xe2`
 (transparent mono: background not written) or `0xb8`, a same-format host source with any source-and-destination ROP3, a copy to
@@ -148,7 +149,7 @@ coordinates are in units of 32-byte memory rows: `column = (x << log2(bytes per 
 column is partial gets a left-edge packet (mask `-1 << (start byte & 31)`), whose last column is partial a right-edge packet
 (mask `-1 >> (32 - end bytes)`), and the full columns in between one packet with mask `0xffffffff`; a rectangle inside one
 column gets the intersection of the two masks. The value is the colour replicated to 32 bits (8 bpp: the byte four times; 16 bpp:
-the half-word twice; 32 bpp: as is). The packet count per dispatch is `0xa4`. Last packet carries a flush marker and is
+the half-word twice; 32 bpp: as is). A dispatch holds at most `0xa4` clear packets. Last packet carries a flush marker and is
 dispatched as the last one. Established (routine read in full, immediates checked); the engine's mask and column reading is
 inferred. This is the **only** 2D operation that uses a coordinate unit other than pixels, and the only one that ignores
 the window origin and clip (`CoRectFill@0x1f25a` for DirectDraw sends window parameters first, but the clear packets do not
@@ -215,7 +216,7 @@ channels expanded to eight bits by bit replication for 16 bpp
 Mode word bit 22 enables it. Established (`DdBlt` first 200 lines, `vCopyBlt`, `vStretchCopyBlt`, `vXferDMA_*`); the field readings are inferred:
 31:28 reads as which channels take part (3 colour channels, or the index), and a 16-bit texel is compared after expansion
 to eight bits per channel by replication, since the key is built that way. The `DDCKEYCAPS` the driver reports (`0x200`) is
-the colour-space source-blit key only, with no destination key and no overlay key.
+the source-blit key only, with no destination key and no overlay key.
 
 ### Text
 
@@ -249,17 +250,17 @@ Established (table read; the mapping to GL names is checked entry by entry; the 
 
 The drivers reduce a ROP3 `r` to an R2 index by `((r >> 2) & 0xc) + 1 + (r & 3)` for fills (the operation does not
 depend on the source) and `(r & 0xf) + 1` for copies (which do not depend on the pattern); `PATCOPY` (`0xf0`) gives 13,
-`BLACKNESS` 1, `WHITENESS` 16, `DSTINVERT` (`0x55`) 6, `NOP` (`0xaa`) 11 which returns without a packet. The ROP2
+`BLACKNESS` 1, `WHITENESS` 16, `DSTINVERT` (`0x55`) 6, `NOP` (`0xaa`) 11; `vFillSolid` returns without a packet for it, while `vCopyBlt`, `vFillPat` and `vFillStip` send `0x50000000`. The ROP2
 packet is skipped for index 13 and the mode word's bit 24 (logic operation) is set otherwise. Established
 (`vFillSolid@0x11cc6`, `vCopyBlt@0x12e30`, `vFillPat@0x12846`, `vFillStip@0x12282`, `DrvBitBlt@0x10726`).
 
 ## 6. DirectDraw, overlay and video
 
-- **Capabilities** (`DrvGetDirectDrawInfo@0x1f4c9`, read in full): `dwCaps` `0x044a0240`, `dwCKeyCaps` `0x200`, `dwFXCaps` `0x15400`,
+- **Capabilities** (`DrvGetDirectDrawInfo@0x1f4c9`, read in full): `dwCaps` `0x044a0240`, `dwCKeyCaps` `0x200`, `dwFXCaps` `0x15400` (stretch and shrink in x and y only),
   `ddsCaps` `0x250`; plus `0x100` in `dwCaps` and two FOURCC codes (`YUY2`, `UYVY`) when the mode is not 8 bit and the engine
   floating-point save and restore entry points exist (`EngSaveFloatingPointState`, `EngRestoreFloatingPointState`). Decoded
   against the public DirectDraw header: block transfer, stretched block transfer, colour fill by blit, source colour key, read scan
-  line, and a "vertical blank" item; FOURCC block transfers; surfaces: primary, off-screen, flippable.
+  line, and a "vertical blank" item; FOURCC block transfers; surfaces: primary, off-screen, flippable. The routine returns 0 (no DirectDraw) when bit `0x10` of the debug word at `0x34244` is set or the stereo field at `+0x614` is non-zero; FOURCC and YUV also need the field at `+0x7cc` above `0x20002` and a non-8-bit mode (`0x1f4cc`..`0x1f56e`), a field not identified.
   **No overlay (`DDCAPS_OVERLAY`), no destination key, no alpha capability, no video port bit.** The `0x4000` bit
   `DdBlt` tests on a surface is `DDSCAPS_VIDEOMEMORY`; the driver supports a YUV surface only as the source of a blit, in video
   memory, at x offset 0 (`DdCreateSurface@0x1ff28`). Established; the decode of the FX and key bits not checked beyond the raw values. Inferred.
@@ -268,9 +269,12 @@ packet is skipped for index 13 and the mode word's bit 24 (logic operation) is s
   screen, by way of a scratch rectangle and a second pass or a direct strip. The **matrix** is the table `CoMatrixYUV2RGB@0x33d24`: twenty floats
   `1.164383, 1.596027, 0, 0, -0.870788, 1.164383, -0.812969, -0.391762, 0, 0.529591, 1.164383, 0, 2.017231, 0, -1.081389, 0, 0, 0, 1, 0`
   then two words `0` and `0xffffffff` (the 22 words of `0x944c42c0`). The coefficients are the studio-swing BT.601 conversion
-  (255/219 = 1.164383, 1.596027, 0.391762, 0.812968, 2.017232; the three constants are `-(16 * 1.164383 + 128 * k) / 255` for each
-  output channel's offset). Established (table read); the BT.601 reading and the application order (column-major, applied to
-  `(Y, Cb, Cr, 1)`) inferred; how the engine orders the YUY2 samples into Y, Cb, Cr is unknown.
+  (255/219 = 1.164383, 1.596027, 0.391762, 0.812968, 2.017232). Read as four rows of five: row 0 is red (`1.164383`, `1.596027`
+  on the Cr slot, then `0, 0`, offset `-0.870788`), row 1 green (`1.164383`, `-0.812969` on Cr, `-0.391762` on Cb, `0`, offset
+  `0.529591`), row 2 blue (`1.164383`, `0`, `2.017231` on Cb, `0`, offset `-1.081389`), row 3 an alpha pass-through (`0, 0, 0, 1, 0`).
+  The red and blue offsets are `-(16 * 1.164383 + 128 * k) / 256` with `k` the Cr or Cb gain; the green offset is
+  `(128 * (0.391762 + 0.812969) - 16 * 1.164383) / 256`. Established (table read); the BT.601 reading and the row-major
+  application are inferred; how the engine orders the YUY2 samples into Y, Cb, Cr is unknown.
   Scaling is the texture filter: nearest (word 2 of `0x93cc0080` is 0 in the 2D routines), so a stretched YUV blit
   does not interpolate (inferred).
 - **Overlay plane.** The 8-bit overlay of the display back end (`ovr_control`, `0x20008`) is not a DirectDraw feature. The display driver
@@ -283,8 +287,8 @@ packet is skipped for index 13 and the mode word's bit 24 (logic operation) is s
   `DDERR_WASSTILLDRAWING` until they agree. Established.
 - **Video input and output.** The graphics blocks have none of it in the display back end. The Livid driver `sgilivid.sys` (disk 2 of the SGI
   digital media pack 5.2.2 for NT 4.0, 17,648 bytes, build 2001-10-29) maps four windows of `0x80` bytes each, at
-  physical `0xf8000000`, `0xf9000000`, `0xfa000000` and `0xfb000000`, each with a second 8-byte mapping (that channel's time-stamp and counter pair at `0xff001340` to `0xff001358`) and a third 8-byte mapping at `0xff001200`
-  (mapped again for each channel, read only), and creates four devices named `sgilivideoin1`, `sgilivideoin2`, `sgilivideoout1`, `sgilivideoout2` in the order
+  physical `0xf8000000`, `0xf9000000`, `0xfa000000` and `0xfb000000`, each with a second 8-byte mapping (that channel's time-stamp and counter pair: `0xff001340` for `0xfa000000`, `0xff001348` for `0xfb000000`, `0xff001350` for `0xf8000000`, `0xff001358` for `0xf9000000`) and a third 8-byte mapping at `0xff001200`
+  (mapped again for each channel, read only), interrupt vectors `0x12`, `0x13`, `0x10` and `0x11` in that order, and a fifth device, `\Device\sgiliglobal`, that maps `0x90` bytes at `0xf8000000`. It creates four devices named `sgilivideoin1`, `sgilivideoin2`, `sgilivideoout1`, `sgilivideoout2` in the order
   `0xfa000000`, `0xfb000000` (flag 0) then `0xf8000000`, `0xf9000000` (flag 1). It locks user pages with an MDL and reads their
   physical addresses (`MmProbeAndLockPages`, `MmGetPhysicalAddress`), so the ports DMA to host memory by physical address.
   Established for the addresses, sizes and calls (the driver's init at `0x10d68`, image base `0x10000`); that the flag is
@@ -296,20 +300,22 @@ packet is skipped for index 13 and the mode word's bit 24 (logic operation) is s
 
 ## 7. What a guest can see exactly, and what may be approximated
 
-**Bit-exact (a model must give these results).**
+**Bit-exact (a model must give these results).** Grades: what the driver writes is established for every item; the engine's side is inferred unless stated.
 
 1. Every ROP2 of §5 applied to 8, 16 and 32 bit pixels in a fill, a copy and a host transfer, including `XOR`, `INVERT`,
-   `NOP` (no write) and the copy of overlapped regions equal to a `memmove`.
-2. Rectangle coverage of quads: pixels `[left, right) x [top, bottom)`. Fills with integer rectangles have no edge ambiguity.
-3. The rectangle clear: 32-byte rows, left, middle, right edge masks, value replication.
-4. Mono expansion: bit order (bit 0 leftmost), start phase `x & 7`, foreground, background, transparent mode `0xe2`.
+   `NOP` (no write) and the copy of overlapped regions equal to a `memmove`. Table: established; engine reading inferred.
+2. Rectangle coverage of quads: pixels `[left, right) x [top, bottom)`. Inferred (the vertices are established).
+3. The rectangle clear: 32-byte rows, left, middle, right edge masks, value replication. Packet established; engine reading inferred.
+4. Mono expansion: bit order (bit 0 leftmost), start phase `x & 7`, foreground, background, transparent mode `0xe2`. Inferred (partial read).
 5. Pattern and stipple alignment to the brush origin (`x & 7`, `y & 7`) and the 8 by 8 wrap; texture coordinate `(2x + 1) / 16`.
-6. Colour key: source texel not equal to key, after the 5 to 8 bit replication for 16 bpp.
-7. 16-bit and 32-bit pixel layouts of §2, and the 16-bit colour spread of `vFillSolid` (the colour the engine receives).
-8. The YUV to RGB matrix of §6 and the `YUY2` / `UYVY` channel order, to the rounding the engine uses (rounding itself unknown).
+   Pattern fill established; stipple inferred.
+6. Colour key: source texel not equal to key, after the 5 to 8 bit replication for 16 bpp. Packet established; field readings inferred.
+7. 16-bit and 32-bit pixel layouts of §2, and the 16-bit colour spread of `vFillSolid`. Established for what the engine receives.
+8. The YUV to RGB matrix of §6 and the `YUY2` / `UYVY` channel order, to the rounding the engine uses. Matrix established;
+   channel order and rounding unknown.
 9. The fence: bit 0 of the node's first byte clears when the engine is done, the serial the miniport sees reaches the last one
-   sent, and a flush-marker packet with sync flags completes.
-10. The `0x2000`-byte pitch of the CPU window onto the screen and its cache behaviour after `DrvSynchronize`.
+   sent, and a flush-marker packet with sync flags completes. Established as the driver's rule.
+10. The `0x2000`-byte pitch of the CPU window onto the screen after a `DrvSynchronize`. Established for 8 bpp.
 
 **May be approximated** (nothing shipped reads the difference): line rasterisation rules for sub-pixel coordinates (the
 vertices carry 1/16 pixel); stretch sampling (nearest at texel centre with bias 0 is what the driver asks for, but GDI stretch

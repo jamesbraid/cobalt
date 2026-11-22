@@ -64,3 +64,11 @@ Loose on the same disc, the matching symbol files (`Symbols\cpl\sgcoicd.dbg`, `S
 | April 1999 `sgcoicd.dbg` | 304,936 | `e79955dafd9f5d17` |
 
 The Windows 2000 pack's `.dbg` files hold frame-pointer data and a reference to the `.pdb` only. The NT 4.0 pack ships a `.pdb` for every driver as well; the NT 4.0 and Windows 2000 `sgcoicd.pdb` files declare the same engine register types and the same context layout (the OpenGL driver page says how they were read).
+
+From the SGI Digital Media Software 5.2.2 pack for Windows NT 4.0 (`SGIDMediaSW522nt4.exe`, the same InstallShield layout; `data1.cab`), the video capture driver:
+
+```files
+sgilivid.sys
+```
+
+`sgilivid.sys` is 17,648 bytes, built 2001-10-29. Its installed path is `Livid_Driver\System32\Drivers\`. The 2D, blit and video page reads its mappings and entry points only.
