@@ -77,8 +77,7 @@ the system clock PLL at `+0x0c`; the 2D path draws the cursor in software or thr
 table commands `CO_CREATE_TEXTLBPKT`, `CO_FREE_TEXTLBPKT` and `CO_SET_READY_TEXTLBPKT`; and an `OPENGL_GETINFO` query.
 Each is a video IOCTL in the `0x23xxxx` range of the video device type that `CobaltStartIO` in `sgcomp.sys` dispatches
 (base code `0x230400`; others include `0x230478` and `0x23206c`). The OpenGL driver does not call the kernel
-driver: its import list has `ExtEscape` from GDI and no `DeviceIoControl`, so it goes through the display driver. Established for the names, software
-expectation for the path.
+driver: its import list has `ExtEscape` from GDI and no `DeviceIoControl`, so it goes through the display driver. Established for the names, inferred for the path.
 
 Reading the names together, the OpenGL driver asks for a packet buffer mapped into its process
 (`ALLOC_PACKET_BUFFER`), fills it with packets itself, and then asks the kernel to run it (`KICKSCHEDULER`,

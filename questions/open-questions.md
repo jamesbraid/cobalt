@@ -12,12 +12,12 @@ Status: **unknown** for everything below. What is established and what software 
   parameters, table entries and mode-word bits are decoded as the drivers write them
   ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md)). Open: what the engine does with each (the
   arithmetic of set-up, interpolation, texturing, blending, depth and stencil formats and the tile layout), what
-  `0x98804000` does, mode-word bits 28, 26, 19 and 12:0, the instance flag on the diffuse blocks, the third word of the
+  `0x98804000` does, mode-word bits 28, 19 and 12:0, the instance flag on the diffuse blocks, the third word of the
   long chain packet, the miniport's window record fields at `+0x194` and the two record fields in the base-pointer entry,
   and the register at `B` = `0xa3` (`A` = `0x490`), which no binary writes. Routes tried: the OpenGL driver (every
   constant header and its routine), the display driver and miniport (the packet builders read in disassembly, 2D routines
   and their mode words), the Windows 2000 packs, the April 1999 display driver and miniport, SGI's graphics white paper
-  (features only), a registry export (identity only), a public emulator's model of the machine (decodes no packet).
+  (features only), a registry export (identity only).
   Next: the April 1999 OpenGL driver (inside an InstallShield 3 archive on disc 2 of the NT 4.0 OEM set, which neither 7z
   nor unshield opens), the Windows 2000 program-database files for symbol names in the Windows 2000 ICD, and the display
   driver's DirectDraw and video routines (`DdBlt`, `CoYUVBlt_S2S`).
@@ -34,8 +34,7 @@ Status: **unknown** for everything below. What is established and what software 
   `0x0c200` to `0x17fff`. Route: `pCoContextSwitch` and `CoProcessCobaltEvent` read in full, and the Windows 2000
   miniport as a cross-check (its names need the program-database file).
 - **Second interrupt register.** The 32-bit register at `0xca000000` that the retrace handler reads and complements, and
-  the register at `0xc0000020`. A public emulator's model keeps the low four bits of a write and returns them, and never
-  raises the interrupt; it is no evidence for the write-back semantics. Route: the Linux Cobalt interrupt code (`visws_quirks.c` and the Lithium and PIIX4
+  the register at `0xc0000020`. Route: the Linux Cobalt interrupt code (`visws_quirks.c` and the Lithium and PIIX4
   paths) and the HAL image for the PROM's use.
 - **Which ASIC.** The kernel's notes name Cobalt, Lithium and Arsenic; the rendering engine is in Cobalt and the display
   back end is inferred to be Arsenic (NT's `as` routine prefix and `ArsenicPixelFormats`). Unconfirmed: which chip

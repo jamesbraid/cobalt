@@ -32,11 +32,11 @@ Every fact carries one of the repository's three ratings ([AGENTS.md](../../AGEN
 - **unknown**: nothing published or shipped decides it. The route that would settle it is given, and it is listed in
   [the open questions](../../questions/open-questions.md).
 
-These pages were first written with five grades (the two extra ones were *inferred*, what one shipped driver
-does, and *observed*, what trade press or a public post reports). Round 2 regraded them to the three above: both extra
-grades became **inferred** unless the entry says otherwise, and a statement of what a named routine does that cites a
-routine read in full is **established**. The regrade is by mapping, not a fresh reading of every row; a row that was
-**established** before is as it was.
+These pages were first written with five grades. The two extra ones were *software expectation* (what one shipped
+driver does) and *observed* (what trade press, a public post or a registry export reports). Round 2 regraded them to the
+three above: both became **inferred** unless the entry says otherwise, and a statement of what a named routine does that
+cites a routine read in full is **established**. The regrade is by mapping, not a fresh reading of every row; a row that
+was **established** before is as it was.
 
 ## Sources
 
@@ -54,7 +54,6 @@ routine read in full is **established**. The regrade is by mapping, not a fresh 
 | Usenet posts in comp.sys.sgi.admin (2003 to 2004) | public posts | history, absence of Linux 3D support |
 | "The Silicon Graphics 320 and Silicon Graphics 540 Visual Workstation Graphics Subsystem", white paper J10043, 1999 | published document | features and peak rates of the engine, memory pool, formats ([board-data.md](board-data.md)) |
 | `HKEY_LOCAL_MACHINE\HARDWARE` export of a running 320 | published output from a real machine | firmware and chip revisions, resource claims, memory ranges ([board-data.md](board-data.md)) |
-| A public emulator's model of this machine (source history) | another project's code | cross-check only; it decodes no packet ([packet-set.md](packet-set.md#another-emulators-model)) |
 
 The NT driver package is the file `SGICoGraphics524nt4.exe` (SHA-256 `5097ff4e…`; the Windows 2000 one is
 `SGICoGraphics524w2k.exe`, `c09ea6c6…`; full hashes in [INDEX.md](../../references/documents/INDEX.md#software)). Each is a

@@ -10,7 +10,7 @@ agreement.
 ## Who does what
 
 The driver transforms and clips on the host and also has a path that leaves the transform to the engine. Which one runs
-is decided per `glBegin`, and the lighting path is decided per validation. Everything in this section about the
+is decided per `glBegin`, and the lighting path is decided per validation. The flags are also read outside `___glcoim_Begin` (`computeDoBits`, `CoExecuteDlist`, `__glCoDlistExecutePackets` read `+0x2d583` and `+0x2d960`), so the decision is not only per `glBegin`: a compiled list is replayed with its own. Everything in this section about the
 decision is **established** (the routines named were read in disassembly); what the engine does on each path is
 **unknown**.
 
@@ -112,9 +112,9 @@ The line and triangle mode words are different context words (`+0x2dba4` and `+0
 driver keeps the last value it sent and does not resend an unchanged word. Other bits of the word are not decoded.
 Polygon modes (point or line instead of fill) are generated into the handlers (`__glCoGeneratePolygonMode`); not read.
 
-Quads are sent as fans of four (type 5), quad strips and triangle strips as strips (type 4), polygons as fans; the
-engine therefore has the strip and fan connectivity in hardware, as the white paper says ("connected line and triangle
-mesh interface"). Inferred. The driver calls the same vertex-send routine for every primitive; only the mode word and
+Quads are sent as fans of four (type 5), quad strips and triangle strips as strips (type 4), polygons as fans
+(established as what the driver sends). What the engine does with the types is unknown; the white paper's "connected
+line and triangle mesh interface" is agreement, not the meaning. The driver calls the same vertex-send routine for every primitive; only the mode word and
 the number of vertices differ.
 
 ## Vertex packets
@@ -142,8 +142,7 @@ Two ports, `0x18a33060` (`A` = `0x0c5`) and `0x18c33060` (`A` = `0x0c6`), each w
    carries only x and y and is used for a two-component vertex when z is not needed (the engine transforms it, or no
    depth test uses it); port B carries x, y and z. The display driver and the miniport's copy use port A only, with
    instance 8 for the texture coordinate (`CoCopyRect` sends four dwords per vertex: x, y, then s and t equal to x and
-   y). Established as the driver's rule; what the engine does with the missing z is unknown (inferred: z is 0 and w is 1
-   when the engine transforms a two-component vertex).
+   y). Established as the driver's rule; what the engine does with the missing z, and with w, is unknown.
 4. A four-component vertex (clip-word bits 19:18 both set) sent while bit 30 of the draw flags is set is the one case
    where the routine changes the coordinate set: it clears bit 30, sends `0x00210020` with the new flags, sends the vertex
    from the other coordinate words, then sets bit 30 again and resends the flags at the end
@@ -183,17 +182,18 @@ The two buffer descriptors are read-modify-write words kept in the context and s
 **Draw-buffer descriptor** (`0x91aa0020`, context word `+0x2e30c`). Disassembly-checked: bits 24:19 are the low six
 bits of the first dword of the buffer's record (the record that `CREATE_BUFFER` and `BIND_BUFFERS` set up), the other
 bits are preserved. `__glCoInitRGB` clears bits 18:0 and sets the format field in bits 30:25 from the context's bits
-per colour component (`gc+0x2460`): 4 gives `0b001101`, 5 gives `0b001001`, 8 gives `0b010010`. So bits 26:25 are a
-size class (1 for the two 16-bit layouts 4-4-4-4 and 5-5-5-1, 2 for 8-8-8-8) and bits 30:27 the layout. Evidence for
-the size class: `__glCoClearBuffers` reads `(descriptor >> 25) & 3` and branches on 0 (byte colour index), 1 (16-bit)
-and 2 (32-bit, per-byte write masks). Inferred. The white paper's 8-, 16- and 32-bit colour formats fit.
+per colour component (`gc+0x2460`): 4 gives `0b001101`, 5 gives `0b001001`, 8 gives `0b010010`. What the driver does with the
+field is established: `__glCoClearBuffers` reads `(descriptor >> 25) & 3` and branches on 0 (byte colour index), 1
+(16-bit) and 2 (32-bit, per-byte write masks), which is why this page calls bits 26:25 a size class (1 for 4-4-4-4 and
+5-5-5-1, 2 for 8-8-8-8) and bits 30:27 the layout. What the engine reads from the field is unknown; the white paper's 8-,
+16- and 32-bit colour formats are agreement.
 
 **Depth and stencil descriptor** (`0x930ab020`, context word `+0x2e310`). Disassembly-checked: bits 28:23 are the low
 six bits of the first dword of the buffer record (the record the context keeps for the current depth buffer, chosen
 by whether the draw buffer is the left or right one). `__glCoInitDepth` sets bits 31:29 to `001` for a 16-bit depth
 buffer and to `110` for 24 bits, and `__glCoClearBuffers` reads `(descriptor >> 29) & 3` as 1 or 2 accordingly. The
-white paper says 16-bit floating point and 24-bit fixed point depth, with 8-bit stencil; the format field agrees by
-size, and which size is the float is the white paper's, not the driver's. Whether stencil is in the same 32-bit word
+white paper says 16-bit floating point and 24-bit fixed point depth, with 8-bit stencil; the driver's sizes (16 and 24)
+match it, but what the engine reads from the field is unknown. Whether stencil is in the same 32-bit word
 as 24-bit depth is not shown by the descriptor.
 
 Depth test (`0x936ae020`: function in 31:29), stencil (`0x938af040`), alpha test, blend, logic operation, colour mask
@@ -228,11 +228,10 @@ buffer), five words:
 The rectangle is in units of 32-byte memory rows: 32 pixels per column at 8 bits, 16 at 16 bits and 8 at 32 bits
 (`coClearBuffers`, the part that builds the packets, and the miniport's `CoClearRect`, read in full). A rectangle that does not start or end on a
 column boundary is split into a left edge, a middle and a right edge, and the edge packets carry a partial mask:
-`-1 << (pixels * bits)` on the left, `-1 >> ...` on the right, where a pixel is 1, 2 or 4 mask bits. So the mask is
-one bit per byte of the 32-byte row, and the engine is addressed in 256-bit memory words, which matches the 288-bit
-(256 data plus ECC) main memory bus the white paper describes. The white paper's "clear operations at full memory
-bandwidth" fits a register-driven clear. The width of the unit is established from two routines; the register
-meanings are inferred.
+`-1 << (pixels * bits)` on the left, `-1 >> ...` on the right, where a pixel is 1, 2 or 4 mask bits. The driver's unit and mask
+width are established from the two routines: 32-byte rows, and the mask carries one bit per byte of the row. What the
+engine does with the mask and the unit is unknown; the white paper's 288-bit main memory bus and its "clear operations at
+full memory bandwidth" are agreement, not the meaning.
 
 ## Pixel transfers and textures
 
@@ -270,7 +269,7 @@ meanings are inferred.
 
 - What the engine does with the attribute-presence mask in the vertex header, and with a port A vertex that has no z.
   The drivers' side is read ([packet-set.md](packet-set.md#instance-bits-per-block)); the engine's side has no source.
-- What mode-word bits 28, 26, 19 and 12:0 select, and what the flush marker does.
+- What mode-word bits 28, 19 and 12:0 select, and what the flush marker does.
 - The lighting rule is read; the texture-coordinate rule (`GLCOSIMFORCECHIPTEXXFORM`, `__glCoPickCalcTextureProcs`) and
   `__glCoPickPhase1Procs` are not.
 - The two record fields `pCoMakeTlbDesc` shifts into a base-pointer entry (bits 18:14 and 13, 9).

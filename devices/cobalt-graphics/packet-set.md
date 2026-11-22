@@ -61,11 +61,11 @@ headed `0x84e44040` when it saves a context; the chain packet `0x97000040` (`A` 
 
 ## `B` is the index in the engine's register file
 
-Sorting every header by `B` instead of `A` gives one sequence of consecutive registers. Across 53 distinct `B` values
-the next `B` equals `B` plus `n` of the previous in 39 of 52 adjacent pairs; three more are overlaps (the long form of a
+Sorting every header by `B` instead of `A` gives one sequence of consecutive registers. Across 53 distinct `B` values,
+taking the largest `n` seen at each `B`, the next `B` equals `B` plus `n` of the previous in 39 of 52 adjacent pairs; three more are overlaps (the long form of a
 packet already includes the next register: the 7-dword ambient-and-diffuse materials include the diffuse block, and the
 3-dword long chain packet at `B` = 0 reaches the primitive mode at `B` = 2), and the remaining ten are gaps at registers that no header in
-the OpenGL driver names. The runs, with `A` for comparison (`A9` is the low nine bits of `A`):
+the OpenGL driver names. (With the smallest `n` at each `B` the split is 41 exact, 11 gaps and no overlaps.) The runs, with `A` for comparison (`A9` is the low nine bits of `A`):
 
 | `B` run | Registers | `A` | `B - A9` |
 |---|---|---|---|
@@ -119,7 +119,7 @@ the generated code runs. Address rows are in `A` order; payload text is inferred
 
 | Header | `A` | `B` | `n` | Name | Written by (ICD unless noted) | Payload |
 |---|---|---|---|---|---|---|
-| `0x00210020` | `0x001` | `0x10` | 1 | draw flags word | `__glCoClipTriangle`, `__glCoClipLine`, `__glCoDoPolygonClip`, `__glCoSetVertexAttribsMask`, `__glCoDlistExecutePackets`, `___glcoim_Begin` and others | Bit 30 says the vertex packets carry the four words at vertex +0 (the engine transforms them), bit 31 the four at +0x20, neither the window x, y, z and the context's w. Bit 30 wins when both are set. The rule that sets them is in [draw-and-buffers.md](draw-and-buffers.md#who-does-what) |
+| `0x00210020` | `0x001` | `0x10` | 1 | draw flags word | `__glCoClipTriangle`, `__glCoClipLine`, `__glCoDoPolygonClip`, `__glCoSetVertexAttribsMask`, `__glCoDlistExecutePackets`, `___glcoim_Begin` and others | Bit 30 says the vertex packets carry the four words at vertex +0 (the engine transforms them), bit 31 the four at +0x20, neither the window x, y, z and the context's w. Bit 30 wins when both are set. Bit 29 is cleared on both paths that leave bits 31:30 non-zero (`___glcoim_Begin@0x6904327f`, `@0x690432a1`); nothing read sets it. The rule that sets them is in [draw-and-buffers.md](draw-and-buffers.md#who-does-what) |
 | `0x00411200` | `0x002` | `0x11` | 16 | model-view-projection matrix | `__glCoPassMVPMatrix` | 16 floats copied from the transform stack, column by column |
 | `0x02421120` | `0x012` | `0x21` | 9 | normal matrix | `__glCoPassNormalMatrix` | 3 by 3 floats |
 | `0x0362a0c0` | `0x01b` | `0x2a` | 6 | viewport | `__glCoSetViewMatrix` | three scale floats then three offsets; the x and y offsets have a sub-pixel constant subtracted |
@@ -171,7 +171,7 @@ the generated code runs. Address rows are in `A` order; payload text is inferred
 | `0x93cc0080` | `0x49e` | `0xc0` | `0x184f0` | 4 | transfer parameters 1 | `__glCoSetXferParam`, `__glCoRestoreXferParam`, `coSetTexParam`, display driver, miniport | word 1 from the ICD is `(((((a & 0xf) + (b << 4)) << 2) + (c & 3)) << 6) + (d & 0x3f)` shifted left by 19: `d` in 24:19, `c` in 26:25, `a` in 30:27, low bit of `b` in 31. The miniport and display driver send `(source buffer id << 19) \| low bits`: the source buffer of a copy. Words 2 to 4 are 0 |
 | `0x944c42c0` | `0x4a2` | `0xc4` | `0x18510` | 22 | colour matrix | `coSetColorMatrixRegisters`, display driver `CoYUVBlt_S2S` | 20 floats from the context (a 4 by 4 matrix and four more), two more dwords |
 | `0x97000020` | `0x4b8` | `0x00` | `0x185c0` | 1 | chain, short form | miniport only | next position |
-| `0x97000040` | `0x4b8` | `0x00` | `0x185c0` | 2 | chain | `ClosePacket`, `DispatchCurrentPkt`, `__glCoDlistExecutePackets`, `coCreateTexBindPkt`, `coDispatchTexBindPkt`, miniport, display driver `pulGetPacket` | next node position, this node position ([graphics-engine.md](graphics-engine.md)) |
+| `0x97000040` | `0x4b8` | `0x00` | `0x185c0` | 2 | chain | `ClosePacket`, `DispatchCurrentPkt`, `__glCoDlistExecutePackets`, `coCreateTexBindPkt`, `coDispatchTexBindPkt`; display driver `pulGetPacket`. The miniport sends only the short and long forms | next node position, this node position ([graphics-engine.md](graphics-engine.md)) |
 | `0x97000060` | `0x4b8` | `0x00` | `0x185c0` | 3 | chain, long form | miniport only (`pCoContextSwitch`, `CoBuildUserTexTlbPacket`) | `CoBuildUserTexTlbPacket` sends the node position shifted left 12, 0 and a word from the texture record (`sgcomp.sys@0x17a6d`..`0x17a86`); the third word's meaning is unknown |
 | `0x97400020` | `0x4ba` | `0x00` | `0x185d0` | 1 | packet pointer reset | `__glCoCreateTexLevel` | the payload is always 0. The ICD sends it, then runs its overflow routine, before it frees storage of the texture that is currently bound. The miniport writes the same register with the current packet pointer |
 | `0x98250160` | `0x4c1` | `0x50` | `0x18608` | 11 | window parameters | miniport (`CoBuildWinparamsPacket`, `CoBuildWinparamsPacketForPxfer`), display driver | a clip-rectangle valid mask and five (minimum, inclusive maximum) corner pairs; see [window parameters](#window-parameter-packets) |
@@ -195,8 +195,8 @@ exactly that bit, read in disassembly, except where noted. "Enable word" is the 
 | 30 | depth write: buffer present, the GL depth-mask byte, enable-word bit 4 (depth test); cleared and restored around the back pass of a two-sided triangle | `__glCoPassDepthMask@0x6902ce2c`, `__glCoFillFrontBackTriangle@0x69025cb5` |
 | 29 | depth test: buffer present and enable-word bit 4 | `__glCoEnableDepthTest@0x6902ceba` |
 | 28 | set by `__glCoPickTriangleProcs` when any of bits 20:18 of the context word `+0x3d80` is set and a local flag derived from the polygon-mode state is nonzero; cleared at the start of each pick. Meaning unknown | `__glCoPickTriangleProcs@0x6903517b` |
-| 27 | the colour write mask is all zero | `__glCoPassColorMask@0x6902ccda` |
-| 26 | written zero by `__glCoPassColorMask` on every path read (the register that supplies it is never set); read by the transfer routines. Unknown | same |
+| 27 | the colour write mask is all zero (`+0x2e31c` is 0) | `__glCoPassColorMask@0x6902ccda` |
+| 26 | partial colour write mask: set when `__glCoPassColorMask` sends `0x92eaa020` because the mask is neither all zero nor all ones (`push 1` at `@0x6902cd71`, `pop ebx` at `@0x6902cd7e`, `and ebx,1` / `shl ebx,0x1a` at `@0x6902cde6`); cleared otherwise. The transfer routines read it and merge it into the word they send (`__glCoLinearToTileXfer@0x6903b61f`, `@0x6903b6a6`) | same |
 | 25 | dither: enable-word bit 3 | `__glCoEnableDither@0x6902c9ba` |
 | 24 | logic operation: enable-word bit 2 in colour-index mode; in RGB mode set by `__glCoEnableBlend` when enable-word bit 21 is set, or blend is on and the blend-equation field is `0xbf1`. Setting it clears bit 23 | `__glCoEnableLogicOp@0x6902ca54`, `__glCoEnableBlend@0x6902c712` |
 | 23 | blend: RGB mode, enable-word bit 1, not logic operation. When set the blend packet is sent | `__glCoEnableBlend` |
@@ -233,7 +233,7 @@ All read in disassembly: `CoBuildWinparamsPacket@0x16e0a`, `CoBuildGdiWinparamsP
 | Dword | Register (`A`, `B`) | Content |
 |---|---|---|
 | 0 of `0x98250160` | `0x4c1`, `0x50` | the clip-rectangle valid mask: thermometer coded, rectangle `j` of five contributes bit `27 + j`. The miniport takes it from a six-entry table indexed by the rectangle count (`0`, `0x08000000`, `0x18000000`, `0x38000000`, `0x78000000`, `0xf8000000` at `sgcomp.sys@0x104e0`); more than five rectangles use the one-rectangle value with the window's bounding box; a zero count, or a window flag at `+0x68`, uses the one-rectangle value with an empty rectangle (minimum `0x00020002`, maximum `0x00010001`). The pixel-transfer variant sends `0x0c000030` (bits 27, 26, 5, 4) when the context flag at `+0x104` bit 5 is set, else 0; the meaning of bits 26, 5 and 4 is unknown |
-| 1 to 10 | bulk range, `B` = `0x51` to `0x5a` | five pairs, minimum then inclusive maximum, of the window's clip rectangles, each corner `y << 16 \| x` with the maximum already reduced by one. The pixel-transfer variant sends one pair, minimum `0xf800f800`, maximum `0x07ff07ff`, then zeros. Unused pairs are zero |
+| 1 to 10 | bulk range, `B` = `0x51` to `0x5a` | five pairs, minimum then inclusive maximum, of the window's clip rectangles, each corner `y << 16 \| x` with the maximum already reduced by one. The pixel-transfer variant sends one pair, minimum `0xf800f800`, maximum `0x07ff07ff`, then zeros. `pCoSetCtxMask` writes only the pairs for the rectangles it has and the valid mask hides the rest; whether the others are zero is not established |
 | `0x9845b020` payload | `0x4c2`, `0x5b` | the window origin `y << 16 \| x`. The miniport adds `0x04000400` (1024 on each axis) to the origin it keeps in the window record; the display driver sends its origin without the bias, and 0 after a full-screen blit. The miniport sends 0 in the GDI mode (context type 3) and `0xf800f800` or 0 in the pixel-transfer variant |
 | `0x9865c020` payload | `0x4c3`, `0x5c` | the record word at `+0x194`; zero in every path read |
 
@@ -254,8 +254,7 @@ All read in disassembly: `CoBuildTlbPacket@0x16a7a`, `CoBuildUserTexTlbPacket@0x
 - **Base-pointer entry** (window `0xc000 + 8 * k`, 64 entries): a buffer record's descriptor dword with the first
   translation-table slot of the buffer in bits 31:21 (the running sum of the earlier buffers' slot counts, 11 bits).
   `pCoMakeTlbDesc` builds the low bits: bits 12:10 are `log4` of the pages per slot (1, 4, 16, 64, 256 pages give 0 to
-  4), bit 19 is set when record flag bits 2:1 equal 2, bit 13 when a record field is `0x200`, bit 9 when it is neither
-  `0x80` nor `0x200`, and a second record field is shifted into bits 18:14. What those two record fields are is
+  4), bit 19 is set when record flag bits 2:1 equal 2, and then the routine skips the rest (`@0x170f1` jumps to `@0x1711c`). Otherwise bit 13 is set when a record field is `0x200`, bit 9 when it is neither `0x80` nor `0x200`, and a second record field is shifted into bits 18:14. So bit 19 and the group of bits 13, 9 and 18:14 are mutually exclusive. What those two record fields are is
   unknown. User textures are placed from the top of the table: slot `0x800 - total` upward (`CoBuildUserTexTlbPacket`).
 - A bind is: a flush marker, the one-dword base-pointer writes for the slots that changed (the miniport keeps a shadow
   and skips unchanged ones), the translation-table writes in groups of at most 64, and a chain packet.
@@ -269,26 +268,12 @@ layout read. Computed forms: the vertex port plus attribute mask (constants seen
 `0x18c33060`, `0x18c33062`, `0x18c33070`; computed: the port plus any combination of `0x02`, `0x04`, `0x08`, `0x10` as
 `__glCoSetVertexAttribsMask` composes it), the light blocks plus light index, the second clear bank (`0x9e7200a0`), and
 the class `11` table loads (miniport only). Not emitted by the ICD but by the miniport: `0x97000020`, `0x97000060`,
-`0x98250160`, `0x9845b020`, `0x9865c020`, class `11`. The display driver adds `0x91ca1020` and uses 21 of the other
-headers; the miniport uses 14. The same scan of the Windows 2000 display driver and miniport, and of the April 1999
+`0x98250160`, `0x9845b020`, `0x9865c020`, class `11`. The display driver adds `0x91ca1020` and uses 22 of the other
+headers; the miniport uses 15. The count is of distinct header values from the tables above that occur as an immediate
+operand in a linear disassembly sweep of `.text`, with payload constants such as `0x3f000000` left out. The same scan of the Windows 2000 display driver and miniport, and of the April 1999
 builds, found the same headers and no others.
 
 **Withdrawn.** The earlier page listed `0x9400014f` as a span header written by `__glStoreSpanARGB8`. The bytes occur
 once in the image, at `sgcoicd.dll@0x690f2681`, in the export address table (they straddle two of its 15 entries), not
 in the import tables, and no routine stores that value, so it is not a header the driver emits. Also `0x04a40000` is
 not a header: the clear routine adds it to `0x99ce00a0` to pick the second bank.
-
-## Another emulator's model
-
-A public emulator that models this machine has an engine window and an interrupt register
-([source](../../references/documents/INDEX.md#public-sources)); nothing else of the packet set.
-
-- It maps `0xc8000000` for the engine, 32 MB (its own comment says the extent is unverified), returns 0 for every
-  read and only logs writes: no packet, register or queue is decoded. So it neither agrees nor disagrees with any
-  row above. Inferred (another project's model); it carries no information about the packets.
-- It maps `0xca000000` for a 4-byte register spread over 32 MB, keeps the low four bits written and returns them. NT's
-  retrace handler reads that register and writes back the complement; a model that latches the low four bits of the
-  write does not clear anything that way, and the model never raises the interrupt. The address agrees with the
-  miniport; the behaviour is the open question in [questions](../../questions/open-questions.md).
-- Its Cobalt revision register reads `0xa4` (or `0xa5`). The registry export of a real machine shows `Cobalt: a4`
-  ([board-data.md](board-data.md)), so the first value is the one the driver would accept on that machine.

@@ -13,11 +13,10 @@ Public documents this workspace reads, by title and public URL only. Nothing her
 
 - "The Silicon Graphics 320 and Silicon Graphics 540 Visual Workstation Graphics Subsystem", Silicon Graphics white paper, form J10043 (2351 6/99), five pages: https://sgi320.wordpress.com/wp-content/uploads/2013/01/320_gfx_subsystem.pdf
 - "Contents of the HKLM\HARDWARE registry key", a registry export of a running SGI 320, linked from the ReactOS wiki page "SGI 320/540": https://pastebin.com/raw/dnE1xn5q and https://reactos.org/wiki/SGI_320/540
-- A public PC emulator's SGI 320 model, source revision 96d399ef4 (21 January 2025). Another project's model, cross-check only; it decodes no packet.
 
 ## Software
 
-- SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 and for Windows 2000: Library cache `drivers/visws/SGICoGraphics524nt4.exe` (SHA-256 `5097ff4e911a73b892e3072d0db439afb42e9e5db099c8937ee8d38ed810d5e6`) and `drivers/visws/SGICoGraphics524w2k.exe` (SHA-256 `c09ea6c6e059b0a887b48dd8ffa66703783d5ba7308efccf994dc7e7ef675363`).
+- SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 and for Windows 2000: Library cache `drivers/visws/SGICoGraphics524nt4.exe` (SHA-256 `5097ff4e911a73b892e3072d0db439afb42e9e5db099c8937ee8d38ed810d5e6`) and file `SGICoGraphics524w2k.exe` (SHA-256 `c09ea6c6e059b0a887b48dd8ffa66703783d5ba7308efccf994dc7e7ef675363`).
 - SGI Visual Workstation 320 and 540 Windows NT 4.0 OEM disc set, discs 1 and 2 (April 1999 builds of the display driver and miniport on disc 1, `I386`; the OpenGL driver's symbol files and the display driver's on disc 2, `SYMBOLS`), and Silicon Graphics Recovery CD-1 v1.1 (the same display driver and miniport builds in `I386`).
 - Linux visws code (history tree): `drivers/video/sgivwfb.c`, `include/video/sgivw.h`, `arch/x86/kernel/visws_quirks.c`, `arch/x86/include/asm/visws/cobalt.h`.
 - Usenet, comp.sys.sgi.admin, 2003 to 2004: history and the absence of Linux 3D support.

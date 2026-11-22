@@ -68,8 +68,7 @@ engine never needs the host's cache.
   `grmPacketSize` boundary, which is 128 dwords (512 bytes); the dispatcher chains buffers when a packet would.
   Inferred (driver behaviour).
 - **Alignment.** Software pads every packet with zero dwords up to a 32-byte boundary before dispatching it
-  (`grmDispatchPacket`, `CoSetGrmPktHeader`). Size and position are counted in 32-byte units after that. Software
-  expectation.
+  (`grmDispatchPacket`, `CoSetGrmPktHeader`). Size and position are counted in 32-byte units after that. Inferred.
 - **Link word and ownership.** For each packet the driver also writes one dword into a link table (the RN's table at
   record offset `0x120`) that carries, in units of 32 bytes, the packet's size and the next buffer's position, and sets bit
   0. To wait for the engine to finish with a buffer the driver spins until bit 0 of a header or link dword in memory reads
@@ -81,8 +80,7 @@ engine never needs the host's cache.
   `0x09a900c3` (`0x2e`, `0x35`, `0x3c`, `0x43`: four packets seven dwords apart), `0x0ca96120` to `0x0ca96123` (`0x4a`, `0x54`,
   `0x5e`, `0x68`: four of ten dwords), `0x1129f020` to `0x1129f023` (`0x72` to `0x78`: four of two), `0x91aa0220` (`0x7a`),
   `0x93cc0340` (`0x8c`), `0x00210440` (`0xa7`), end at `0xd0`. The four-times structure with the low two bits counting
-  0 to 3 matches the datasheet's four hardware lights; that is inferred, no source names the packets. Software
-  expectation for the table's contents.
+  0 to 3 matches the datasheet's four hardware lights; that is inferred, no source names the packets. Inferred for the table's contents.
 - **Header words seen elsewhere.** Packet builders in the driver and in the OpenGL driver store header dwords of the form
   `0x9880_4000`, `0x8000_3020`, `0x84e4_4040`, `0x99ce_00a0`, `0x9865_c020`, `0x9700_0020`, `0x9700_0040`, `0x9700_0060`,
   `0x91aa_0020`, `0x91ea_2040`, `0x93cc_0080`. The low byte tracks the packet's length in 32-byte units times 32
