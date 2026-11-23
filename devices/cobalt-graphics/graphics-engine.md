@@ -95,10 +95,11 @@ hold. Neither the memory-controller block (`0xc6000000`) nor the Lithium windows
 touches no register of the first and the second decode `0xf0000000` upward.
 
 **Register-write count that supports this reading. Inferred (arithmetic, not a trace).** One start-up of the miniport writes the
-window at `0xc8000000` as follows: 64 descriptor entries and 2048 table entries in `pCoInitializePacketPool`, 16 table entries,
-descriptor 0 and three control words in `CoInitHw`, and 2016 table entries plus descriptor 2 in the map-video-memory handler: 4149 stores,
-the number of writes an emulator saw to this window. The matching writes into `0x82000000` and above are the frame-buffer clears and
-glyph drawing of text-mode setup (4-byte fills, 1-byte pixels at 8 bits per pixel; inferred from the modes, not from a trace).
+window at `0xc8000000` as follows: 64 descriptor entries and 2048 table entries in `pCoInitializePacketPool`, N table entries
+(N is the pool's tile count: the bank's size in MiB, capped at 16 at `0x15206`), descriptor 0 and three control words in `CoInitHw`,
+and 2016 table entries plus descriptor 2 in the map-video-memory handler: 4133 + N stores, 4149 for a 16-tile pool (a bank of 16 MiB
+or more). The writes into `0x82000000` and above are the frame-buffer clears and glyph drawing of text-mode setup (4-byte fills,
+1-byte pixels at 8 bits per pixel; inferred from the modes, not from a trace).
 
 ## Interrupts
 

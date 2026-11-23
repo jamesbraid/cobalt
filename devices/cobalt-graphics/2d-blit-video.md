@@ -34,7 +34,7 @@ float `i` with `0x2000000` subtracted from its bit pattern, which lowers the exp
 
 ## 2. Surfaces, formats and the descriptor ids
 
-`bInitializeModeFields@0x20ea2` sets the words every packet below uses. Read in full. Established.
+`bInitializeModeFields` (`sgcodd.dll` 5.2.4, `0x24c70` to `0x25359`; an earlier `@0x20ea2` was wrong for this build) sets the words every packet below uses. Read in full. Established.
 
 | Item | 8 bpp | 16 bpp | 32 bpp |
 |---|---|---|---|
@@ -56,7 +56,7 @@ GDI draw target by default (`ulFbDescId`, `ulGdiDescId`, format `base | 0x100000
 (`0x280000`, 8 bit) and 6 its back buffer (`0x300000`), 7 and 8 right-eye front and back (stereo only), 10 the clip-ID
 plane (`ulCidDescId`, `0x500000`), 11 the linear host-memory buffer used by pixel transfers (`ulLnDescId`, format
 `ulLnFormat | 0x80580000`: bit 31 "linear" set), 12 the texture used for pattern fills (`ulTexDescId`, `base | 0x600000`).
-Id 0 is the packet pool. Ids 1, 4 and 9 are not set by the mode set-up. Established (`bInitializeModeFields`).
+Id 6 (and the stereo-pair ids written beside it) is set only when the record word at `+0x614` is non-zero (`0x25270`; that word is set from bit `0x40` of a flag argument at `0x24cad`), so the id 6 window the miniport maps is not always used by the display driver. Id 0 is the packet pool. Ids 1, 4 and 9 are not set by the mode set-up. Established (`bInitializeModeFields`).
 
 Texture type codes seen in 2D: 0 (8-bit index), 2 (16-bit), 4 (32-bit), 8 (8-bit glyph mask,
 `DrvTextOut@0x2dfbe`, word `0x40100000`), 14 and 15 (YUY2 and UYVY, [nt-display-driver-video.md](../../software/windows/nt-display-driver-video.md)).
