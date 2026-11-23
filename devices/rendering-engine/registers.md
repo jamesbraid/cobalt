@@ -1,7 +1,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 -->
+<!-- input sha256 a66ee6132863138599bed6f783195f613ca5661fe278916c6ccbf4295bc25bc1 -->
 
 # Rendering engine register window
 
@@ -61,7 +61,7 @@ Starts the engine on a packet position and reports where it is. A write is the p
 |---|---|---|---|---|---|
 | 31:12 | `pkt_pos` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines |  |
 | 11 | `start` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines | set in every write that starts or restarts a node, clear at start-up |
-| 10:0 | `idle_count` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines | the driver keeps this value in a field it names as the packet idle count |
+| 10:0 | `idle_count` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines | the driver writes 2 here with every start and keeps the value in a field it names as the packet idle count; what the engine does with the count is unknown |
 
 ### Register `doorbell`
 
@@ -252,7 +252,7 @@ Lighting mode word.
 
 ### Word `LINK_WORD`
 
-Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.
+Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|

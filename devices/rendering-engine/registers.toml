@@ -5,6 +5,8 @@ title = "Rendering engine register window"
 doc = "The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is \"r\" for that reason). Nothing here is a reset value, and no register is read before it is written."
 from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
 public_from = ["SGI Cobalt Graphics Driver 5.2.4"]
+# Names are the shipped 5.2.4 driver pack's own, from its program database (sgcoicd.pdb); the defs tooling has no
+# name_source value for that, so "ours" stands in. Field names are the driver's own.
 name_source = "ours"
 
 # What the hardware does with any of these is inferred at best: the drivers are the only witness. A
@@ -48,7 +50,7 @@ doc = "Starts the engine on a packet position and reports where it is. A write i
 [registers.exec_ctl.fields]
 pkt_pos = { bits = [31, 12], grade = "inferred" }
 start = { bits = [11, 11], grade = "inferred", doc = "set in every write that starts or restarts a node, clear at start-up" }
-idle_count = { bits = [10, 0], grade = "inferred", doc = "the driver keeps this value in a field it names as the packet idle count" }
+idle_count = { bits = [10, 0], grade = "inferred", doc = "the driver writes 2 here with every start and keeps the value in a field it names as the packet idle count; what the engine does with the count is unknown" }
 
 [registers.doorbell]
 offset = 0x10008
@@ -339,7 +341,7 @@ type = { bits = [28, 25], grade = "inferred" }
 width = 32
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
-doc = "Link word of a packet node: bit 0 set means the engine owns the node and clears it when done."
+doc = "Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit."
 [words.LINK_WORD.fields]
 next = { bits = [31, 12], grade = "inferred" }
 size = { bits = [11, 3], grade = "inferred" }

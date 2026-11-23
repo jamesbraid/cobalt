@@ -1,7 +1,7 @@
 /* generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 */
+/* input sha256 a66ee6132863138599bed6f783195f613ca5661fe278916c6ccbf4295bc25bc1 */
 /* Rendering engine register window */
 #ifndef RENG_GEN_H
 #define RENG_GEN_H
@@ -332,7 +332,7 @@
 #define RENG_LIGHT_MODE_EN_LIGHTING_INPLACE          (RENG_LIGHT_MODE_EN_LIGHTING_MASK << RENG_LIGHT_MODE_EN_LIGHTING_SHIFT)
 
 /*
- * Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.
+ * Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit.
  */
 /* word LINK_WORD: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers */
 #define RENG_LINK_WORD_WIDTH                         32 /* inferred */
