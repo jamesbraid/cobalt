@@ -104,3 +104,102 @@ three statements cover the immediates and that routine, not every computed word.
 for pixel-format code 4 (RGBA5551) to red in 31:27, green in 23:19 and blue in 15:11. With bit 15 named as the opaque-stipple
 enable by the vendor's mode type, the register is read as the colour of the pixels the pattern or the 1-bit source leaves
 clear. The glyph-cache site (`bPutGlyphInCache@0x2da2a`) sends `0x18e84020` with 0 first and `0x91ca1020` with `0xff` after it, and fits it once the later steps are read: the cache holds colour 0 for set pixels and `0xff` for clear ones, and `DrvTextOut` alpha-tests the cache against `0xff` ([2d-blit-video.md](../../devices/cobalt-graphics/2d-blit-video.md#text)). Inferred (the sites read; the pairing of the two colours with the pattern's set and clear bits is not).
+
+## The 8 bits per pixel palette, colour translation and the CPU-drawn paths
+
+Read from the April 1999 NT 4.0 build of `sgcodd.dll` (disc 1, 334,704 bytes, hash prefix in the files list), the build installed
+from the OEM media, in the typed decompile with the key routines checked in the disassembly. The 5.2.4 build was compared only at
+two points (the colour map loop starting at index `0x1101` and the default graphics-capability word below), which match. Names
+are the vendor's, from the `.dbg`; addresses are image virtual addresses. The miniport `sgcomp.sys` takes no part: the display
+driver maps the display back end itself (the base at `*(*pdev+0xc8)`) and never issues the miniport's colour-register
+IOCTL (`0x23041c`; no push of it in the image).
+
+**What the driver tells GDI (`DrvEnablePDEV@0x24120`, `bInitializeModeFields@0x24c70`).** Established.
+
+- The default graphics-capability word copied into the device-info record is `0x28552c`: alternate and winding fill, the colour
+  dither bit (`0x20`), opaque rectangles, mono dither, asynchronous pointer move, direct draw, high-resolution text, and
+  `GCAPS_PALMANAGED` (`0x80000`); bit `0x200000` is not one this page names. For 16 and 32 bits per pixel the routine clears
+  `0x80000` and `0x20`, so **at 8 bits per pixel the device reports a palette-managed colour-dither device**.
+- The default graphics-info record gives 20 static colours (`ulNumColors`) and 256 palette registers (`ulNumPalReg`); the
+  mode's bitmap format is `BMF_8BPP` and the device-info dither format is `BMF_8BPP` with an 8 by 8 cell (the record holds
+  `0x80008`).
+- `bInitializePalette@0x2d290` builds one 256-entry table in memory and creates the default palette with `EngCreatePalette` in
+  indexed mode (mode 1, 256 entries); at other depths it creates a bit-field palette from the mode's masks. The table is a 3-3-2
+  ramp (red in the top three index bits, green next, blue in the low two; each component widened by bit replication), with the
+  twenty static colours of the usual Windows layout copied over entries 0 to 9 and 246 to 255 from a table in the image. The
+  palette handle goes into both the device record and the device-info `hpalDefault`.
+
+**What the driver does with the palette hardware.** Established for the two routines read in full.
+
+- `bEnablePalette@0x2d3d0` (called from `DrvEnableSurface`) writes the colour map at `+0x50000` of the display back end twice.
+  First entries `0x1101` to `0x11ff` get the same 3-3-2 ramp, with index `0x1120` forced to zero; then, at 8 bits per pixel only,
+  bank 0 (entries 0 to 255, written from 255 down to 0) gets the table above. Entry format as the register page: red in
+  31:24, green 23:16, blue 15:8. Before every 32nd write, and once before each run, it spins until `+0x58000` has its low six
+  bits zero or reads `0x30` or more. That status word is the only thing it reads from the device; nothing reads a colour map entry.
+- `DrvSetPalette@0x2d560` takes `PALOBJ_cGetColors` (the start index and count GDI passes), refuses if GDI returns fewer entries
+  than asked, waits on the same status word, then copies the entries into the driver's own table and into bank 0, from the
+  last entry down, each time at index `i` of the run with the **start index ignored** (the run always lands at entry 0). Read in the
+  disassembly. Whether GDI ever passes a non-zero start index for this driver is unknown.
+- The window mode table entry at `+0x48000` is written with `3` for 8 bits per pixel (`0x1b` for 16, `0x17` for 32), in the
+  routine that follows the pixel-size test at `0x2481c`. Entry bits 9:5 (the colour map bank field of the register page) are
+  clear in all three, so bank 0 is the bank an 8-bit pixel goes through; what bank `0x11` is for is unknown (inferred: a
+  second table for an OpenGL colour-index or RGB-332 window mode, because no 2D path selects it).
+
+So **the 8 bpp palette, GDI's translation tables and the dither tables are all computed without reading any device state** other
+than the status word, whose wanted value (low six bits zero, or `0x30` and above) any model value of `0x3f` satisfies.
+
+**Dither.** `DrvDitherColor@0x1a160` and `vDitherColor@0x19f30` build the 8 by 8 pattern from a table that turns a 16-colour
+code into a palette index: codes 0 to 6 map to indices 0 to 6, code 7 to `0xf8`, code 8 to 7, codes 9 to 15 to `0xf9` to `0xff`
+(table at `0x39348`, replicated bytes at `0x39208`). It assumes the standard static layout in the table above and reads nothing from
+the device. The only indices a non-solid fill can produce are those sixteen. Established.
+
+**Which surface GDI draws into.** Established.
+
+- The screen is a device-managed surface (`EngCreateDeviceSurface`, then `EngAssociateSurface` with hook mask `0x157b`: bit blt,
+  stretch blt, text out, paint, stroke path, fill path, line to, copy bits, synchronize). `DrvCreateDeviceBitmap@0x29a90` returns
+  zero (GDI makes its own bitmap) unless the pixel size matches, the pixel is larger than 8 by 8, the off-screen heap has room
+  and one more device-record field (`+0x88`) is not 1; a bitmap it accepts lives in the off-screen heap and carries a record with type 0.
+- `bEnableOffscreenHeap@0x29c60` also creates two **engine-managed 8 bpp bitmaps** (pitch `0x2000`, a placeholder bits pointer
+  `0xbadf00d`), locks them and keeps them in the device record (`+0x168`, `+0x16c`). Before a punt the driver sets the first one's
+  `pvScan0` to the CPU aperture of the screen or of the bitmap's off-screen rectangle (the id 2 window, pitch `0x2000`) and
+  calls `EngBitBlt` or `EngCopyBits` on it. **That is the source of byte and dword stores through window 2 with no reads**: GDI's
+  own routines write the translated bytes straight into the aperture.
+- `DrvCopyBits@0x10f40` (source a plain DIB, target the screen, **non-trivial translation**) takes that path when the device
+  record flag at `+0x628` is set (the mode routine sets it when two mode flags, `+0x614` and `+0x618`, are both clear; what they
+  mean is not read), unless a 16 or 32 bpp XRGB fast path applies.
+  A source of the same pixel format with a trivial translation goes to `vXferNative8bpp@0x14e10` instead, which stores dwords
+  through the window when the logic operation is copy (`0xcccc`) and otherwise sends the engine's pixel DMA packets. 4 bpp and
+  1 bpp sources never match that test, except 1 bpp, which goes to `vXfer1bpp`.
+- `DrvBitBlt@0x10860` only accepts a DIB source for the direct transfer when the translation is trivial and the formats are
+  equal; anything else, and every operation with a mask or a pattern ROP, goes to `bPuntBlt@0x10370`. For a screen target and
+  an operation other than copy, `bPuntBlt` allocates a host bitmap (`EngAllocMem`, then `EngCreateBitmap` and
+  `EngAssociateSurface` with no hooks), **reads the screen rectangle into it with `vXferDMA_SB@0x15d10`**, lets `EngBitBlt` compose
+  in host memory (the translation is GDI's, passed through unchanged as the `XLATEOBJ`), and writes the result back with
+  `vXferNative8bpp` (CPU window stores).
+- `vXferDMA_SB` (typed decompile only) builds engine pixel-transfer packets (a destination buffer descriptor, then vertex pairs under the header `0x18a33068`, a
+  fence), calls `DrvSynchronize`, and then, only for the first and last partial 32-byte lines of the host buffer, **copies those
+  bytes with CPU reads through the same window (pitch `0x2000`)**. Its main body is the engine writing screen pixels to system memory.
+
+**Colour translation of a different-format source (4, 8 or 24 bpp).** The driver never builds its own `XLATEOBJ`. It receives GDI's
+and either calls it (`XLATEOBJ_iXlate`, only in the 16 and 32 bpp XRGB test) or hands it through to `EngBitBlt` / `EngCopyBits`. The
+translation to the 8 bpp indexed palette is computed by GDI from the palette created above and, for a palette-managed device,
+GDI's idea of the realised system palette. **Inferred:** nothing in the driver can make that translation return only black.
+The driver's palette entries (statics at 0 to 9 and 246 to 255) match its dither tables.
+
+### Answers to the three questions that prompted this reading
+
+1. **Palette and translation (established).** As above: `GCAPS_PALMANAGED` set at 8 bpp, indexed 256-entry palette from a table
+   built in the driver, hardware loaded by direct stores, and the only device read is the colour map FIFO status. No read-back of
+   the colour map, no capability word, no colour-format query reaches the palette code. `DrvEnablePDEV` also issues two private IOCTLs (`0x232060`, `0x232064`) whose answers fill mode and aperture fields; that is the
+   only other device input to the set-up (inferred from the stores; the output layout was not decoded).
+2. **CPU-drawn blits (established for the paths; inferred for the cause).** Non-trivial-translation DIB copies and masked or
+   non-copy ROPs are computed by GDI into the aperture (`pvScan0` swap) or into a host bitmap seeded by an engine DMA read-back
+   of the screen. Because the symptom shows exactly the silhouette of the mask with every opaque pixel zero, while background
+   pixels keep their value, either the colour source arrives as zero index or the xor/overwrite step that adds colour never
+   lands; the driver reads no device state that could cause the first.
+3. **The IE background (inferred).** A solid colour that is not a static is a dithered brush, built from the 16 fixed indices
+   above without any device read, or a DIB fill by the same two paths. It fits the same family only if the cause lies in
+   GDI's translation or in the pixel DMA; it does not fit a palette-hardware cause, because no palette value reaches those bytes.
+
+What would settle it is the open question on the 8 bpp icons in [questions/open-questions.md](../../questions/open-questions.md);
+the driver alone does not decide it (**unknown**).

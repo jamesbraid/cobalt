@@ -139,3 +139,11 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   OpenGL context. Next: the display driver's pixel-format describe routine.
 - **Windows 2000 OpenGL driver.** Only its extension string, version string and format table were compared; its routines
   carry no vendor names and were not matched one by one with the NT 4.0 ones.
+- **Why the NT 4.0 display driver at 8 bits per pixel can draw only black, teal and grey for colour icons.** A model run of the
+  installed April 1999 driver at 640 by 480 shows every opaque icon pixel, the Display Properties monitor picture and the Internet
+  Explorer start page background written through CPU aperture window 2 with the values 0, 6 and 7 only, while a Start button
+  bitmap copied by the engine from off-screen memory carries `0xf8` to `0xff`. The driver reads no palette hardware and builds
+  its translation tables without device input ([nt-display-driver-video.md](../software/windows/nt-display-driver-video.md#the-8-bits-per-pixel-palette-colour-translation-and-the-cpu-drawn-paths)).
+  Next: check whether the engine pixel DMA of `vXferDMA_SB` returns screen contents and honours the logic operation word that
+  `vXferDMA_BS` sends, and where GDI's 4 bpp to 8 bpp translation vector first becomes zero (the `XLATEOBJ` handed to `DrvCopyBits` and
+  `bPuntBlt`).
