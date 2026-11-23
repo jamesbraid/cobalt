@@ -174,7 +174,8 @@ the hardware accepts more than one order.
   (`PFN >> 4`, from a 512-byte aligned list whose physical address goes in `frm_control` `[31:9]`), the depth field `[14:13]`,
   and for the linear form (`frm_control` bit 1) a raster whose line pitch is the tile-column count rounded up, times 512 bytes
   (the firmware and `sgibvid.dll` both lay the frame buffer out that way, `1.1005@0x113154e`, `sgibvid.dll@0x80010b54`).
-  Layout established, hardware reading inferred.
+  Layout established, hardware reading inferred. Per-mode register values and the visible-rectangle rule:
+  [display-engine.md](display-engine.md#frame-width-line-pitch-and-the-visible-rectangle).
 - Pixel byte order: red in the top byte of a 32-bit pixel word (`sglfb.sys` colour masks; `ArsenicPixelFormats`). Inferred,
   and the `config` little-endian bit (`0x20`) is not settled.
 - DDC and flat-panel I2C: only if a monitor or panel is to be emulated. Bit 0 is SDA and bit 1 SCL, a 1 pulls the line low and
@@ -240,6 +241,6 @@ device name table entry), neither of which touches the display back end's regist
 
 Still unknown, with the route tried: reset values (no shipped software reads one before writing it); what `ctrlstat` bit 25
 means and when it reads set; what `RUN` going low does to scan-out (the NT 4.0 HAL clears it with one write and sets it with the
-next, with no wait); the exact live-copy delay; the linear form's behaviour for a width that is not a multiple of 512 bytes;
+next, with no wait); the exact live-copy delay; what the hardware does with Linux's layout (line length equal to the visible width) for a width that is not a multiple of 512 bytes;
 the write semantics of `0xca000000` beyond the inference above. [questions/open-questions.md](../../questions/open-questions.md)
 lists each with what would settle it.

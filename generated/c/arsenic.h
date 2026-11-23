@@ -2,7 +2,7 @@
  * change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 4 */
-/* input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a */
+/* input sha256 11821b07c56ea6f9e2d527b6b66727b0adb39dc6e03f4030967928f1f776607b */
 /* Arsenic display back end register block */
 #ifndef ARS_GEN_H
 #define ARS_GEN_H
@@ -598,7 +598,17 @@
  * 512 bytes by 128 lines, so a 32-bit mode has 128 pixels per tile column and a
  * 16-bit mode 256. The NT miniport writes the value twice around the reset
  * pulse; the firmware does the same. Linux, NT and the O2 display back end page
- * agree. The firmware self-test walks bits 15:0.
+ * agree.  The writers disagree on the width: the NT miniport, the Windows 2000
+ * frame buffer miniport and the firmware write the exact line length in bytes
+ * (whole columns plus the remainder in 32-byte units, 0x24 for 640 pixels at 8
+ * bits), while Linux and the Windows 2000 boot video driver write the length
+ * rounded up to whole columns with a zero remainder (0x40 for 640 and for 800
+ * pixels at 8 bits; 0x60 for 1280). All of these are read from the writers. The
+ * register is not the visible width: every writer also programs the
+ * pixel-enable windows (`vt_hpixen`, `vt_vpixen`), whose lengths are the
+ * visible width less 2 and the visible height. What the fetch does with the
+ * bytes past the exact length is inferred (shown pixels come from the windows).
+ * The firmware self-test walks bits 15:0.
  */
 /* frm_size_tile: rw32, reset unknown; Linux frame buffer driver for the display
  * back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4
@@ -661,10 +671,16 @@
  * the frame buffer's physical address shifted right 9 and the line pitch is the
  * tile-column count rounded up times 512 bytes (Linux, both Windows 2000
  * drivers and the firmware set it, the SGI 5.2.4 miniport does not and gives
- * its tile list instead). In the tile-list form the pointer is the physical
- * address of a 512-byte aligned list of 16-bit entries. Both stop DMA by
- * clearing bit 0 and wait up to 20000 ten-microsecond steps for the live copy
- * to follow. The firmware self-test walks bits 31:9 and 1:0.
+ * its tile list instead). The pitch rule is inferred from the two writers whose
+ * frames are not Linux: the firmware (exact width register, 1024-byte stride at
+ * 640 pixels) and the Windows 2000 boot video driver (rounded-up register,
+ * 1024-byte stride at 640). Linux lays its lines out at the visible width in
+ * bytes (640 and 800, not 1024), which disagrees with that pitch for any width
+ * that is not a multiple of 512; whether the hardware then shears is unknown.
+ * In the tile-list form the pointer is the physical address of a 512-byte
+ * aligned list of 16-bit entries. Both stop DMA by clearing bit 0 and wait up
+ * to 20000 ten-microsecond steps for the live copy to follow. The firmware
+ * self-test walks bits 31:9 and 1:0.
  */
 /* frm_control: rw32, reset unknown; Linux frame buffer driver for the display
  * back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4
