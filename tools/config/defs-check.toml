@@ -9,6 +9,15 @@ rust_crate = "cobalt-defs"
 address_bits = 32
 max_reg_offset = 0xffffffff
 
+[gen.export]
+profiles = ["c-regfields"]
+
+[gen.export.units.arsenic]
+base = 0x0
+
+[gen.export.units.rendering_engine]
+base = 0x0
+
 [allowlists]
 leak = "tools/config/leak-allow.txt"
 source_names = "tools/config/source-names-allow.txt"
