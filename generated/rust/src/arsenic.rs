@@ -1,9 +1,11 @@
-// generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source
+// @generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
-// defs-gen 2
+// defs-gen 3
 // input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a
 // Arsenic display back end register block
 #![allow(dead_code)]
+#![allow(clippy::doc_markdown)]
+#![cfg_attr(rustfmt, rustfmt_skip)]
 
 pub mod enums {
     pub mod did_buffer_mode {
@@ -915,6 +917,7 @@ pub mod vc_start_xy {
     }
 }
 /// Overlay plane width. Whole 512-byte tile columns in 12:5 and the remainder in 32-byte units in 4:0; FIFO reset in bit 13 is pulsed set then clear. The (inferred)
+#[allow(clippy::module_inception)]
 pub mod ovr_width_tile {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x20000;
@@ -1012,6 +1015,7 @@ pub mod frm_size_tile {
         pub const fn set(v: u32, x: u32) -> u32 {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
+        #[allow(unused_imports)]
         pub use super::super::enums::frame_depth::Value;
     }
     pub mod frm_width_tile { // bits 12:5, established
@@ -1185,6 +1189,7 @@ pub mod mode_regs {
         pub const fn set(v: u32, x: u32) -> u32 {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
+        #[allow(unused_imports)]
         pub use super::super::enums::did_pixel_type::Value;
     }
     pub mod wid_buf { // bits 1:0, inferred
@@ -1196,6 +1201,7 @@ pub mod mode_regs {
         pub const fn set(v: u32, x: u32) -> u32 {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
+        #[allow(unused_imports)]
         pub use super::super::enums::did_buffer_mode::Value;
     }
 }

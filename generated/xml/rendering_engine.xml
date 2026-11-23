@@ -1,7 +1,7 @@
 <?xml version="1.0" ?>
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
-<!-- defs-gen 2 -->
+<!-- defs-gen 3 -->
 <!-- input sha256 b9b418e921d382c9e05469ae1e7fceea13fce3301107ab67b40c20ebb695e1b2 -->
 <genxml unit="rendering_engine" prefix="RENG" block="RENG" title="Rendering engine register window" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database">
   <doc>The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is "r" for that reason). Nothing here is a reset value, and no register is read before it is written.</doc>
