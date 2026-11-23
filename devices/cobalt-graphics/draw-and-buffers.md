@@ -415,6 +415,8 @@ full memory bandwidth" are agreement, not the meaning.
 
 - What the engine does with the attribute-presence mask in the vertex header, and with a port A vertex that has no z.
   The drivers' side is read ([packet-set.md](packet-set.md#instance-bits-per-block)); the engine's side has no source.
+  The per-mode table of which words a port A and a port B vertex carry, the viewport and origin arithmetic and the
+  lighting words are in [opengl-triangle-path.md](../../software/windows/opengl-triangle-path.md).
 - What the flush marker does, and what the engine does with every field the vendor's types name but no routine sets
   (mode-word bits 12:0 are declared reserved).
 

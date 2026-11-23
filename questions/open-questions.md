@@ -147,3 +147,22 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   Next: check whether the engine pixel DMA of `vXferDMA_SB` returns screen contents and honours the logic operation word that
   `vXferDMA_BS` sends, and where GDI's 4 bpp to 8 bpp translation vector first becomes zero (the `XLATEOBJ` handed to `DrvCopyBits` and
   `bPuntBlt`).
+
+## Rendering engine arithmetic and vertex semantics
+
+What [the triangle-path reading](../software/windows/opengl-triangle-path.md) leaves for an emulator author to choose.
+No shipped routine or published document decides these; routes tried: the OpenGL driver's vertex, viewport, matrix,
+lighting and colour-material routines, the display driver and miniport (draw flags, viewport and default context image).
+Next: the Windows 2000 build of the OpenGL driver, by header constants, only repeats the driver side.
+
+- **Missing z and w on a vertex.** Port A has no z; under the object-coordinate mode neither z nor w is sent. The model
+  must supply z = 0 and w = 1 (inferred from matching the host path); what the engine does under the other two modes
+  with the missing z is unknown (depth is off there).
+- **Clip, w at or below zero.** Whether the engine clips, rejects or flags; the clip-check bit is never set.
+- **Order and rounding of viewport offset, window origin and the 1/64-pixel conversion.** The sum is inferred; where it
+  rounds is unknown. The bias pair is inferred to be a texture-coordinate offset; its interplay with the miniport's
+  switch-in patch for a 3D context is unknown.
+- **Host colour with lit vertices.** Added before or after the engine's clamp; whether ambient is scaled by the light
+  scalar; the lighting-word specular-only bit (never set by the driver).
+- **Diffuse block instance 1.** Inferred to mean "also set the ambient colour"; the byte that selects it in the code
+  generator is not traced.
