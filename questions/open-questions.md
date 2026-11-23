@@ -17,6 +17,12 @@ Status: **unknown** for everything below. What is established and what software 
   header and its routine), the display driver and miniport, the program databases of the OpenGL driver and the miniport, SGI's graphics
   white paper (features only), a registry export (identity only). Next: nothing in the shipped software decides these; a
   model chooses and documents a value.
+- **CPU aperture windows.** The NT 4.0 miniport maps physical `0x80000000 + (id << 24)` for ids 0, 2, 5 and 6 and returns the id 2 window as the
+  frame buffer ([format](../devices/cobalt-graphics/graphics-engine.md#cpu-aperture-windows-at-0x80000000)). Open: which block decodes the
+  range (no register of the memory controller or the CPU block is touched for it), whether the descriptor's tile geometry or 8 KiB steps
+  index the table, what a line beyond the buffer's row length reads, and what a read does. Routes tried: the miniport, display driver and
+  both NT 4.0 HALs, the Windows 2000 HAL and the PROM (no other user of the range). Next: nothing in the shipped software decides
+  these; a model chooses and documents a value, and the first text-mode screen shows whether the layout is right.
 - **Host setup versus engine setup.** Answered for the driver's side
   ([draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md#who-does-what)): transform is the engine's only
   when the clip-volume hint is `GL_FASTEST`, the user enables it or a variable forces it, and the primitive is not drawn by

@@ -38,6 +38,68 @@ The display back end also uses `0x10000`, `0x10018` and `0x10020` in its own blo
 [display-engine.md](display-engine.md)). The two windows share offsets, not a register file: the engine's are at
 `0xc8010000` and up.
 
+## CPU aperture windows at `0x80000000`
+
+The NT 4.0 miniport reaches buffers through a second set of physical windows, one per buffer descriptor id, apart from the
+register window above. Everything below is the miniport `sgcomp.sys` 5.2.4 (April 1999 build); the two NT 4.0 HALs, the Windows 2000 HAL and the PROM
+contain nothing like it, and the Windows 2000 frame buffer drivers take a RAM base from the registry instead
+([w2k-display-drivers.md](../../software/windows/w2k-display-drivers.md)). Grades: the driver's behaviour is established where the whole routine was read; what
+the hardware does with these addresses is inferred, because no document describes them.
+
+**What the driver maps. Established.** `pCoInitializePacketPool` (the routine that also fills the 2048-entry table above) makes four
+`MmMapIoSpace` calls of `0x1000000` (16 MiB) each, in this order, at physical `0x80000000`, `0x82000000`, `0x85000000` and `0x86000000`
+(`sgcomp.sys@0x15386`, `0x153de`, `0x1543c`, `0x1549a`). Each is first mapped with a third argument of 2 (inferred to be the NT 4.0 kernel's frame-buffer caching type, a write-combining
+request on P6 parts; not checked against the kernel) and, if that returns null, again with 0 (uncached); if both fail the routine fails and the engine is not brought up. The
+earlier statement here and in [the driver-floor page](framebuffer-driver-floor.md) that the fourth window is at `0x87000000` was a
+misreading: the immediate is `0x86000000`. The window address is `0x80000000 + (descriptor id << 24)`, and the ids are the ones the
+display driver sets in `bInitializeModeFields` ([2d-blit-video.md](2d-blit-video.md)):
+
+| Window | Id | Buffer | Kept at |
+|---|---|---|---|
+| `0x80000000` | 0 | the packet pool (descriptor 0; the pool is bank 0 of the graphics memory, up to 16 tiles of 1 MiB) | pool record `+8` |
+| `0x82000000` | 2 | the front buffer and GDI's default draw target | device extension `+0xd4c`, reply word `+0x38` |
+| `0x85000000` | 5 | the 8-bit overlay plane | device extension `+0xd50`, reply word `+0x3c` |
+| `0x86000000` | 6 | the overlay plane's back buffer | device extension `+0xd54`, reply word `+0x40` |
+
+The mapped virtual addresses of ids 2, 5 and 6 are copied into the miniport's global-information reply (`CobaltStartIO@0x13272`..`0x1328d`),
+which is how the display and OpenGL drivers get them. Id 3, the colour back buffer, is not mapped. The miniport itself addresses the
+pool through the id 0 window: its pool addresses are `0x80000000` plus a byte offset, and the routine at `0x150b0` converts one back
+to a page of the mapped window and zeroes it.
+
+**The frame buffer the video port hands out is the id 2 window. Established.** The standard map-video-memory control code (`0x230458`,
+handler at `0x12b56`) first writes buffer descriptor 2 (`+0xc010`) with the buffer record's descriptor bits OR `0x4000000`, which is
+first slot 32; loads the translation table from slot 32 with one 24-bit value (the tile's first 4 KB frame number) per tile of the
+screen buffer; fills every later slot up to `0x7ff` with the pool's first tile; and then calls `VideoPortMapMemory` on physical
+`0x82000000`, high dword 0, with the P6-cache space flag (8) and a length of the mode's `VideoMemoryBitmapHeight` times its
+`ScreenStride`. The returned address is both `VideoRamBase` and `FrameBufferBase` of the standard reply. The share-video-memory code
+(`0x230474`, `0x12cec`) maps a sub-range of the same physical window into user mode (flags `0xa`). So text-mode setup (which uses this
+miniport as its display driver; `TXTSETUP.SIF` lists `sgcomp.sys` for display) and the display driver draw into physical
+`0x82000000` and above, not into RAM.
+
+**The window's address format. Established as the driver's expectation.** The mode records have `ScreenStride` fixed at `0x2000`
+(8192 bytes, stored at `0x1aca6`, whatever the width) and a bitmap height of at most `0x800` lines (`0x1ad2e`..`0x1ad3f`), which is a
+16 MiB window of 2048 lines. A routine in the interface table the miniport hands out (`0x19ed0`, table slot at `0x1ed3c`) decodes a
+mapped address of the id 2 window by asking the kernel for its physical address and, if that lies in `0x82000000` to `0x82ffffff`, splits
+it into three fields: bits 29:24 the descriptor id, bits 12:0 the byte within the line, bits 23:13 the line number. So the aperture
+address of pixel byte `(x, y)` is `0x80000000 | id << 24 | y << 13 | x`.
+
+**What the hardware does with it. Inferred.** The window is a linear raster view of a tiled buffer, with the line stride fixed at
+8192 bytes whatever the buffer's real row length. The converting agent has to be the engine's own address translation, the one
+the table (`+0x8000`) and descriptors (`+0xc000`) belong to, because the driver loads only those two structures and writes nothing
+else that describes the window. The conversion that fits every observed field is: tile column `x >> 9` (512-byte tiles, or `x >> 7` for
+128-byte ones), tile row `y >> 7`, table slot `firstSlot + tile row * tilesPerRow + tile column` (the descriptor's fields,
+[packet-set.md](packet-set.md#texture-table-packets-class-11)), frame number from the table entry, and inside a 64 KiB tile
+512-byte rows of 128 lines. Whether the hardware indexes this way or by 8 KiB steps of the window, what a read of a line beyond the
+buffer's row length returns, and whether the window is also usable through any other physical range are not settled by any software we
+hold. Neither the memory-controller block (`0xc6000000`) nor the Lithium windows are involved as far as any binary shows: the miniport
+touches no register of the first and the second decode `0xf0000000` upward.
+
+**Register-write count that supports this reading. Inferred (arithmetic, not a trace).** One start-up of the miniport writes the
+window at `0xc8000000` as follows: 64 descriptor entries and 2048 table entries in `pCoInitializePacketPool`, 16 table entries,
+descriptor 0 and three control words in `CoInitHw`, and 2016 table entries plus descriptor 2 in the map-video-memory handler: 4149 stores,
+the number of writes an emulator saw to this window. The matching writes into `0x82000000` and above are the frame-buffer clears and
+glyph drawing of text-mode setup (4-byte fills, 1-byte pixels at 8 bits per pixel; inferred from the modes, not from a trace).
+
 ## Interrupts
 
 - **Pin 25 (the "RE" pin): the engine.** `CoInterruptHandler` reads `+0x10018` and returns "not mine" when it reads zero.
