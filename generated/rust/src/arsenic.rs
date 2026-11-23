@@ -1,6 +1,6 @@
 // @generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
-// defs-gen 3
+// defs-gen 4
 // input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a
 // Arsenic display back end register block
 #![allow(dead_code)]
