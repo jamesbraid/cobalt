@@ -6,9 +6,11 @@
 
 | Page | Title | Summary |
 |---|---|---|
+| [engine-readbacks.md](windows/engine-readbacks.md) | What the Cobalt drivers read back from the engine | Every place the OpenGL driver (`sgcoicd.dll`), the display driver (`sgcodd.dll`) and the miniport (`sgcomp.sys`)... |
 | [nt-display-driver-video.md](windows/nt-display-driver-video.md) | The NT 4.0 display driver's video and 2D routines | What the display driver `sgcodd.dll` 5.2.4 (NT 4.0 pack, 299,696 bytes, the files list has its hash) does in its... |
 | [nt-opengl-icd.md](windows/nt-opengl-icd.md) | The NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4 | How the OpenGL installable client driver (ICD) is built, how its symbols were applied, and where its packet emitters... |
 | [opengl-depth-stencil-fog.md](windows/opengl-depth-stencil-fog.md) | Depth and stencil words, the clears, the 16-bit depth encoding, and the fog value | What the NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4 writes to clear, test, store and read depth and stencil, and the... |
+| [opengl-escapes.md](windows/opengl-escapes.md) | The escapes between the OpenGL driver and the display driver | Every request the OpenGL installable client driver (`sgcoicd.dll`) makes of the kernel side goes through one GDI... |
 | [opengl-expectations.md](windows/opengl-expectations.md) | What the OpenGL driver expects of the engine | The facts an x64 or other OpenGL path must satisfy to stand in for the Cobalt rendering engine: the identity strings... |
 | [opengl-pixel-transfers.md](windows/opengl-pixel-transfers.md) | Pixel transfers: source types, the colour matrix, and the draw, read and copy packet sequences | How the NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4 moves pixels and texture images through the engine: which transfer... |
 | [opengl-texture-levels.md](windows/opengl-texture-levels.md) | How the OpenGL driver lays out a texture: mip levels, small levels and texel order | What the NT 4.0 OpenGL driver `sgcoicd.dll` 5.2.4 does to give the engine the levels of one texture, how it fills... |

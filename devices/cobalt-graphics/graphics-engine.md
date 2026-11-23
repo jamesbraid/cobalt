@@ -368,8 +368,8 @@ dword 2" describes only the OpenGL and display drivers' extra copy; the word the
 examined; the rest were not searched.
 
 **Waiting. Established (OpenGL driver `0x6901aa0b`, `0x6901b50c` and `0x690614c2`).** All three loops exit when bit 0 of node dword 0 reads clear, and on nothing else: not dword 2, not dword 3.
-They step through an 18-entry table of busy-wait counts. At the last step, unless the variable that disables blocking is set, the loop asks the kernel (escape `0x62`, wait for hardware) whether the engine is still
-busy with a serial and, if so, sleeps on an event the miniport signals from its stop interrupt; then it restarts the table. The serial it sends is dword 3 of the node, read just before the call
+They step through an 18-entry table of busy-wait counts. At the last step, unless the variable that disables blocking is set, the loop asks the kernel (escape `0x62`, wait for hardware) whether the node has yet to be loaded onto the engine
+for that serial and, if so, sleeps on an event the miniport signals when it next loads the node ([escapes](../../software/windows/opengl-escapes.md#what-wait_for_hardware-really-waits-for)); then it restarts the table. The serial it sends is dword 3 of the node, read just before the call
 (sixth input dword of the escape). The two loops inside the dispatch and display-list code reset their remembered value to all ones each time the table step is reloaded (`0x6901a9e9`, `0x690614a0`), so the compare against it skips the call only
 when the serial is `0xffffffff`; the loop at `0x6901b50c` keeps the value across passes and asks once per distinct serial. No loop waits for dword 3 to change.
 

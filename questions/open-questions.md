@@ -153,13 +153,21 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   and the `equal_range` field of the depth word, never set. A model encodes on the depth path only and stores raw words as sent.
 - **Fog arithmetic.** The driver sends `trunc(255 * f)` per vertex with OpenGL's `f` (1 is no fog); the engine's interpolation,
   rounding and treatment of alpha are unknown. A model blends `(F * C + (255 - F) * C_fog) / 255` per colour channel.
-- **The occlusion count.** `GL_SGIX_depth_pass_instrument` drives bits 28:27 of the depth-test word; where the count is
-  written and how `glReadInstrumentsSGIX` collects it were not followed (`0x6904366a`, `0x6904371a`, `0x69043798`).
+- **The occlusion bit's writer and exact meaning.** The driver side is read ([read-backs](../software/windows/engine-readbacks.md#1-the-packet-nodes-first-dword)):
+  one bit, bit 31 of the retired node's first dword, set when a fragment passed the depth test with bits 28:27 of the depth-test
+  word on. Unknown: no shipped software depends on more, and the engine's rule for setting it (any pixel, any sample after
+  early rejection, count of at most one) is not stated anywhere. Routes tried: the ICD and miniport (the miniport never writes
+  the word), the type declarations (`CoPktRespType`). An emulator author chooses: a constant 0 satisfies every caller.
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
 - **The display driver's pixel-format list** (escape `0x5d`, output `0x30` bytes) and the colour and depth sizes it offers an
   OpenGL context. Next: the display driver's pixel-format describe routine.
 - **Windows 2000 OpenGL driver.** Only its extension string, version string and format table were compared; its routines
   carry no vendor names and were not matched one by one with the NT 4.0 ones.
+- **What `SET_READY_TEXTLBPKT` (escape `0x59`) arms.** The display driver copies a stored link field in its own record of the
+  texture packet; the miniport is not called and no packet word is written. Unknown: no shipped path shows what reads the
+  field afterwards. An emulator author keeps the bookkeeping or drops the escape.
+- **Escapes `0xcace`, `0xcaca` and the `0x11` group of the display driver.** Reachable only by a caller that is not the OpenGL
+  driver; the OpenGL driver sends none, so no OpenGL path depends on them. The control-panel applet was not read for them.
 - **Why the NT 4.0 display driver at 8 bits per pixel can draw only black, teal and grey for colour icons.** A model run of the
   installed April 1999 driver at 640 by 480 shows every opaque icon pixel, the Display Properties monitor picture and the Internet
   Explorer start page background written through CPU aperture window 2 with the values 0, 6 and 7 only, while a Start button
