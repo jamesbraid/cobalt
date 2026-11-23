@@ -64,7 +64,7 @@ Findings:
   pixel-transfer enable. Cobalt has no bits for scissor, coverage, anti-aliased lines, a GL-mode bit or the per-byte write mask
   that CRIME has; Cobalt alone has depth offset, separate specular sum, a colour matrix enable and a "partial colour mask"
   bit. The order and bit positions differ (Cobalt counts down from bit 31 with stencil first; only smooth shading sits at bit
-  16 in both), and both have an opaque-stipple enable (Cobalt's field is `opaque_stipple_on`; CRIME's is bit 17). Grade:
+  16 in both), and both have an opaque-stipple enable (Cobalt's vendor field is `enOpaqStipple`; CRIME's is bit 17). Grade:
   inferred shared lineage; no bit-for-bit match beyond one bit. Source: [CRIME_RE.h](https://github.com/jamesbraid/crime/blob/main/devices/re/CRIME_RE.h), `DM_*` constants.
 - **Per-primitive registers.** Both have a primitive word with a primitive type field and an edge or width field, a stipple
   register set (line repeat and pattern, polygon pattern), a scissor and a window origin. CRIME's primitive type values are

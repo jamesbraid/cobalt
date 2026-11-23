@@ -1,7 +1,7 @@
 {
  "license": "BSD-3-Clause",
  "generator": "defs-gen 2",
- "input_sha256": "40f341e6f3e5ecb9130c295b7acf23a6bcfe5c990967fc3b5f7bc2ac1002cb50",
+ "input_sha256": "fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22",
  "schema": "defs-flat/1",
  "source": "devices/rendering-engine/registers.toml",
  "profile": "public",
@@ -32,7 +32,7 @@
   {
    "unit": "rendering_engine",
    "kind": "register",
-   "name": "buffer_desc",
+   "name": "tlb_desc",
    "offset": 49152,
    "access": "w",
    "width": 32,
@@ -41,52 +41,52 @@
    "space": null,
    "reset": "unknown",
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "buffer_desc.slot",
+   "name": "tlb_desc.offset",
    "hi": 31,
    "lo": 21,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "buffer_desc.row_tiles",
+   "name": "tlb_desc.tiles_per_row",
    "hi": 20,
    "lo": 14,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "buffer_desc.tile_size_sel",
+   "name": "tlb_desc.tile_width",
    "hi": 13,
    "lo": 13,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "buffer_desc.tile_pages_log4",
+   "name": "tlb_desc.page_size",
    "hi": 12,
    "lo": 10,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "buffer_desc.pool_flag",
+   "name": "tlb_desc.page_type",
    "hi": 9,
    "lo": 9,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -123,7 +123,7 @@
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "exec_ctl.idle_wait",
+   "name": "exec_ctl.idle_count",
    "hi": 10,
    "lo": 0,
    "grade": "inferred",
@@ -356,7 +356,7 @@
   {
    "unit": "rendering_engine",
    "kind": "register",
-   "name": "bound_texture_id",
+   "name": "tex_id",
    "offset": 99792,
    "access": "rw",
    "width": 32,
@@ -384,948 +384,948 @@
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "ALPHA_TEST_CONFIG",
+   "name": "BLEND_MODE",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 alpha-test writer"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "ALPHA_TEST_CONFIG.component_enables",
+   "name": "BLEND_MODE.dst_func",
    "hi": 31,
    "lo": 28,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 alpha-test writer"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "ALPHA_TEST_CONFIG.func",
-   "hi": 27,
-   "lo": 25,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 alpha-test writer"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "BLEND_CONFIG",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 blend writer"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "BLEND_CONFIG.dst_factor",
-   "hi": 31,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 blend writer"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "BLEND_CONFIG.src_factor",
+   "name": "BLEND_MODE.src_func",
    "hi": 27,
    "lo": 24,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 blend writer"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "BLEND_CONFIG.op",
+   "name": "BLEND_MODE.op",
    "hi": 23,
    "lo": 20,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 blend writer"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "COLOR_BUFFER_DESC",
+   "name": "COLOR_FORMAT",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "COLOR_BUFFER_DESC.linear",
+   "name": "COLOR_FORMAT.linear",
    "hi": 31,
    "lo": 31,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "COLOR_BUFFER_DESC.pixel_kind",
+   "name": "COLOR_FORMAT.color_type",
    "hi": 30,
    "lo": 27,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "COLOR_BUFFER_DESC.size_class",
+   "name": "COLOR_FORMAT.buf_depth",
    "hi": 26,
    "lo": 25,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "COLOR_BUFFER_DESC.buffer_id",
+   "name": "COLOR_FORMAT.desc_id",
    "hi": 24,
    "lo": 19,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "COLOR_BUFFER_DESC.span_flag",
+   "name": "COLOR_FORMAT.span_mode",
    "hi": 18,
    "lo": 18,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "CORNER_XY",
+   "name": "COLOR_TEST_MODE",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 scissor and clear-rectangle writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorTestModeReg, alpha-test writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "CORNER_XY.y",
+   "name": "COLOR_TEST_MODE.en_comp",
    "hi": 31,
-   "lo": 16,
+   "lo": 28,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 scissor and clear-rectangle writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorTestModeReg, alpha-test writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "CORNER_XY.x",
-   "hi": 15,
-   "lo": 0,
+   "name": "COLOR_TEST_MODE.func",
+   "hi": 27,
+   "lo": 25,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 scissor and clear-rectangle writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoColorTestModeReg, alpha-test writer"
   },
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "DEPTH_COMPARE",
+   "name": "DEPTH_TEST",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth-test writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "DEPTH_COMPARE.func",
+   "name": "DEPTH_TEST.func",
    "hi": 31,
    "lo": 29,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth-test writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "DEPTH_COMPARE.occlusion_reset",
+   "name": "DEPTH_TEST.init_occlusion_test",
    "hi": 28,
    "lo": 28,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth-test writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "DEPTH_COMPARE.occlusion_on",
+   "name": "DEPTH_TEST.en_occlusion_test",
    "hi": 27,
    "lo": 27,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth-test writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "DEPTH_COMPARE.equal_window",
+   "name": "DEPTH_TEST.equal_range",
    "hi": 26,
    "lo": 23,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth-test writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "DEPTH_STENCIL_BUFFER_DESC",
+   "name": "DRAW_MODE",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth and stencil descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "DEPTH_STENCIL_BUFFER_DESC.kind_flag",
+   "name": "DRAW_MODE.en_stencil_test",
    "hi": 31,
    "lo": 31,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth and stencil descriptor writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "DEPTH_STENCIL_BUFFER_DESC.size_class",
-   "hi": 30,
-   "lo": 29,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth and stencil descriptor writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "DEPTH_STENCIL_BUFFER_DESC.buffer_id",
-   "hi": 28,
-   "lo": 23,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 depth and stencil descriptor writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "LIGHTING_FLAGS",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "LIGHTING_FLAGS.two_sided",
-   "hi": 31,
-   "lo": 31,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "LIGHTING_FLAGS.light3_on",
+   "name": "DRAW_MODE.en_depth_mask",
    "hi": 30,
    "lo": 30,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.light2_on",
+   "name": "DRAW_MODE.en_depth_test",
    "hi": 29,
    "lo": 29,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.light1_on",
+   "name": "DRAW_MODE.en_depth_offset",
    "hi": 28,
    "lo": 28,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.light0_on",
+   "name": "DRAW_MODE.en_color_discard",
    "hi": 27,
    "lo": 27,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.normalize_on",
+   "name": "DRAW_MODE.en_color_mask",
    "hi": 26,
    "lo": 26,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.specular_on",
+   "name": "DRAW_MODE.en_dither",
    "hi": 25,
    "lo": 25,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.specular_only",
+   "name": "DRAW_MODE.en_logic_op",
    "hi": 24,
    "lo": 24,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "LIGHTING_FLAGS.lit_on",
+   "name": "DRAW_MODE.en_blend",
    "hi": 23,
    "lo": 23,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 lighting-path writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "NODE_LINK",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "NODE_LINK.next",
-   "hi": 31,
-   "lo": 12,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "NODE_LINK.size",
-   "hi": 11,
-   "lo": 3,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "NODE_LINK.sync",
-   "hi": 2,
-   "lo": 2,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "NODE_LINK.interrupt",
-   "hi": 1,
-   "lo": 1,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "NODE_LINK.ready",
-   "hi": 0,
-   "lo": 0,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "PIXEL_PIPE_FLAGS",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.stencil_test_on",
-   "hi": 31,
-   "lo": 31,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.depth_write_on",
-   "hi": 30,
-   "lo": 30,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.depth_test_on",
-   "hi": 29,
-   "lo": 29,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.depth_offset_on",
-   "hi": 28,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.color_discard_on",
-   "hi": 27,
-   "lo": 27,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.color_mask_on",
-   "hi": 26,
-   "lo": 26,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.dither_on",
-   "hi": 25,
-   "lo": 25,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.logic_op_on",
-   "hi": 24,
-   "lo": 24,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.blend_on",
-   "hi": 23,
-   "lo": 23,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.alpha_test_on",
+   "name": "DRAW_MODE.en_color_test",
    "hi": 22,
    "lo": 22,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.fog_on",
+   "name": "DRAW_MODE.en_fog",
    "hi": 21,
    "lo": 21,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.matrix_convert_on",
+   "name": "DRAW_MODE.en_color_matrix",
    "hi": 20,
    "lo": 20,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.pixel_transfer_on",
+   "name": "DRAW_MODE.en_pixel_xfer",
    "hi": 19,
    "lo": 19,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.texture_on",
+   "name": "DRAW_MODE.en_texture",
    "hi": 18,
    "lo": 18,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.secondary_color_on",
+   "name": "DRAW_MODE.en_second_color",
    "hi": 17,
    "lo": 17,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.smooth_shade_on",
+   "name": "DRAW_MODE.en_smooth_shade",
    "hi": 16,
    "lo": 16,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.opaque_stipple_on",
+   "name": "DRAW_MODE.en_opaq_stipple",
    "hi": 15,
    "lo": 15,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.polygon_stipple_on",
+   "name": "DRAW_MODE.en_poly_stipple",
    "hi": 14,
    "lo": 14,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.line_stipple_on",
+   "name": "DRAW_MODE.en_line_stipple",
    "hi": 13,
    "lo": 13,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PIXEL_PIPE_FLAGS.reserved",
+   "name": "DRAW_MODE.reserved",
    "hi": 12,
    "lo": 0,
    "grade": "unknown",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "PRIMITIVE_SETUP",
+   "name": "FB_ADDR",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoFbAddrType, scissor and clear-rectangle writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "PRIMITIVE_SETUP.primitive_kind",
+   "name": "FB_ADDR.y",
    "hi": 31,
-   "lo": 29,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.line_antialias",
-   "hi": 28,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.line_loop",
-   "hi": 27,
-   "lo": 27,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.line_width",
-   "hi": 26,
-   "lo": 15,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.cull_face",
-   "hi": 14,
-   "lo": 13,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.front_face",
-   "hi": 12,
-   "lo": 12,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.back_face_as_line",
-   "hi": 11,
-   "lo": 11,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.direction_10_9",
-   "hi": 10,
-   "lo": 9,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.direction_select_8",
-   "hi": 8,
-   "lo": 8,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "PRIMITIVE_SETUP.reserved",
-   "hi": 7,
-   "lo": 0,
-   "grade": "unknown",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "RASTER_LOGIC",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 logic-operation writer"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "RASTER_LOGIC.op",
-   "hi": 31,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 logic-operation writer"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "STENCIL_CONFIG",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "STENCIL_CONFIG.pass_op",
-   "hi": 31,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "STENCIL_CONFIG.depth_fail_op",
-   "hi": 27,
-   "lo": 24,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "STENCIL_CONFIG.stencil_fail_op",
-   "hi": 23,
-   "lo": 20,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "STENCIL_CONFIG.func",
-   "hi": 19,
    "lo": 16,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoFbAddrType, scissor and clear-rectangle writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "STENCIL_CONFIG.mask",
+   "name": "FB_ADDR.x",
    "hi": 15,
-   "lo": 8,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "STENCIL_CONFIG.ref",
-   "hi": 7,
    "lo": 0,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 stencil writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoFbAddrType, scissor and clear-rectangle writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "word",
-   "name": "TEXTURE_APPLY",
+   "name": "LIGHT_MODE",
    "width": 32,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-environment writers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "TEXTURE_APPLY.func",
-   "hi": 31,
-   "lo": 29,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-environment writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_APPLY.type",
-   "hi": 28,
-   "lo": 25,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-environment writers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "TEXTURE_FORMAT_WORD",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_FORMAT_WORD.linear",
+   "name": "LIGHT_MODE.two_sided",
    "hi": 31,
    "lo": 31,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "TEXTURE_FORMAT_WORD.texture_kind",
-   "hi": 30,
-   "lo": 27,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_FORMAT_WORD.size_class",
-   "hi": 26,
-   "lo": 25,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_FORMAT_WORD.buffer_id",
-   "hi": 24,
-   "lo": 19,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "TEXTURE_LOD_RANGE",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_LOD_RANGE.max_level",
-   "hi": 31,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_LOD_RANGE.min_level",
-   "hi": 27,
-   "lo": 24,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_LOD_RANGE.frac_bits",
-   "hi": 23,
-   "lo": 21,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_LOD_RANGE.lod_bias",
-   "hi": 20,
-   "lo": 11,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "TEXTURE_SAMPLING",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_SAMPLING.min_filter",
-   "hi": 31,
-   "lo": 29,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_SAMPLING.mag_filter",
-   "hi": 28,
-   "lo": 28,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_SAMPLING.wrap_t",
-   "hi": 27,
-   "lo": 26,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_SAMPLING.wrap_s",
-   "hi": 25,
-   "lo": 24,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_SAMPLING.height_code",
-   "hi": 23,
-   "lo": 20,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TEXTURE_SAMPLING.width_code",
-   "hi": 19,
-   "lo": 16,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "word",
-   "name": "TRANSFORM_FLAGS",
-   "width": 32,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TRANSFORM_FLAGS.viewport_xform_on",
-   "hi": 31,
-   "lo": 31,
-   "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver"
-  },
-  {
-   "unit": "rendering_engine",
-   "kind": "field",
-   "name": "TRANSFORM_FLAGS.model_xform_on",
+   "name": "LIGHT_MODE.en_light3",
    "hi": 30,
    "lo": 30,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "TRANSFORM_FLAGS.tex_xform_on",
+   "name": "LIGHT_MODE.en_light2",
    "hi": 29,
    "lo": 29,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
   },
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "TRANSFORM_FLAGS.clip_check_on",
+   "name": "LIGHT_MODE.en_light1",
    "hi": 28,
    "lo": 28,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LIGHT_MODE.en_light0",
+   "hi": 27,
+   "lo": 27,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LIGHT_MODE.en_normalize",
+   "hi": 26,
+   "lo": 26,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LIGHT_MODE.en_specular",
+   "hi": 25,
+   "lo": 25,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LIGHT_MODE.spec_only",
+   "hi": 24,
+   "lo": 24,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LIGHT_MODE.en_lighting",
+   "hi": 23,
+   "lo": 23,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "LINK_WORD",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LINK_WORD.next",
+   "hi": 31,
+   "lo": 12,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LINK_WORD.size",
+   "hi": 11,
+   "lo": 3,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LINK_WORD.sync",
+   "hi": 2,
+   "lo": 2,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LINK_WORD.intr",
+   "hi": 1,
+   "lo": 1,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LINK_WORD.ready",
+   "hi": 0,
+   "lo": 0,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "LOGIC_OP",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLogicOpReg, logic-operation writer"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "LOGIC_OP.op",
+   "hi": 31,
+   "lo": 28,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoLogicOpReg, logic-operation writer"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "PRIM_MODE",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.prim_type",
+   "hi": 31,
+   "lo": 29,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.aa_line",
+   "hi": 28,
+   "lo": 28,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.closed_line",
+   "hi": 27,
+   "lo": 27,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.line_width",
+   "hi": 26,
+   "lo": 15,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.cull_face",
+   "hi": 14,
+   "lo": 13,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.front_face",
+   "hi": 12,
+   "lo": 12,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.back_face_line",
+   "hi": 11,
+   "lo": 11,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.prim_dir",
+   "hi": 10,
+   "lo": 9,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.sel_prim_dir",
+   "hi": 8,
+   "lo": 8,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "PRIM_MODE.reserved",
+   "hi": 7,
+   "lo": 0,
+   "grade": "unknown",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "STENCIL_MODE",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "STENCIL_MODE.dppass",
+   "hi": 31,
+   "lo": 28,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "STENCIL_MODE.dpfail",
+   "hi": 27,
+   "lo": 24,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "STENCIL_MODE.sfail",
+   "hi": 23,
+   "lo": 20,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "STENCIL_MODE.func",
+   "hi": 19,
+   "lo": 16,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "STENCIL_MODE.mask",
+   "hi": 15,
+   "lo": 8,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "STENCIL_MODE.ref",
+   "hi": 7,
+   "lo": 0,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "SZ_FORMAT",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "SZ_FORMAT.sz_type",
+   "hi": 31,
+   "lo": 31,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "SZ_FORMAT.buf_depth",
+   "hi": 30,
+   "lo": 29,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "SZ_FORMAT.desc_id",
+   "hi": 28,
+   "lo": 23,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "TEXENV_MODE",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexEnvModeReg, texture-environment writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXENV_MODE.func",
+   "hi": 31,
+   "lo": 29,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexEnvModeReg, texture-environment writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXENV_MODE.type",
+   "hi": 28,
+   "lo": 25,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexEnvModeReg, texture-environment writers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "TEXGEN_FORMAT",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_FORMAT.linear",
+   "hi": 31,
+   "lo": 31,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_FORMAT.tex_type",
+   "hi": 30,
+   "lo": 27,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_FORMAT.buf_depth",
+   "hi": 26,
+   "lo": 25,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_FORMAT.desc_id",
+   "hi": 24,
+   "lo": 19,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "TEXGEN_LOD",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_LOD.max_level",
+   "hi": 31,
+   "lo": 28,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_LOD.min_level",
+   "hi": 27,
+   "lo": 24,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_LOD.lod_frac_size",
+   "hi": 23,
+   "lo": 21,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_LOD.lod_bias",
+   "hi": 20,
+   "lo": 11,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "TEXGEN_MODE",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_MODE.min_filter",
+   "hi": 31,
+   "lo": 29,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_MODE.mag_filter",
+   "hi": 28,
+   "lo": 28,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_MODE.wrap_t",
+   "hi": 27,
+   "lo": 26,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_MODE.wrap_s",
+   "hi": 25,
+   "lo": 24,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_MODE.map_height",
+   "hi": 23,
+   "lo": 20,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "TEXGEN_MODE.map_width",
+   "hi": 19,
+   "lo": 16,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "word",
+   "name": "XFORM_MODE",
+   "width": 32,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "XFORM_MODE.en_viewport_xform",
+   "hi": 31,
+   "lo": 31,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "XFORM_MODE.en_model_xform",
+   "hi": 30,
+   "lo": 30,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "XFORM_MODE.en_tex_xform",
+   "hi": 29,
+   "lo": 29,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver"
+  },
+  {
+   "unit": "rendering_engine",
+   "kind": "field",
+   "name": "XFORM_MODE.en_clip_check",
+   "hi": 28,
+   "lo": 28,
+   "grade": "inferred",
+   "from": "SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver"
   },
   {
    "unit": "rendering_engine",
@@ -1334,7 +1334,7 @@
    "value": 10,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1343,7 +1343,7 @@
    "value": 8,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1352,7 +1352,7 @@
    "value": 6,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1361,7 +1361,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1370,7 +1370,7 @@
    "value": 11,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1379,7 +1379,7 @@
    "value": 9,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1388,7 +1388,7 @@
    "value": 7,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1397,7 +1397,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1406,7 +1406,7 @@
    "value": 5,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1415,7 +1415,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1424,7 +1424,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1433,7 +1433,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1442,7 +1442,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1451,7 +1451,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1460,7 +1460,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1469,7 +1469,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1478,7 +1478,7 @@
    "value": 12,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1487,7 +1487,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1496,7 +1496,7 @@
    "value": 7,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1505,7 +1505,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1514,7 +1514,7 @@
    "value": 6,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1523,7 +1523,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1532,7 +1532,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1541,7 +1541,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1550,7 +1550,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1559,7 +1559,7 @@
    "value": 5,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1568,7 +1568,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1577,7 +1577,7 @@
    "value": 5,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1586,7 +1586,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1595,7 +1595,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1604,7 +1604,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1613,7 +1613,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1622,7 +1622,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1631,7 +1631,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1640,7 +1640,7 @@
    "value": 5,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1649,7 +1649,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1658,7 +1658,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1667,7 +1667,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1676,7 +1676,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1685,7 +1685,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1694,7 +1694,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1703,7 +1703,7 @@
    "value": 5,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1712,7 +1712,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1721,7 +1721,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1730,7 +1730,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1739,7 +1739,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1748,7 +1748,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1757,7 +1757,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1766,7 +1766,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1775,7 +1775,7 @@
    "value": 8,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1784,7 +1784,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1793,7 +1793,7 @@
    "value": 6,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1802,7 +1802,7 @@
    "value": 7,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1811,7 +1811,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1820,7 +1820,7 @@
    "value": 3,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1829,7 +1829,7 @@
    "value": 4,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1838,7 +1838,7 @@
    "value": 5,
    "count": 1,
    "grade": "unknown",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1847,7 +1847,7 @@
    "value": 14,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1856,7 +1856,7 @@
    "value": 15,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1865,7 +1865,7 @@
    "value": 3355443200,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1874,7 +1874,7 @@
    "value": 102400,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1883,7 +1883,7 @@
    "value": 1,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1892,7 +1892,7 @@
    "value": 2,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   },
   {
    "unit": "rendering_engine",
@@ -1901,7 +1901,7 @@
    "value": 0,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database"
   }
  ]
 }

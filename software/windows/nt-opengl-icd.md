@@ -105,15 +105,15 @@ full; the offsets match the routines cited in [draw-and-buffers.md](../../device
 | Offset | Vendor name | Notes |
 |---|---|---|
 | `+0x2d578` | `modes` (16 bytes of flags) | `+6` `softLighting`, `+7` `useOG`, `+8` `forceClip`, `+9` `clipToBigFrustum`, `+0xa` `forceChipXForm` (`GLCOSIMFORCECHIPXFORM`), `+0xb` `allowChipXForm` (`GLCOALLOWCHIPXFORM`, at `+0x2d583`), `+0xc` `forceChipTexXForm` (`GLCOSIMFORCECHIPTEXXFORM`, at `+0x2d584`), `+0xd` `fastSetAttribs`, `+0xe` `objectClipCheck`, `+0xf` `hardwareDisplayListsEnabled` |
-| `+0x2d5a0` | `light` | `lightingMode` (the path word) at `+0x2d5c0`, `controlWord` (per-light bits: `__glCoSetVertexAttribsMask` tests `1 << light` shifted left 8 to decide whether a light's scalar packet is sent) at `+0x2d5cc`, `lightModeReg` (the lighting-mode packet's word, a `LIGHTING_FLAGS`) at `+0x2d5e4`, `calcColor` at `+0x2d608`; the out-of-range flags `cOutOfRange` at `+0x2d5a8` |
+| `+0x2d5a0` | `light` | `lightingMode` (the path word) at `+0x2d5c0`, `controlWord` (per-light bits: `__glCoSetVertexAttribsMask` tests `1 << light` shifted left 8 to decide whether a light's scalar packet is sent) at `+0x2d5cc`, `lightModeReg` (the lighting-mode packet's word, a `CoLightModeReg`) at `+0x2d5e4`, `calcColor` at `+0x2d608`; the out-of-range flags `cOutOfRange` at `+0x2d5a8` |
 | `+0x2d60c` | `vertex` (868 bytes) | `noNeedToClip` at `+0x2d960` (a four-byte word: bit 0 `forceChipXForm` from `GLCOSIMFORCECHIPXFORM`, bit 1 the clip-volume hint while it is `GL_FASTEST`, bit 2 lock-array, bit 3 display list); `allTuples` `+0x2d964`; `hostCulling` `+0x2d968`; `enableTexMatrix` byte at `+0x2d96e` |
 | `+0x2d9b0` | `texture` (204 bytes) | `coParam` (the four texture-format words) `+0x2d9b0`, `coEnv` `+0x2d9c0`; `controlWord` at `+0x2da78` is the texture-generation state word of `__glCoPickCalcTextureProcs` |
-| `+0x2da7c` | `pixel` (284 bytes) | `yCrCbToRGBA` `+0xc`, `RGBAToyCrCb` `+0xd`, `enableHwCM` (colour-matrix flag) `+0xd6`, `xferParam` `+0x104` (the five words `buffer_id`, `pixDepth`, `pixType`, `pixMode`, `linear`), `colorFormat` `+0x118` |
+| `+0x2da7c` | `pixel` (284 bytes) | `yCrCbToRGBA` `+0xc`, `RGBAToyCrCb` `+0xd`, `enableHwCM` (colour-matrix flag) `+0xd6`, `xferParam` `+0x104` (the five words `descId`, `pixDepth`, `pixType`, `pixMode`, `linear`), `colorFormat` `+0x118` |
 | `+0x2db98` | `displayBank` | |
-| `+0x2db9c`, `+0x2dba0` | `drawmode`, `drawModeReg` | the pixel-pipe mode word and the last value sent, a `PIXEL_PIPE_FLAGS` |
-| `+0x2dba4`, `+0x2dba8`, `+0x2dbac` | `linePrimMode`, `polyPrimMode`, `primitiveReg` | `PRIMITIVE_SETUP` |
-| `+0x2dbb0` | `xformmodeReg` | a `TRANSFORM_FLAGS`: the draw flags word |
-| `+0x2dbb4`, `+0x2dbb8` | `flatColorReg`, `scissor` | the colour last sent (reset to all ones by a node dispatch); the scissor corners (scissor corner words) |
+| `+0x2db9c`, `+0x2dba0` | `drawmode`, `drawModeReg` | the pixel-pipe mode word and the last value sent, a `CoDrawModeReg` |
+| `+0x2dba4`, `+0x2dba8`, `+0x2dbac` | `linePrimMode`, `polyPrimMode`, `primitiveReg` | `CoPrimModeReg` |
+| `+0x2dbb0` | `xformmodeReg` | a `CoXformModeReg`: the draw flags word |
+| `+0x2dbb4`, `+0x2dbb8` | `flatColorReg`, `scissor` | the colour last sent (reset to all ones by a node dispatch); the scissor corners (`CoClipRectReg`) |
 | `+0x2dbc4` | `tlbDescTable` | 64 descriptors of 24 bytes (id, type, slots, base, offset, descriptor word) |
 | `+0x2e284` to `+0x2e2c8` | `pktSequence`, `pktCount`, `pktSize`, `baseOffset`, `pktFlushOffset`, `currentPkt`, `currentLevelPtr`, `currentHighPtr`, `pktBuffers`, `pktBufferDesc`, `dispatchCurrentPkt`, `forceDispatchPrim`, `forceDispatchAll`, `forceFinish` | the packet-buffer state the dispatch routines keep |
 | `+0x2e2cc`, `+0x2e2cd` | `fastClear`, `bigScissor` | `fastClear` picks the second bank of the rectangle-clear register (`0x9e7200a0` instead of `0x99ce00a0`) |
@@ -141,13 +141,13 @@ names `+0x108` `savedPktOffset`, `+0x4e0` `currentTexId`, `+0x4e4` to `+0x4f0` t
 `+0xbd8` `CAI_InterruptReg` (the register at the second interrupt address), `+0xbdc` `coBase` and `+0xbe0` `asBase`.
 Established (declarations).
 
-**The engine register words.** The program database declares 28 bit-field types for the engine's words: 23 register-word types and five others (a four-integer
-colour, an RGBA colour, a corner, a packet link word and a packet response). The 23 are the word types for the registers the packets
-load (the register definitions carry them as `PIXEL_PIPE_FLAGS`, `PRIMITIVE_SETUP`, `TRANSFORM_FLAGS`, `COLOR_BUFFER_DESC`, `DEPTH_STENCIL_BUFFER_DESC`, `buffer_desc`,
-`BLEND_CONFIG`, `ALPHA_TEST_CONFIG`, `DEPTH_COMPARE`, `STENCIL_CONFIG`, `RASTER_LOGIC`, `LIGHTING_FLAGS`, texture packet words,
-texture-environment packet words, clear-rectangle packet words and the rest), with bit-field names and positions; the definitions use our own names for them. They are compared
+**The engine register words.** The program database declares 28 `Co*` types: 23 whose names end in `Reg`, and `CoColor4i`, `CoRgbaType`, `CoFbAddrType`,
+`CoPktDescType` and `CoPktRespType`. The 23 are the word types for the registers the packets
+load (`CoDrawModeReg`, `CoPrimModeReg`, `CoXformModeReg`, `CoColorFormatReg`, `CoSzFormatReg`, `CoTlbDescReg`,
+`CoBlendReg`, `CoColorTestReg`, `CoDepthTestReg`, `CoStencilModeReg`, `CoLogicOpReg`, `CoLightModeReg`, `CoTexGenParamReg`,
+`CoTexEnvParamReg`, `CoClearModeReg` and the rest), with bit-field names and positions. They are compared
 with every writer in [packet-set.md](../../devices/cobalt-graphics/packet-set.md). The register definitions carry 18 words;
-the four-integer colour, the packet response, the stipple packet words and the clear-rectangle packet words are not in them yet.
+`CoColor4i`, `CoPktRespType`, `CoStippleModeReg` and `CoClearModeReg` are not in them yet.
 
 ## The April 1999 build
 

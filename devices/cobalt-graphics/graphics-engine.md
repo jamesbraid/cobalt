@@ -87,7 +87,7 @@ address of pixel byte `(x, y)` is `0x80000000 | id << 24 | y << 13 | x`.
 8192 bytes whatever the buffer's real row length. The converting agent has to be the engine's own address translation, the one
 the table (`+0x8000`) and descriptors (`+0xc000`) belong to, because the driver loads only those two structures and writes nothing
 else that describes the window. The conversion that fits every observed field is: tile column `x >> 9` (512-byte tiles, or `x >> 7` for
-128-byte ones), tile row `y >> 7`, table slot `firstSlot + tile row * row_tiles + tile column` (the descriptor's fields,
+128-byte ones), tile row `y >> 7`, table slot `firstSlot + tile row * tilesPerRow + tile column` (the descriptor's fields,
 [packet-set.md](packet-set.md#texture-table-packets-class-11)), frame number from the table entry, and inside a 64 KiB tile
 512-byte rows of 128 lines. Whether the hardware indexes this way or by 8 KiB steps of the window, what a read of a line beyond the
 buffer's row length returns, and whether the window is also usable through any other physical range are not settled by any software we

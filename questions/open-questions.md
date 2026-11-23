@@ -8,7 +8,7 @@ Status: **unknown** for everything below. What is established and what software 
 
 - **Packet semantics.** The headers are catalogued ([packet-set.md](../devices/cobalt-graphics/packet-set.md)): 52
   constant values in the OpenGL driver plus one in the display driver, each with its emitting routine and payload layout,
-  and the computed forms; the payload word layouts were checked against the drivers' type declarations
+  and the computed forms; the payload words carry the vendor's own field names from the drivers' program databases
   ([the register definitions](../devices/rendering-engine/registers.md)). Open: what the engine does with each (the
   arithmetic of set-up, interpolation, texturing, blending, depth and stencil formats and the tile layout), what
   `0x98804000` (the flush marker) does, what the `0x06c6d081` instance flag on the diffuse blocks does, whether
@@ -123,15 +123,15 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
 - **Channel order of the 32-bit types 4 and 5**, and the unused codes 1 and 11 to 13. The colour-buffer words say red is in
   the top byte for type 4; type 5 is written for host sources and its difference is not shown. Next: the converters
   `0x6903afa2`, `0x6903e7f8`, `0x6903e944`, `0x6903eac8` and the colour-matrix loader `coSetColorMatrixRegisters`.
-- **Sampling arithmetic.** Filter precision, the rounding of level selection, the effect of `frac_bits`, how a border is
+- **Sampling arithmetic.** Filter precision, the rounding of level selection, the effect of `lodFracSize`, how a border is
   filtered, and perspective correction. No shipped routine depends on them.
 - **Rasterisation rules.** Coverage, fill convention, rounding of the 1/64 pixel position, attribute interpolation precision,
   line and point rules. The 0.492 and 0.508 viewport constants hint at a tie-break but do not state it.
 - **Blend, dither and write-mask arithmetic.** Rounding of the blend products, the dither pattern, behaviour of the 4-bit
   colour formats under blend. Nothing in the driver depends on them beyond the codes.
 - **Depth.** The 16-bit depth is described by SGI's white paper as floating point and the 24-bit as fixed point; the format
-  field (`DEPTH_STENCIL_BUFFER_DESC`) has a type bit and a two-bit depth and the driver does not say which representation each is. The
-  `equal_window` field of the depth word is never set. Whether stencil shares the 32-bit word with 24-bit depth is not shown.
+  field (`CoSzFormatReg`) has a type bit and a two-bit depth and the driver does not say which representation each is. The
+  `equal_range` field of the depth word is never set. Whether stencil shares the 32-bit word with 24-bit depth is not shown.
 - **The occlusion count.** `GL_SGIX_depth_pass_instrument` drives bits 28:27 of the depth-test word; where the count is
   written and how `glReadInstrumentsSGIX` collects it were not followed (`0x6904366a`, `0x6904371a`, `0x69043798`).
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
