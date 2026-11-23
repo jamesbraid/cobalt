@@ -1,7 +1,7 @@
 /* generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b */
+/* input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a */
 /* Arsenic display back end register block */
 #ifndef ARS_GEN_H
 #define ARS_GEN_H
@@ -26,6 +26,7 @@
 #define ARS_FRAME_DEPTH_BPP8                         0 /* established */
 #define ARS_FRAME_DEPTH_BPP16                        1 /* established */
 #define ARS_FRAME_DEPTH_BPP32                        2 /* established */
+#define ARS_FRAME_DEPTH_RESERVED                     3 /* unknown */
 
 /*
  * General control and status. The mode-set routine of the NT miniport writes the value with the clock selector at 3 as its last step; Linux writes the selector at 2 before programming and 3 afterwards when bit 25 reads set; the firmware does the same, and with a flat panel ORs in bit 26 instead of writing the selector 3. The firmware reads the low nibble as the chip revision (a real 320 shows display engine 002). Linux treats a clock selector below 2 as not scanning out from the internal dot clock.
@@ -487,7 +488,7 @@
 #define ARS_FRM_CONTROL_FRM_DMA_ENABLE_INPLACE       (ARS_FRM_CONTROL_FRM_DMA_ENABLE_MASK << ARS_FRM_CONTROL_FRM_DMA_ENABLE_SHIFT)
 
 /*
- * Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.
+ * Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. The live bit is bit 16. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.
  */
 /* did_inhwctrl: r32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine */
 #define ARS_DID_INHWCTRL_OFFSET                      0x40000u /* inferred */
@@ -511,6 +512,12 @@
 #define ARS_MODE_REGS_OFFSET                         0x48000u /* inferred */
 #define ARS_MODE_REGS_COUNT                          32
 #define ARS_MODE_REGS_STRIDE                         4
+#define ARS_MODE_REGS_WID_GAMMA_BYPASS_SHIFT         10 /* inferred */
+#define ARS_MODE_REGS_WID_GAMMA_BYPASS_MASK          0x1u
+#define ARS_MODE_REGS_WID_GAMMA_BYPASS_INPLACE       (ARS_MODE_REGS_WID_GAMMA_BYPASS_MASK << ARS_MODE_REGS_WID_GAMMA_BYPASS_SHIFT)
+#define ARS_MODE_REGS_WID_CM_BANK_SHIFT              5 /* inferred */
+#define ARS_MODE_REGS_WID_CM_BANK_MASK               0x1fu
+#define ARS_MODE_REGS_WID_CM_BANK_INPLACE            (ARS_MODE_REGS_WID_CM_BANK_MASK << ARS_MODE_REGS_WID_CM_BANK_SHIFT)
 #define ARS_MODE_REGS_WID_TYP_SHIFT                  2 /* inferred */
 #define ARS_MODE_REGS_WID_TYP_MASK                   0x7u
 #define ARS_MODE_REGS_WID_TYP_INPLACE                (ARS_MODE_REGS_WID_TYP_MASK << ARS_MODE_REGS_WID_TYP_SHIFT)
@@ -611,7 +618,7 @@
 #define ARS_CRS_CMAP_BLUE_INPLACE                    (ARS_CRS_CMAP_BLUE_MASK << ARS_CRS_CMAP_BLUE_SHIFT)
 
 /*
- * Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.
+ * Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. Pixel x of row y is field px(x mod 16) of dword 2y + x div 16, so px0 is the leftmost pixel of a dword and sits in bits 31:30. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* crs_glyph: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code */
 #define ARS_CRS_GLYPH_OFFSET                         0x78000u /* inferred */
@@ -730,6 +737,39 @@
 #define ARS_RETRACE_STATUS_FRAME_END_INPLACE         (ARS_RETRACE_STATUS_FRAME_END_MASK << ARS_RETRACE_STATUS_FRAME_END_SHIFT)
 
 /*
+ * A 32-bit frame buffer pixel of the RGB8 type. The miniport's pixel format table and the Windows 2000 frame buffer driver give red in the top byte, green below it and blue in 15:8; the Linux frame buffer driver puts red in the low byte, so the byte order is not settled for the hardware. The low byte is not described. The colour map and gamma entries use the same red, green, blue positions.
+ */
+/* word PIXEL_RGB8: 32 bits; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver */
+#define ARS_PIXEL_RGB8_WIDTH                         32 /* inferred */
+#define ARS_PIXEL_RGB8_RED_SHIFT                     24 /* inferred */
+#define ARS_PIXEL_RGB8_RED_MASK                      0xffu
+#define ARS_PIXEL_RGB8_RED_INPLACE                   (ARS_PIXEL_RGB8_RED_MASK << ARS_PIXEL_RGB8_RED_SHIFT)
+#define ARS_PIXEL_RGB8_GREEN_SHIFT                   16 /* inferred */
+#define ARS_PIXEL_RGB8_GREEN_MASK                    0xffu
+#define ARS_PIXEL_RGB8_GREEN_INPLACE                 (ARS_PIXEL_RGB8_GREEN_MASK << ARS_PIXEL_RGB8_GREEN_SHIFT)
+#define ARS_PIXEL_RGB8_BLUE_SHIFT                    8 /* inferred */
+#define ARS_PIXEL_RGB8_BLUE_MASK                     0xffu
+#define ARS_PIXEL_RGB8_BLUE_INPLACE                  (ARS_PIXEL_RGB8_BLUE_MASK << ARS_PIXEL_RGB8_BLUE_SHIFT)
+
+/*
+ * A 16-bit frame buffer pixel of the RGBA5 type: five bits of red on top, then green and blue, and one alpha bit at the bottom. The miniport's format table and the Linux driver agree on these masks.
+ */
+/* word PIXEL_RGBA5: 16 bits; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver */
+#define ARS_PIXEL_RGBA5_WIDTH                        16 /* inferred */
+#define ARS_PIXEL_RGBA5_RED_SHIFT                    11 /* inferred */
+#define ARS_PIXEL_RGBA5_RED_MASK                     0x1fu
+#define ARS_PIXEL_RGBA5_RED_INPLACE                  (ARS_PIXEL_RGBA5_RED_MASK << ARS_PIXEL_RGBA5_RED_SHIFT)
+#define ARS_PIXEL_RGBA5_GREEN_SHIFT                  6 /* inferred */
+#define ARS_PIXEL_RGBA5_GREEN_MASK                   0x1fu
+#define ARS_PIXEL_RGBA5_GREEN_INPLACE                (ARS_PIXEL_RGBA5_GREEN_MASK << ARS_PIXEL_RGBA5_GREEN_SHIFT)
+#define ARS_PIXEL_RGBA5_BLUE_SHIFT                   1 /* inferred */
+#define ARS_PIXEL_RGBA5_BLUE_MASK                    0x1fu
+#define ARS_PIXEL_RGBA5_BLUE_INPLACE                 (ARS_PIXEL_RGBA5_BLUE_MASK << ARS_PIXEL_RGBA5_BLUE_SHIFT)
+#define ARS_PIXEL_RGBA5_ALPHA_SHIFT                  0 /* inferred */
+#define ARS_PIXEL_RGBA5_ALPHA_MASK                   0x1u
+#define ARS_PIXEL_RGBA5_ALPHA_INPLACE                (ARS_PIXEL_RGBA5_ALPHA_MASK << ARS_PIXEL_RGBA5_ALPHA_SHIFT)
+
+/*
  * One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* word TILE_LIST_ENTRY: 16 bits; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines */
@@ -738,9 +778,18 @@
 #define ARS_TILE_LIST_ENTRY_TILE_NUMBER_MASK         0xffffu
 #define ARS_TILE_LIST_ENTRY_TILE_NUMBER_INPLACE      (ARS_TILE_LIST_ENTRY_TILE_NUMBER_MASK << ARS_TILE_LIST_ENTRY_TILE_NUMBER_SHIFT)
 
+#define ARS_BLOCK_SIZE_DECLARED                      0x80024u /* established */
+#define ARS_BLOCK_SIZE_LINUX                         0x1000000u /* established */
+#define ARS_BLOCK_SIZE_MAPPED                        0x80020u /* established */
+#define ARS_CHIPID_REAL_320                          0x2u /* inferred */
 #define ARS_CLOCK_REF_KHZ                            0x6978u /* inferred */
+#define ARS_CMAP_BANK_ENTRIES                        0x100u /* inferred */
 #define ARS_COLOR_MAP_FIFO_FREE                      0x3fu /* inferred */
 #define ARS_CRS_MAGIC                                0x36u /* inferred */
+#define ARS_CURSOR_GLYPH_PIXELS_PER_DWORD            0x10u /* inferred */
+#define ARS_CURSOR_GLYPH_PIXEL_BITS                  0x2u /* inferred */
+#define ARS_CURSOR_GLYPH_ROWS                        0x20u /* inferred */
+#define ARS_CURSOR_GLYPH_ROW_DWORDS                  0x2u /* inferred */
 #define ARS_CURSOR_PARK_POS                          0xfe00fe0u /* inferred */
 #define ARS_ID_VALUE                                 0x666u /* inferred */
 #define ARS_NORMAL_TILE_LISTS                        0x4u /* established */

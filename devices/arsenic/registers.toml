@@ -13,7 +13,7 @@ doc = "The 32-bit retrace latch window, a mapping separate from the main block; 
 
 # Enums
 [enums.frame_depth]
-values = { bpp8 = { value = 0, grade = "established" }, bpp16 = { value = 1, grade = "established" }, bpp32 = { value = 2, grade = "established" } }
+values = { bpp8 = { value = 0, grade = "established" }, bpp16 = { value = 1, grade = "established" }, bpp32 = { value = 2, grade = "established" }, reserved = { value = 3, grade = "unknown", doc = "no driver writes it; behaviour unknown" } }
 
 [enums.did_pixel_type]
 doc = "Pixel type of a window in the per-window mode table: the values the Linux header names. Which hardware path each selects is inferred from the O2 display back end."
@@ -30,7 +30,7 @@ grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
 doc = "General control and status. The mode-set routine of the NT miniport writes the value with the clock selector at 3 as its last step; Linux writes the selector at 2 before programming and 3 afterwards when bit 25 reads set; the firmware does the same, and with a flat panel ORs in bit 26 instead of writing the selector 3. The firmware reads the low nibble as the chip revision (a real 320 shows display engine 002). Linux treats a clock selector below 2 as not scanning out from the internal dot clock."
 [registers.ctrlstat.fields]
-chipid = { bits = [3, 0], grade = "inferred", doc = "chip revision as the firmware reads it" }
+chipid = { bits = [3, 0], grade = "inferred", doc = "chip revision as the firmware reads it; a real 320 reports 2 (see the real-machine revision constant). Reset value unknown" }
 sense_n = { bits = [4, 4], grade = "unknown", doc = "named in the Linux header; no shipped driver reads or writes it" }
 bit25 = { bits = [25, 25], grade = "unknown", doc = "meaning unknown; the firmware writes the selector 3 only when this reads set, so a model should read it as 1" }
 bit26 = { bits = [26, 26], grade = "unknown", doc = "set by the firmware and the NT 4.0 HAL when a flat panel answered; meaning unknown" }
@@ -424,9 +424,9 @@ width = 32
 access = "r"
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine"
-doc = "Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end."
+doc = "Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. The live bit is bit 16. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end."
 [registers.did_inhwctrl.fields]
-did_dma_enable = { bits = [16, 16], grade = "inferred", doc = "id fetch active; the Linux header names bit 0 for this field" }
+did_dma_enable = { bits = [16, 16], grade = "inferred", doc = "id fetch active, bit 16; the Linux header names bit 0, which looks wrong" }
 
 [registers.did_control]
 offset = 0x40004
@@ -436,7 +436,7 @@ grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch routines; SGI Visual Workstation PROM 1.1005, display start-up code"
 doc = "Per-window id fetch control, the shadow word. The NT miniport writes 0 at mode set and clears bit 16 to stop; the firmware writes 0. The firmware self-test walks all 32 bits."
 [registers.did_control.fields]
-did_dma_enable = { bits = [16, 16], grade = "inferred", doc = "id fetch enable; the Linux header names bit 0 for this field" }
+did_dma_enable = { bits = [16, 16], grade = "inferred", doc = "id fetch enable, bit 16 (the NT driver clears it to stop); the Linux header names bit 0, which looks wrong" }
 
 [registers.mode_regs]
 offset = 0x48000
@@ -450,6 +450,8 @@ doc = "Per-window mode table of 32 words, the window id table. Linux fills all 3
 [registers.mode_regs.fields]
 wid_buf = { bits = [1, 0], grade = "inferred", enum = "did_buffer_mode", doc = "buffer mode; 3 selects both buffers" }
 wid_typ = { bits = [4, 2], grade = "inferred", enum = "did_pixel_type", doc = "pixel type" }
+wid_cm_bank = { bits = [9, 5], grade = "inferred", doc = "colour map bank select: the upper five bits of the colour map index for an 8-bit index pixel, 256 entries to a bank. From the O2 display back end specification; no Arsenic driver or firmware writes a non-zero value (every value written has these bits clear)" }
+wid_gamma_bypass = { bits = [10, 10], grade = "inferred", doc = "gamma bypass: 1 disables the gamma map, 0 enables it. From the O2 display back end specification; no Arsenic driver sets it" }
 
 [registers.cmap]
 offset = 0x50000
@@ -507,8 +509,8 @@ grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
 doc = "Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits. The driver writes are established; the grade is for what the hardware does with them."
 [registers.crs_pos.fields]
-x = { bits = [11, 0], grade = "inferred", doc = "horizontal position less hot spot" }
-y = { bits = [27, 16], grade = "inferred", doc = "vertical position less hot spot" }
+x = { bits = [11, 0], grade = "inferred", doc = "horizontal position less hot spot, a 12-bit two's complement number: the display driver masks x minus the hot spot with 0xfff. Sign extension from bit 11 by the hardware is inferred from the park value, which puts 0xfe0 (minus 32) in both fields to move the cursor off screen" }
+y = { bits = [27, 16], grade = "inferred", doc = "vertical position less hot spot, 12-bit two's complement as for x" }
 
 [registers.crs_ctl]
 offset = 0x70004
@@ -543,7 +545,7 @@ count = 64
 stride = 4
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
-doc = "Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them."
+doc = "Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. Pixel x of row y is field px(x mod 16) of dword 2y + x div 16, so px0 is the leftmost pixel of a dword and sits in bits 31:30. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them."
 [registers.crs_glyph.fields]
 px0 = { bits = [31, 30], grade = "inferred" }
 px1 = { bits = [29, 28], grade = "inferred" }
@@ -653,6 +655,29 @@ doc = "One entry of a tile list in main memory: the tile's first 4 KB page frame
 [words.TILE_LIST_ENTRY.fields]
 tile_number = { bits = [15, 0], grade = "inferred", doc = "64 KB tile number" }
 
+[words.PIXEL_RGB8]
+width = 32
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver"
+name_source = "ours"
+doc = "A 32-bit frame buffer pixel of the RGB8 type. The miniport's pixel format table and the Windows 2000 frame buffer driver give red in the top byte, green below it and blue in 15:8; the Linux frame buffer driver puts red in the low byte, so the byte order is not settled for the hardware. The low byte is not described. The colour map and gamma entries use the same red, green, blue positions."
+[words.PIXEL_RGB8.fields]
+red = { bits = [31, 24], grade = "inferred" }
+green = { bits = [23, 16], grade = "inferred" }
+blue = { bits = [15, 8], grade = "inferred" }
+
+[words.PIXEL_RGBA5]
+width = 16
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver"
+name_source = "ours"
+doc = "A 16-bit frame buffer pixel of the RGBA5 type: five bits of red on top, then green and blue, and one alpha bit at the bottom. The miniport's format table and the Linux driver agree on these masks."
+[words.PIXEL_RGBA5.fields]
+red = { bits = [15, 11], grade = "inferred" }
+green = { bits = [10, 6], grade = "inferred" }
+blue = { bits = [5, 1], grade = "inferred" }
+alpha = { bits = [0, 0], grade = "inferred" }
+
 [constants]
 ID_VALUE = { value = 1638, grade = "inferred", doc = "value the id register must read; the check is established, what the value means is inferred" }
 CRS_MAGIC = { value = 54, grade = "inferred", doc = "Linux's name for the cursor start offset" }
@@ -664,3 +689,12 @@ TILE_LIST_ALIGN = { value = 512, grade = "established", doc = "alignment of a ti
 NORMAL_TILE_LISTS = { value = 4, grade = "established", doc = "tile lists the NT miniport keeps for the normal plane" }
 CURSOR_PARK_POS = { value = 266342368, grade = "inferred", doc = "value the display driver writes to the cursor position to hide it" }
 COLOR_MAP_FIFO_FREE = { value = 63, grade = "inferred", doc = "value that satisfies every shipped reader of the colour map FIFO status" }
+BLOCK_SIZE_MAPPED = { value = 524320, grade = "established", doc = "bytes the NT miniport maps and claims for the block, ending at the last capture word" }
+BLOCK_SIZE_DECLARED = { value = 524324, grade = "established", doc = "size of the register structure in the miniport's program database, the last capture word included; no source gives a larger size such as a page-rounded 0x81000, which is a model choice" }
+BLOCK_SIZE_LINUX = { value = 16777216, grade = "established", doc = "size the Linux frame buffer driver reserves for the block" }
+CHIPID_REAL_320 = { value = 2, grade = "inferred", doc = "chip revision a real 320 reports (registry export: Display Engine 002); that it is the low nibble of the control and status register is inferred" }
+CMAP_BANK_ENTRIES = { value = 256, grade = "inferred", doc = "entries in one colour map bank, from the eight index bits of an 8-bit pixel and the O2 display back end specification; the NT drivers write indices 0 to 255" }
+CURSOR_GLYPH_ROWS = { value = 32, grade = "inferred", doc = "rows in the cursor glyph" }
+CURSOR_GLYPH_ROW_DWORDS = { value = 2, grade = "inferred", doc = "dwords per glyph row" }
+CURSOR_GLYPH_PIXEL_BITS = { value = 2, grade = "inferred", doc = "bits per glyph pixel; 16 pixels to a dword, the first in bits 31:30" }
+CURSOR_GLYPH_PIXELS_PER_DWORD = { value = 16, grade = "inferred", doc = "glyph pixels in one dword" }

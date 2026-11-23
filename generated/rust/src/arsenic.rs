@@ -1,7 +1,7 @@
 // generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b
+// input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a
 // Arsenic display back end register block
 #![allow(dead_code)]
 
@@ -82,11 +82,13 @@ pub mod enums {
         pub const BPP8: u32 = 0; // established
         pub const BPP16: u32 = 1; // established
         pub const BPP32: u32 = 2; // established
+        pub const RESERVED: u32 = 3; // unknown
         #[derive(Debug, Clone, Copy, PartialEq, Eq)]
         pub enum Value {
             Bpp8,
             Bpp16,
             Bpp32,
+            Reserved,
             Other(u32),
         }
         impl Value {
@@ -95,6 +97,7 @@ pub mod enums {
                     0 => Self::Bpp8,
                     1 => Self::Bpp16,
                     2 => Self::Bpp32,
+                    3 => Self::Reserved,
                     _ => Self::Other(v),
                 }
             }
@@ -103,6 +106,7 @@ pub mod enums {
                     Self::Bpp8 => 0,
                     Self::Bpp16 => 1,
                     Self::Bpp32 => 2,
+                    Self::Reserved => 3,
                     Self::Other(v) => v,
                 }
             }
@@ -1116,7 +1120,7 @@ pub mod frm_control {
         }
     }
 }
-/// Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, wh (inferred)
+/// Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. The live bit is bit 16. Linux name (inferred)
 pub mod did_inhwctrl {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x40000;
@@ -1152,6 +1156,26 @@ pub mod mode_regs {
     pub const OFFSET: u64 = 0x48000;
     pub const COUNT: u32 = 32;
     pub const STRIDE: u64 = 4;
+    pub mod wid_gamma_bypass { // bits 10:10, inferred
+        pub const SHIFT: u32 = 10;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod wid_cm_bank { // bits 9:5, inferred
+        pub const SHIFT: u32 = 5;
+        pub const MASK: u32 = 0x1f;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
     pub mod wid_typ { // bits 4:2, inferred
         pub const SHIFT: u32 = 2;
         pub const MASK: u32 = 0x7;
@@ -1585,6 +1609,84 @@ pub mod retrace_status {
         }
     }
 }
+/// A 32-bit frame buffer pixel of the RGB8 type. The miniport's pixel format table and the Windows 2000 frame buffer driver give red in the top byte, gre (inferred)
+pub mod pixel_rgb8 {
+    pub const WIDTH: u32 = 32;
+    pub mod red { // bits 31:24, inferred
+        pub const SHIFT: u32 = 24;
+        pub const MASK: u32 = 0xff;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod green { // bits 23:16, inferred
+        pub const SHIFT: u32 = 16;
+        pub const MASK: u32 = 0xff;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod blue { // bits 15:8, inferred
+        pub const SHIFT: u32 = 8;
+        pub const MASK: u32 = 0xff;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+}
+/// A 16-bit frame buffer pixel of the RGBA5 type: five bits of red on top, then green and blue, and one alpha bit at the bottom. The miniport's format ta (inferred)
+pub mod pixel_rgba5 {
+    pub const WIDTH: u32 = 16;
+    pub mod red { // bits 15:11, inferred
+        pub const SHIFT: u32 = 11;
+        pub const MASK: u32 = 0x1f;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod green { // bits 10:6, inferred
+        pub const SHIFT: u32 = 6;
+        pub const MASK: u32 = 0x1f;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod blue { // bits 5:1, inferred
+        pub const SHIFT: u32 = 1;
+        pub const MASK: u32 = 0x1f;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod alpha { // bits 0:0, inferred
+        pub const SHIFT: u32 = 0;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+}
 /// One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical addre (inferred)
 pub mod tile_list_entry {
     pub const WIDTH: u32 = 16;
@@ -1599,9 +1701,18 @@ pub mod tile_list_entry {
         }
     }
 }
+pub const BLOCK_SIZE_DECLARED: u32 = 0x80024; // established
+pub const BLOCK_SIZE_LINUX: u32 = 0x1000000; // established
+pub const BLOCK_SIZE_MAPPED: u32 = 0x80020; // established
+pub const CHIPID_REAL_320: u32 = 0x2; // inferred
 pub const CLOCK_REF_KHZ: u32 = 0x6978; // inferred
+pub const CMAP_BANK_ENTRIES: u32 = 0x100; // inferred
 pub const COLOR_MAP_FIFO_FREE: u32 = 0x3f; // inferred
 pub const CRS_MAGIC: u32 = 0x36; // inferred
+pub const CURSOR_GLYPH_PIXELS_PER_DWORD: u32 = 0x10; // inferred
+pub const CURSOR_GLYPH_PIXEL_BITS: u32 = 0x2; // inferred
+pub const CURSOR_GLYPH_ROWS: u32 = 0x20; // inferred
+pub const CURSOR_GLYPH_ROW_DWORDS: u32 = 0x2; // inferred
 pub const CURSOR_PARK_POS: u32 = 0xfe00fe0; // inferred
 pub const ID_VALUE: u32 = 0x666; // inferred
 pub const NORMAL_TILE_LISTS: u32 = 0x4; // established

@@ -1,7 +1,7 @@
 <!-- generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b -->
+<!-- input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a -->
 
 # Arsenic display back end register block
 
@@ -89,7 +89,7 @@ General control and status. The mode-set routine of the NT miniport writes the v
 | 26 | `bit26` | unknown |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine | set by the firmware and the NT 4.0 HAL when a flat panel answered; meaning unknown |
 | 25 | `bit25` | unknown |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine | meaning unknown; the firmware writes the selector 3 only when this reads set, so a model should read it as 1 |
 | 4 | `sense_n` | unknown |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine | named in the Linux header; no shipped driver reads or writes it |
-| 3:0 | `chipid` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine | chip revision as the firmware reads it |
+| 3:0 | `chipid` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine | chip revision as the firmware reads it; a real 320 reports 2 (see the real-machine revision constant). Reset value unknown |
 
 ### Register `dotclock`
 
@@ -369,7 +369,7 @@ Normal plane width and depth. Whole tile columns in 12:5 and the remainder in 32
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
 | 15 | `frm_fifo_reset` | established |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code | FIFO reset, pulsed set then clear |
-| 14:13 | `frm_depth` | established | frame_depth (bpp8=0, bpp16=1, bpp32=2) | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code | pixel depth; the value 3 is not used by any driver |
+| 14:13 | `frm_depth` | established | frame_depth (bpp8=0, bpp16=1, bpp32=2, reserved=3) | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code | pixel depth; the value 3 is not used by any driver |
 | 12:5 | `frm_width_tile` | established |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code | whole 512-byte tile columns |
 | 4:0 | `frm_rhs` | established |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code | remainder in 32-byte units |
 
@@ -403,11 +403,11 @@ Normal plane control, the shadow word taken at the start of vertical blank. Bit 
 
 ### Register `did_inhwctrl`
 
-Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.
+Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. The live bit is bit 16. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 16 | `did_dma_enable` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine | id fetch active; the Linux header names bit 0 for this field |
+| 16 | `did_dma_enable` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine | id fetch active, bit 16; the Linux header names bit 0, which looks wrong |
 
 ### Register `did_control`
 
@@ -415,7 +415,7 @@ Per-window id fetch control, the shadow word. The NT miniport writes 0 at mode s
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 16 | `did_dma_enable` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch routines; SGI Visual Workstation PROM 1.1005, display start-up code | id fetch enable; the Linux header names bit 0 for this field |
+| 16 | `did_dma_enable` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch routines; SGI Visual Workstation PROM 1.1005, display start-up code | id fetch enable, bit 16 (the NT driver clears it to stop); the Linux header names bit 0, which looks wrong |
 
 ### Register `mode_regs`
 
@@ -425,6 +425,8 @@ Array of 32 registers, stride 4.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
+| 10 | `wid_gamma_bypass` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers | gamma bypass: 1 disables the gamma map, 0 enables it. From the O2 display back end specification; no Arsenic driver sets it |
+| 9:5 | `wid_cm_bank` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers | colour map bank select: the upper five bits of the colour map index for an 8-bit index pixel, 256 entries to a bank. From the O2 display back end specification; no Arsenic driver or firmware writes a non-zero value (every value written has these bits clear) |
 | 4:2 | `wid_typ` | inferred | did_pixel_type (index8=0, index12=1, rg3b2=2, rgb4=3, argb5=4, rgb8=5, rgba5=6, rgb10=7) | Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers | pixel type |
 | 1:0 | `wid_buf` | inferred | did_buffer_mode (both=3) | Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers | buffer mode; 3 selects both buffers |
 
@@ -472,8 +474,8 @@ Cursor position. The display driver writes the pointer position less the hot spo
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 27:16 | `y` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code | vertical position less hot spot |
-| 11:0 | `x` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code | horizontal position less hot spot |
+| 27:16 | `y` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code | vertical position less hot spot, 12-bit two's complement as for x |
+| 11:0 | `x` | inferred |  | Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code | horizontal position less hot spot, a 12-bit two's complement number: the display driver masks x minus the hot spot with 0xfff. Sign extension from bit 11 by the hardware is inferred from the park value, which puts 0xfe0 (minus 32) in both fields to move the cursor off screen |
 
 ### Register `crs_ctl`
 
@@ -498,7 +500,7 @@ Array of 3 registers, stride 4.
 
 ### Register `crs_glyph`
 
-Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.
+Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. Pixel x of row y is field px(x mod 16) of dword 2y + x div 16, so px0 is the leftmost pixel of a dword and sits in bits 31:30. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.
 
 Array of 64 registers, stride 4.
 
@@ -569,7 +571,30 @@ Retrace latch in its own 32-bit window, wired to line 24 of the system interrupt
 
 | Word | Width | Grade | Source |
 |---|---|---|---|
+| `PIXEL_RGB8` | 32 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |
+| `PIXEL_RGBA5` | 16 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |
 | `TILE_LIST_ENTRY` | 16 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines |
+
+### Word `PIXEL_RGB8`
+
+A 32-bit frame buffer pixel of the RGB8 type. The miniport's pixel format table and the Windows 2000 frame buffer driver give red in the top byte, green below it and blue in 15:8; the Linux frame buffer driver puts red in the low byte, so the byte order is not settled for the hardware. The low byte is not described. The colour map and gamma entries use the same red, green, blue positions.
+
+| Bits | Field | Grade | Values | Source | Description |
+|---|---|---|---|---|---|
+| 31:24 | `red` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
+| 23:16 | `green` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
+| 15:8 | `blue` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
+
+### Word `PIXEL_RGBA5`
+
+A 16-bit frame buffer pixel of the RGBA5 type: five bits of red on top, then green and blue, and one alpha bit at the bottom. The miniport's format table and the Linux driver agree on these masks.
+
+| Bits | Field | Grade | Values | Source | Description |
+|---|---|---|---|---|---|
+| 15:11 | `red` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
+| 10:6 | `green` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
+| 5:1 | `blue` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
+| 0 | `alpha` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver |  |
 
 ### Word `TILE_LIST_ENTRY`
 
@@ -609,14 +634,24 @@ Pixel type of a window in the per-window mode table: the values the Linux header
 | `bpp8` | 0 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) |
 | `bpp16` | 1 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) |
 | `bpp32` | 2 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) |
+| `reserved` | 3 | unknown | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) |
 
 ## Constants
 
 | Constant | Value | Grade | Source | Description |
 |---|---|---|---|---|
+| `BLOCK_SIZE_DECLARED` | 0x80024 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | size of the register structure in the miniport's program database, the last capture word included; no source gives a larger size such as a page-rounded 0x81000, which is a model choice |
+| `BLOCK_SIZE_LINUX` | 0x1000000 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | size the Linux frame buffer driver reserves for the block |
+| `BLOCK_SIZE_MAPPED` | 0x80020 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | bytes the NT miniport maps and claims for the block, ending at the last capture word |
+| `CHIPID_REAL_320` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | chip revision a real 320 reports (registry export: Display Engine 002); that it is the low nibble of the control and status register is inferred |
 | `CLOCK_REF_KHZ` | 0x6978 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | dot clock reference, from the Linux header and the formula that fits the NT mode table |
+| `CMAP_BANK_ENTRIES` | 0x100 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | entries in one colour map bank, from the eight index bits of an 8-bit pixel and the O2 display back end specification; the NT drivers write indices 0 to 255 |
 | `COLOR_MAP_FIFO_FREE` | 0x3f | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | value that satisfies every shipped reader of the colour map FIFO status |
 | `CRS_MAGIC` | 0x36 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | Linux's name for the cursor start offset |
+| `CURSOR_GLYPH_PIXELS_PER_DWORD` | 0x10 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | glyph pixels in one dword |
+| `CURSOR_GLYPH_PIXEL_BITS` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | bits per glyph pixel; 16 pixels to a dword, the first in bits 31:30 |
+| `CURSOR_GLYPH_ROWS` | 0x20 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | rows in the cursor glyph |
+| `CURSOR_GLYPH_ROW_DWORDS` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | dwords per glyph row |
 | `CURSOR_PARK_POS` | 0xfe00fe0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | value the display driver writes to the cursor position to hide it |
 | `ID_VALUE` | 0x666 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | value the id register must read; the check is established, what the value means is inferred |
 | `NORMAL_TILE_LISTS` | 0x4 | established | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions) | tile lists the NT miniport keeps for the normal plane |

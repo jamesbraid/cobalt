@@ -2,7 +2,7 @@
 <!-- generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b -->
+<!-- input sha256 8125592e1294c4b2309e70f52ec7a8ce510f33fe6751ca63d12a1cd6e8d9276a -->
 <genxml unit="arsenic" prefix="ARS" block="ARS" title="Arsenic display back end register block" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)">
   <doc>The display back end of the graphics subsystem: the register block the NT 4.0 miniport and display driver, the Windows 2000 display drivers, the firmware and the Linux frame buffer driver program. Offsets are from the start of the block, which the display miniport maps; all accesses are 32 bits wide and uncached, with a few byte loads of live words noted per register. The retrace latch is a separate 32-bit window outside the block and sits in its own address space. Access records what the drivers do to the register. Reset values are unknown for every register: no shipped software reads one before writing it, and both drivers only ever see a post-firmware state. A register's grade is the grade of its hardware meaning; what the drivers write is recorded in its doc, and where a doc says the driver writes are established, that holds whatever the grade says. Register names are the ones the public Linux header uses, which the miniport symbol tables also carry; field names are the Linux header names where it defines one and our own plain description otherwise.</doc>
   <space name="retrace" unit="byte"/>
@@ -23,6 +23,7 @@
     <value name="bpp8" value="0" grade="established"/>
     <value name="bpp16" value="1" grade="established"/>
     <value name="bpp32" value="2" grade="established"/>
+    <value name="reserved" value="3" grade="unknown"/>
   </enum>
   <struct name="CTRLSTAT" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x0" access="rw" reset="unknown">
     <doc>General control and status. The mode-set routine of the NT miniport writes the value with the clock selector at 3 as its last step; Linux writes the selector at 2 before programming and 3 afterwards when bit 25 reads set; the firmware does the same, and with a flat panel ORs in bit 26 instead of writing the selector 3. The firmware reads the low nibble as the chip revision (a real 320 shows display engine 002). Linux treats a clock selector below 2 as not scanning out from the internal dot clock.</doc>
@@ -213,7 +214,7 @@
     <field name="frm_dma_enable" start="0" size="1" type="uint" grade="inferred"/>
   </struct>
   <struct name="DID_INHWCTRL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine" register="yes" offset="0x40000" access="r" reset="unknown">
-    <doc>Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.</doc>
+    <doc>Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. The live bit is bit 16. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.</doc>
     <field name="did_dma_enable" start="16" size="1" type="uint" grade="inferred"/>
   </struct>
   <struct name="DID_CONTROL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x40004" access="rw" reset="unknown">
@@ -222,6 +223,8 @@
   </struct>
   <struct name="MODE_REGS" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers" register="yes" offset="0x48000" access="w" count="32" stride="4" reset="unknown">
     <doc>Per-window mode table of 32 words, the window id table. Linux fills all 32 identically (8 bits per pixel as index, 16 as RGBA5, 32 as RGB8); the firmware and the Windows 2000 boot video driver write 3 into all 32; the Windows 2000 frame buffer driver writes only the first word, 3 for 8 bits per pixel and 0x17 for 32. The SGI 5.2.4 miniport does not write the table.</doc>
+    <field name="wid_gamma_bypass" start="10" size="1" type="uint" grade="inferred"/>
+    <field name="wid_cm_bank" start="5" size="5" type="uint" grade="inferred"/>
     <field name="wid_typ" start="2" size="3" type="did_pixel_type" grade="inferred"/>
     <field name="wid_buf" start="0" size="2" type="did_buffer_mode" grade="inferred"/>
   </struct>
@@ -261,7 +264,7 @@
     <field name="blue" start="8" size="8" type="uint" grade="inferred"/>
   </struct>
   <struct name="CRS_GLYPH" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x78000" access="rw" count="64" stride="4" reset="unknown">
-    <doc>Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.</doc>
+    <doc>Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. Pixel x of row y is field px(x mod 16) of dword 2y + x div 16, so px0 is the leftmost pixel of a dword and sits in bits 31:30. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.</doc>
     <field name="px0" start="30" size="2" type="uint" grade="inferred"/>
     <field name="px1" start="28" size="2" type="uint" grade="inferred"/>
     <field name="px2" start="26" size="2" type="uint" grade="inferred"/>
@@ -310,13 +313,35 @@
     <doc>Retrace latch in its own 32-bit window, wired to line 24 of the system interrupt controller (latched). The retrace handler reads it, writes back the bitwise complement of what it read and does not read it again; bit 1 set means a frame has ended and is counted. The firmware's hand-over routine writes the complement of the word the same way. That only clears the bits if a written 0 clears a bit and a written 1 leaves it, so the register is write-0-to-clear (inferred). What the other bits are is unknown. The name is ours: the register has no public name.</doc>
     <field name="frame_end" start="1" size="1" type="uint" grade="inferred"/>
   </struct>
+  <struct name="PIXEL_RGB8" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver">
+    <doc>A 32-bit frame buffer pixel of the RGB8 type. The miniport's pixel format table and the Windows 2000 frame buffer driver give red in the top byte, green below it and blue in 15:8; the Linux frame buffer driver puts red in the low byte, so the byte order is not settled for the hardware. The low byte is not described. The colour map and gamma entries use the same red, green, blue positions.</doc>
+    <field name="red" start="24" size="8" type="uint" grade="inferred"/>
+    <field name="green" start="16" size="8" type="uint" grade="inferred"/>
+    <field name="blue" start="8" size="8" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="PIXEL_RGBA5" size="2" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport pixel format table; Linux frame buffer driver">
+    <doc>A 16-bit frame buffer pixel of the RGBA5 type: five bits of red on top, then green and blue, and one alpha bit at the bottom. The miniport's format table and the Linux driver agree on these masks.</doc>
+    <field name="red" start="11" size="5" type="uint" grade="inferred"/>
+    <field name="green" start="6" size="5" type="uint" grade="inferred"/>
+    <field name="blue" start="1" size="5" type="uint" grade="inferred"/>
+    <field name="alpha" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
   <struct name="TILE_LIST_ENTRY" size="2" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines">
     <doc>One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits. The driver writes are established; the grade is for what the hardware does with them.</doc>
     <field name="tile_number" start="0" size="16" type="uint" grade="inferred"/>
   </struct>
+  <constant name="BLOCK_SIZE_DECLARED" value="0x80024" grade="established"/>
+  <constant name="BLOCK_SIZE_LINUX" value="0x1000000" grade="established"/>
+  <constant name="BLOCK_SIZE_MAPPED" value="0x80020" grade="established"/>
+  <constant name="CHIPID_REAL_320" value="0x2" grade="inferred"/>
   <constant name="CLOCK_REF_KHZ" value="0x6978" grade="inferred"/>
+  <constant name="CMAP_BANK_ENTRIES" value="0x100" grade="inferred"/>
   <constant name="COLOR_MAP_FIFO_FREE" value="0x3f" grade="inferred"/>
   <constant name="CRS_MAGIC" value="0x36" grade="inferred"/>
+  <constant name="CURSOR_GLYPH_PIXELS_PER_DWORD" value="0x10" grade="inferred"/>
+  <constant name="CURSOR_GLYPH_PIXEL_BITS" value="0x2" grade="inferred"/>
+  <constant name="CURSOR_GLYPH_ROWS" value="0x20" grade="inferred"/>
+  <constant name="CURSOR_GLYPH_ROW_DWORDS" value="0x2" grade="inferred"/>
   <constant name="CURSOR_PARK_POS" value="0xfe00fe0" grade="inferred"/>
   <constant name="ID_VALUE" value="0x666" grade="inferred"/>
   <constant name="NORMAL_TILE_LISTS" value="0x4" grade="established"/>

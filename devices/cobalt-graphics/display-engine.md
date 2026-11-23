@@ -103,8 +103,8 @@ instead sets the panel's power-save bit over I2C.
 **The cursor, as the NT display driver drives it.** `sgcodd.dll` (not `sgcomp.sys`) writes the cursor block through its `gberegs`
 pointer: `vMovePointer` and `DrvSetPointerShape` set `crs_pos` to `((y - hotY) & 0xfff) << 16 | ((x - hotX) & 0xfff)` and `crs_ctl` to 1
 to show it, and to `0x0fe00fe0` and 0 to hide it (`ulCursorState` bit 0 means the hardware cursor holds the pointer, bit 1 that it is shown, bit 2 that
-a software pointer is in use); `bEnablePointer` sets `crs_cmap[1]` to 0 and
-`crs_cmap[2]` to `0xffffff00`; `bCopyColorPointerIntoHardware` rewrites all 64 glyph dwords and the 3 colour dwords for a pointer of at most 32 by 32
+a software pointer is in use); The two position fields are 12-bit two's complement numbers: the code subtracts the hot spot and masks with `0xfff` (`vMovePointer@0x283b3` to `0x283d8`, `DrvSetPointerShape@0x28f4c` to `0x28f6b`), and the park value `0x0fe00fe0` (`vMovePointer@0x282ce`) is `0xfe0` in each field, minus 32, which moves the cursor off screen when read as a signed number. Hardware sign extension from bit 11 is inferred from that park value. PROM 1.1005 only writes position 0 (`1.1005@0x11318cb`, read in an earlier pass and not re-read here); `sglfb.sys` writes only the control word (`0x10f33`); neither does any hot-spot arithmetic. `bEnablePointer` sets `crs_cmap[1]` to 0 and
+`crs_cmap[2]` to `0xffffff00` (`sgcodd.dll@0x28b4d`, `0x28b57`); `bCopyColorPointerIntoHardware` rewrites all 64 glyph dwords and the 3 colour dwords for a pointer of at most 32 by 32
 pixels and three colours (the routine tests both limits at its top; the bodies of those tests are empty in the decompile and are read as a return
 to the software path), packing each pixel into 2 bits from the top of the dword, two dwords per row (0 for a transparent pixel, 1 to 3 for the
 colour list's entry), and writing the colours as `R<<24 | G<<16 | B<<8`. Any other pointer is drawn in software: the driver keeps three 32 by 32
