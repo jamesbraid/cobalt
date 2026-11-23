@@ -8,8 +8,8 @@ limits and strings in [opengl-expectations.md](../../software/windows/opengl-exp
 Grades are the repository's three ([AGENTS.md](../../AGENTS.md)). **Established** here means a whole routine was read in
 disassembly and the table or encoding is what it writes; the routine is cited as `sgcoicd.dll@address`. What the engine
 does with a word is at best **inferred** (no document or public driver describes the engine), and anything not marked is
-**unknown**. Field names in the vendor's own spelling come from the driver's program database (the
-`CoTexGen*` and `CoTexEnv*` types and the `__GLCOmipMapLevelRec` record).
+**unknown**. Payload field names are ours; the layouts were checked against the driver's type declarations (the
+texture register words and the `__GLCOmipMapLevelRec` record).
 
 ## What the driver sends
 
@@ -33,9 +33,9 @@ cannot be defined (`coDefineTexture@0x6901cb6a`); the debug text calls this "Tex
 | Bits | Field (vendor name) | Value | Grade |
 |---|---|---|---|
 | 31 | `linear` | 0 for a texture (`coSetTexParam`); 1 in the transfer routine, where the source is a host image read as a texture | established (writers), inferred (meaning) |
-| 30:27 | `texType` | the four-bit type code ([below](#type-codes)), from the level record's `texelType` | established, inferred |
-| 26:25 | `bufDepth` | the level record's `texelDepth`, two bits | established, inferred |
-| 24:19 | `descId` | the six-bit id of the buffer descriptor holding the level, from the level's `tlbDesc.id` | established |
+| 30:27 | `texture_kind` | the four-bit type code ([below](#type-codes)), from the level record's `texelType` | established, inferred |
+| 26:25 | `size_class` | the level record's `texelDepth`, two bits | established, inferred |
+| 24:19 | `buffer_id` | the six-bit id of the buffer descriptor holding the level, from the level's `tlbDesc.id` | established |
 | 18:0 | | zero | established |
 
 ## Type codes
@@ -72,13 +72,13 @@ record). Established for the table, inferred for the hardware meaning of each co
 
 | Bits | Field | Code | GL value |
 |---|---|---:|---|
-| 31:29 | `minFilter` | 0 | `GL_NEAREST` |
+| 31:29 | `min_filter` | 0 | `GL_NEAREST` |
 | | | 1 | `GL_LINEAR` |
 | | | 2 | `GL_NEAREST_MIPMAP_NEAREST` |
 | | | 3 | `GL_LINEAR_MIPMAP_NEAREST` |
 | | | 4 | `GL_NEAREST_MIPMAP_LINEAR` |
 | | | 5 | `GL_LINEAR_MIPMAP_LINEAR` |
-| 28 | `magFilter` | 0 / 1 | `GL_NEAREST` / `GL_LINEAR` |
+| 28 | `mag_filter` | 0 / 1 | `GL_NEAREST` / `GL_LINEAR` |
 | 27:26 | wrap T | 0 | `GL_REPEAT` |
 | | | 1 | `GL_CLAMP` (the border colour is used) |
 | | | 2 | `GL_CLAMP_TO_EDGE_SGIS` (`0x812f`, `GL_SGIS_texture_edge_clamp`) |
@@ -101,10 +101,10 @@ The mode word is an uninitialised local: a minification value outside the six, o
 |---|---|---|
 | 31:28 | `maxLevel` | `min(round(maxLod), the object's maxLevel, the texture record's top level `p`)`, where `p` is shifted down as the base level rises (the shift count was read, its meaning is inferred) |
 | 27:24 | `minLevel` | `max(round(minLod), 0)`, where round is the sum with the context's `half` constant (`gc+0x2508`) truncated (`_ftol`) |
-| 23:21 | `lodFracSize` | 4 for a 1-D texture (the texture record's `dim` is 1), 3 otherwise; overridden by the variable `GLCOTEXLODFRACSIZE` |
-| 20:0 | | zero. The vendor's type declares a `lodBias` in 20:11 that nothing sets |
+| 23:21 | `frac_bits` | 4 for a 1-D texture (the texture record's `dim` is 1), 3 otherwise; overridden by the variable `GLCOTEXLODFRACSIZE` |
+| 20:0 | | zero. The driver's declaration of the word has a `lod_bias` in 20:11 that nothing sets |
 
-Established for the packing; inferred for the meaning of `lodFracSize` (the number of fraction bits the engine keeps
+Established for the packing; inferred for the meaning of `frac_bits` (the number of fraction bits the engine keeps
 of the level of detail; the only evidence is the name). A minification filter that is not a mipmap form (code 0 or 1) forces both the minimum and the maximum level to 0 (`0x6901e152`, `0x6901e157`). `GLCOTEXLODFRACSIZE` is clamped to 0 to 4 (default -2 becomes -1, meaning "use the computed value"). The code compares `minLevel` and `maxLevel` and refuses the
 texture (returns 0) if the rounded minimum is above the rounded maximum.
 
@@ -119,7 +119,7 @@ below has the same order and the same truncation (`0x6901e91a` to `0x6901e991`);
 
 ## Environment word
 
-The first word is `(function << 4 | type) << 25`, so `function` is bits 31:29 and `type` bits 28:25 (`CoTexEnvModeReg`).
+The first word is `(function << 4 | type) << 25`, so `function` is bits 31:29 and `type` bits 28:25 (`TEXTURE_APPLY`).
 
 | Function | GL environment mode | Grade |
 |---:|---|---|
@@ -190,11 +190,11 @@ For a level not in the common tile, `coComputeTexLevelSize` computes (establishe
   rows of 512 bytes);
 - tile rows: `ceil(height / rowsPerTile)`, and tile count = tile rows times tiles per row.
 
-The buffer descriptor word the routine writes has the vendor's `CoTlbDescReg` layout: bits 31:21 all ones (the first
+The buffer descriptor word the routine writes has the register file's `buffer_desc` layout: bits 31:21 all ones (the first
 slot, filled in by the kernel driver when the level is bound), 20:14 tiles per row, bit 13 set for 512-byte tile
 rows, 12:10 the page-size code, bit 9 clear and 8:0 left as they were
 ([packet-set.md](packet-set.md#texture-table-packets-class-11)). The texels of a level fill tiles row by row: that the
-engine addresses texel (x, y) at tile `(y / rowsPerTile) * tilesPerRow + (x * bytesPerTexel / tileRowLength)` and, inside
+engine addresses texel (x, y) at tile `(y / rowsPerTile) * row_tiles + (x * bytesPerTexel / tileRowLength)` and, inside
 the tile, row `y mod rowsPerTile` at byte `x * bytesPerTexel mod tileRowLength` is **inferred** from the descriptor
 fields and the context's tile bookkeeping (`tileRowLen`, `tileRowInc`, `tileSize`, `tileHeight`); the CPU store
 routines were not followed to the address arithmetic, so a model should treat the within-tile order as a choice to confirm
@@ -234,6 +234,6 @@ matrix. A model that implements texturing from tiled levels only still has to ho
 Everything above is what the driver writes. What the engine does with it is **unknown**, with these routes tried: the
 OpenGL driver in both builds, the display driver's YUV and pattern paths, the vendor's types, the white paper (features
 only). The texel addressing inside a tile, the order of channels in types 4 and 5, the filter arithmetic and its rounding,
-the level selection, the meaning of `lodFracSize` and the colour-matrix conversion during an upload are unknown.
+the level selection, the meaning of `frac_bits` and the colour-matrix conversion during an upload are unknown.
 [questions/open-questions.md](../../questions/open-questions.md#texture-and-pixel-pipeline-what-the-shipped-software-does-not-settle)
 lists each with the next route.

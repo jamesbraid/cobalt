@@ -1,7 +1,7 @@
 // generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22
+// input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140
 // Rendering engine register window
 #![allow(dead_code)]
 
@@ -23,7 +23,7 @@ pub mod tlb_entry {
     }
 }
 /// Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format word (inferred)
-pub mod tlb_desc {
+pub mod buffer_desc {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0xc000;
     pub const COUNT: u32 = 64;
@@ -38,7 +38,7 @@ pub mod tlb_desc {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod tiles_per_row { // bits 20:14, inferred
+    pub mod row_tiles { // bits 20:14, inferred
         pub const SHIFT: u32 = 14;
         pub const MASK: u32 = 0x7f;
         pub const fn get(v: u32) -> u32 {
@@ -48,7 +48,7 @@ pub mod tlb_desc {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod tile_width { // bits 13:13, inferred
+    pub mod tile_size_sel { // bits 13:13, inferred
         pub const SHIFT: u32 = 13;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -58,7 +58,7 @@ pub mod tlb_desc {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod page_size { // bits 12:10, inferred
+    pub mod tile_pages_log4 { // bits 12:10, inferred
         pub const SHIFT: u32 = 10;
         pub const MASK: u32 = 0x7;
         pub const fn get(v: u32) -> u32 {
@@ -68,7 +68,7 @@ pub mod tlb_desc {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod page_type { // bits 9:9, inferred
+    pub mod pool_flag { // bits 9:9, inferred
         pub const SHIFT: u32 = 9;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -103,7 +103,7 @@ pub mod exec_ctl {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod idle_count { // bits 10:0, inferred
+    pub mod idle_wait { // bits 10:0, inferred
         pub const SHIFT: u32 = 0;
         pub const MASK: u32 = 0x7ff;
         pub const fn get(v: u32) -> u32 {
@@ -290,19 +290,19 @@ pub mod chain_this {
     }
 }
 /// The third word of the long chain packet. The kernel driver keeps a per-context current-texture id and writes it here when it starts the context and re (inferred)
-pub mod tex_id {
+pub mod bound_texture_id {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x185d0;
 }
-/// Written with the outgoing context's dump offset (the field the driver names as its context-switch dump offset) when another context is started, before (inferred)
+/// Written with the outgoing context's dump offset (a per-context field the driver keeps for the purpose) when another context is started, before the new (inferred)
 pub mod ctx_dump {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x18800;
 }
-/// First word of the blend packet; the second is the constant colour. (inferred)
-pub mod blend_mode {
+/// First word of the alpha-test packet; the second is the reference colour. (inferred)
+pub mod alpha_test_config {
     pub const WIDTH: u32 = 32;
-    pub mod dst_func { // bits 31:28, inferred
+    pub mod component_enables { // bits 31:28, inferred
         pub const SHIFT: u32 = 28;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -312,7 +312,31 @@ pub mod blend_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod src_func { // bits 27:24, inferred
+    pub mod func { // bits 27:25, inferred
+        pub const SHIFT: u32 = 25;
+        pub const MASK: u32 = 0x7;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+}
+/// First word of the blend packet; the second is the constant colour. (inferred)
+pub mod blend_config {
+    pub const WIDTH: u32 = 32;
+    pub mod dst_factor { // bits 31:28, inferred
+        pub const SHIFT: u32 = 28;
+        pub const MASK: u32 = 0xf;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod src_factor { // bits 27:24, inferred
         pub const SHIFT: u32 = 24;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -334,7 +358,7 @@ pub mod blend_mode {
     }
 }
 /// Draw-buffer descriptor. (inferred)
-pub mod color_format {
+pub mod color_buffer_desc {
     pub const WIDTH: u32 = 32;
     pub mod linear { // bits 31:31, inferred
         pub const SHIFT: u32 = 31;
@@ -346,7 +370,7 @@ pub mod color_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod color_type { // bits 30:27, inferred
+    pub mod pixel_kind { // bits 30:27, inferred
         pub const SHIFT: u32 = 27;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -356,7 +380,7 @@ pub mod color_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod buf_depth { // bits 26:25, inferred
+    pub mod size_class { // bits 26:25, inferred
         pub const SHIFT: u32 = 25;
         pub const MASK: u32 = 0x3;
         pub const fn get(v: u32) -> u32 {
@@ -366,7 +390,7 @@ pub mod color_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod desc_id { // bits 24:19, inferred
+    pub mod buffer_id { // bits 24:19, inferred
         pub const SHIFT: u32 = 19;
         pub const MASK: u32 = 0x3f;
         pub const fn get(v: u32) -> u32 {
@@ -376,281 +400,9 @@ pub mod color_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod span_mode { // bits 18:18, inferred
+    pub mod span_flag { // bits 18:18, inferred
         pub const SHIFT: u32 = 18;
         pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-}
-/// First word of the alpha-test packet; the second is the reference colour. (inferred)
-pub mod color_test_mode {
-    pub const WIDTH: u32 = 32;
-    pub mod en_comp { // bits 31:28, inferred
-        pub const SHIFT: u32 = 28;
-        pub const MASK: u32 = 0xf;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod func { // bits 27:25, inferred
-        pub const SHIFT: u32 = 25;
-        pub const MASK: u32 = 0x7;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-}
-/// Depth test word. (inferred)
-pub mod depth_test {
-    pub const WIDTH: u32 = 32;
-    pub mod func { // bits 31:29, inferred
-        pub const SHIFT: u32 = 29;
-        pub const MASK: u32 = 0x7;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod init_occlusion_test { // bits 28:28, inferred
-        pub const SHIFT: u32 = 28;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_occlusion_test { // bits 27:27, inferred
-        pub const SHIFT: u32 = 27;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod equal_range { // bits 26:23, inferred
-        pub const SHIFT: u32 = 23;
-        pub const MASK: u32 = 0xf;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-}
-/// Pixel-pipe mode word. (inferred)
-pub mod draw_mode {
-    pub const WIDTH: u32 = 32;
-    pub mod en_stencil_test { // bits 31:31, inferred
-        pub const SHIFT: u32 = 31;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_depth_mask { // bits 30:30, inferred
-        pub const SHIFT: u32 = 30;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_depth_test { // bits 29:29, inferred
-        pub const SHIFT: u32 = 29;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_depth_offset { // bits 28:28, inferred
-        pub const SHIFT: u32 = 28;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_color_discard { // bits 27:27, inferred
-        pub const SHIFT: u32 = 27;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_color_mask { // bits 26:26, inferred
-        pub const SHIFT: u32 = 26;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_dither { // bits 25:25, inferred
-        pub const SHIFT: u32 = 25;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_logic_op { // bits 24:24, inferred
-        pub const SHIFT: u32 = 24;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_blend { // bits 23:23, inferred
-        pub const SHIFT: u32 = 23;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_color_test { // bits 22:22, inferred
-        pub const SHIFT: u32 = 22;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_fog { // bits 21:21, inferred
-        pub const SHIFT: u32 = 21;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_color_matrix { // bits 20:20, inferred
-        pub const SHIFT: u32 = 20;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_pixel_xfer { // bits 19:19, inferred
-        pub const SHIFT: u32 = 19;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_texture { // bits 18:18, inferred
-        pub const SHIFT: u32 = 18;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_second_color { // bits 17:17, inferred
-        pub const SHIFT: u32 = 17;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_smooth_shade { // bits 16:16, inferred
-        pub const SHIFT: u32 = 16;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_opaq_stipple { // bits 15:15, inferred
-        pub const SHIFT: u32 = 15;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_poly_stipple { // bits 14:14, inferred
-        pub const SHIFT: u32 = 14;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod en_line_stipple { // bits 13:13, inferred
-        pub const SHIFT: u32 = 13;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod reserved { // bits 12:0, unknown
-        pub const SHIFT: u32 = 0;
-        pub const MASK: u32 = 0x1fff;
         pub const fn get(v: u32) -> u32 {
             (v >> SHIFT) & MASK
         }
@@ -660,7 +412,7 @@ pub mod draw_mode {
     }
 }
 /// A corner: x in the low half, y in the high half (signed 16-bit). (inferred)
-pub mod fb_addr {
+pub mod corner_xy {
     pub const WIDTH: u32 = 32;
     pub mod y { // bits 31:16, inferred
         pub const SHIFT: u32 = 16;
@@ -683,8 +435,86 @@ pub mod fb_addr {
         }
     }
 }
+/// Depth test word. (inferred)
+pub mod depth_compare {
+    pub const WIDTH: u32 = 32;
+    pub mod func { // bits 31:29, inferred
+        pub const SHIFT: u32 = 29;
+        pub const MASK: u32 = 0x7;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod occlusion_reset { // bits 28:28, inferred
+        pub const SHIFT: u32 = 28;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod occlusion_on { // bits 27:27, inferred
+        pub const SHIFT: u32 = 27;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod equal_window { // bits 26:23, inferred
+        pub const SHIFT: u32 = 23;
+        pub const MASK: u32 = 0xf;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+}
+/// Depth and stencil buffer descriptor. (inferred)
+pub mod depth_stencil_buffer_desc {
+    pub const WIDTH: u32 = 32;
+    pub mod kind_flag { // bits 31:31, inferred
+        pub const SHIFT: u32 = 31;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod size_class { // bits 30:29, inferred
+        pub const SHIFT: u32 = 29;
+        pub const MASK: u32 = 0x3;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod buffer_id { // bits 28:23, inferred
+        pub const SHIFT: u32 = 23;
+        pub const MASK: u32 = 0x3f;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+}
 /// Lighting mode word. (inferred)
-pub mod light_mode {
+pub mod lighting_flags {
     pub const WIDTH: u32 = 32;
     pub mod two_sided { // bits 31:31, inferred
         pub const SHIFT: u32 = 31;
@@ -696,7 +526,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_light3 { // bits 30:30, inferred
+    pub mod light3_on { // bits 30:30, inferred
         pub const SHIFT: u32 = 30;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -706,7 +536,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_light2 { // bits 29:29, inferred
+    pub mod light2_on { // bits 29:29, inferred
         pub const SHIFT: u32 = 29;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -716,7 +546,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_light1 { // bits 28:28, inferred
+    pub mod light1_on { // bits 28:28, inferred
         pub const SHIFT: u32 = 28;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -726,7 +556,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_light0 { // bits 27:27, inferred
+    pub mod light0_on { // bits 27:27, inferred
         pub const SHIFT: u32 = 27;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -736,7 +566,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_normalize { // bits 26:26, inferred
+    pub mod normalize_on { // bits 26:26, inferred
         pub const SHIFT: u32 = 26;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -746,7 +576,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_specular { // bits 25:25, inferred
+    pub mod specular_on { // bits 25:25, inferred
         pub const SHIFT: u32 = 25;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -756,7 +586,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod spec_only { // bits 24:24, inferred
+    pub mod specular_only { // bits 24:24, inferred
         pub const SHIFT: u32 = 24;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -766,7 +596,7 @@ pub mod light_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_lighting { // bits 23:23, inferred
+    pub mod lit_on { // bits 23:23, inferred
         pub const SHIFT: u32 = 23;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -778,7 +608,7 @@ pub mod light_mode {
     }
 }
 /// Link word of a packet node: bit 0 set means the engine owns the node and clears it when done. (inferred)
-pub mod link_word {
+pub mod node_link {
     pub const WIDTH: u32 = 32;
     pub mod next { // bits 31:12, inferred
         pub const SHIFT: u32 = 12;
@@ -810,7 +640,7 @@ pub mod link_word {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod intr { // bits 1:1, inferred
+    pub mod interrupt { // bits 1:1, inferred
         pub const SHIFT: u32 = 1;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -831,12 +661,12 @@ pub mod link_word {
         }
     }
 }
-/// Logic operation word. (inferred)
-pub mod logic_op {
+/// Pixel-pipe mode word. (inferred)
+pub mod pixel_pipe_flags {
     pub const WIDTH: u32 = 32;
-    pub mod op { // bits 31:28, inferred
-        pub const SHIFT: u32 = 28;
-        pub const MASK: u32 = 0xf;
+    pub mod stencil_test_on { // bits 31:31, inferred
+        pub const SHIFT: u32 = 31;
+        pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
             (v >> SHIFT) & MASK
         }
@@ -844,13 +674,19 @@ pub mod logic_op {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-}
-/// Primitive mode word. (inferred)
-pub mod prim_mode {
-    pub const WIDTH: u32 = 32;
-    pub mod prim_type { // bits 31:29, inferred
+    pub mod depth_write_on { // bits 30:30, inferred
+        pub const SHIFT: u32 = 30;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod depth_test_on { // bits 29:29, inferred
         pub const SHIFT: u32 = 29;
-        pub const MASK: u32 = 0x7;
+        pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
             (v >> SHIFT) & MASK
         }
@@ -858,7 +694,7 @@ pub mod prim_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod aa_line { // bits 28:28, inferred
+    pub mod depth_offset_on { // bits 28:28, inferred
         pub const SHIFT: u32 = 28;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -868,7 +704,191 @@ pub mod prim_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod closed_line { // bits 27:27, inferred
+    pub mod color_discard_on { // bits 27:27, inferred
+        pub const SHIFT: u32 = 27;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod color_mask_on { // bits 26:26, inferred
+        pub const SHIFT: u32 = 26;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod dither_on { // bits 25:25, inferred
+        pub const SHIFT: u32 = 25;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod logic_op_on { // bits 24:24, inferred
+        pub const SHIFT: u32 = 24;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod blend_on { // bits 23:23, inferred
+        pub const SHIFT: u32 = 23;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod alpha_test_on { // bits 22:22, inferred
+        pub const SHIFT: u32 = 22;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod fog_on { // bits 21:21, inferred
+        pub const SHIFT: u32 = 21;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod matrix_convert_on { // bits 20:20, inferred
+        pub const SHIFT: u32 = 20;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod pixel_transfer_on { // bits 19:19, inferred
+        pub const SHIFT: u32 = 19;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod texture_on { // bits 18:18, inferred
+        pub const SHIFT: u32 = 18;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod secondary_color_on { // bits 17:17, inferred
+        pub const SHIFT: u32 = 17;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod smooth_shade_on { // bits 16:16, inferred
+        pub const SHIFT: u32 = 16;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod opaque_stipple_on { // bits 15:15, inferred
+        pub const SHIFT: u32 = 15;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod polygon_stipple_on { // bits 14:14, inferred
+        pub const SHIFT: u32 = 14;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod line_stipple_on { // bits 13:13, inferred
+        pub const SHIFT: u32 = 13;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod reserved { // bits 12:0, unknown
+        pub const SHIFT: u32 = 0;
+        pub const MASK: u32 = 0x1fff;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+}
+/// Primitive mode word. (inferred)
+pub mod primitive_setup {
+    pub const WIDTH: u32 = 32;
+    pub mod primitive_kind { // bits 31:29, inferred
+        pub const SHIFT: u32 = 29;
+        pub const MASK: u32 = 0x7;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod line_antialias { // bits 28:28, inferred
+        pub const SHIFT: u32 = 28;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod line_loop { // bits 27:27, inferred
         pub const SHIFT: u32 = 27;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -908,7 +928,7 @@ pub mod prim_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod back_face_line { // bits 11:11, inferred
+    pub mod back_face_as_line { // bits 11:11, inferred
         pub const SHIFT: u32 = 11;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -918,7 +938,7 @@ pub mod prim_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod prim_dir { // bits 10:9, inferred
+    pub mod direction_10_9 { // bits 10:9, inferred
         pub const SHIFT: u32 = 9;
         pub const MASK: u32 = 0x3;
         pub const fn get(v: u32) -> u32 {
@@ -928,7 +948,7 @@ pub mod prim_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod sel_prim_dir { // bits 8:8, inferred
+    pub mod direction_select_8 { // bits 8:8, inferred
         pub const SHIFT: u32 = 8;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -949,10 +969,10 @@ pub mod prim_mode {
         }
     }
 }
-/// First word of the stencil packet. (inferred)
-pub mod stencil_mode {
+/// Logic operation word. (inferred)
+pub mod raster_logic {
     pub const WIDTH: u32 = 32;
-    pub mod dppass { // bits 31:28, inferred
+    pub mod op { // bits 31:28, inferred
         pub const SHIFT: u32 = 28;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -962,7 +982,21 @@ pub mod stencil_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod dpfail { // bits 27:24, inferred
+}
+/// First word of the stencil packet. (inferred)
+pub mod stencil_config {
+    pub const WIDTH: u32 = 32;
+    pub mod pass_op { // bits 31:28, inferred
+        pub const SHIFT: u32 = 28;
+        pub const MASK: u32 = 0xf;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod depth_fail_op { // bits 27:24, inferred
         pub const SHIFT: u32 = 24;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -972,7 +1006,7 @@ pub mod stencil_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod sfail { // bits 23:20, inferred
+    pub mod stencil_fail_op { // bits 23:20, inferred
         pub const SHIFT: u32 = 20;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -1013,42 +1047,8 @@ pub mod stencil_mode {
         }
     }
 }
-/// Depth and stencil buffer descriptor. (inferred)
-pub mod sz_format {
-    pub const WIDTH: u32 = 32;
-    pub mod sz_type { // bits 31:31, inferred
-        pub const SHIFT: u32 = 31;
-        pub const MASK: u32 = 0x1;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod buf_depth { // bits 30:29, inferred
-        pub const SHIFT: u32 = 29;
-        pub const MASK: u32 = 0x3;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-    pub mod desc_id { // bits 28:23, inferred
-        pub const SHIFT: u32 = 23;
-        pub const MASK: u32 = 0x3f;
-        pub const fn get(v: u32) -> u32 {
-            (v >> SHIFT) & MASK
-        }
-        pub const fn set(v: u32, x: u32) -> u32 {
-            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
-        }
-    }
-}
 /// First word of the two-word texture-environment packet; the second is the environment colour. (inferred)
-pub mod texenv_mode {
+pub mod texture_apply {
     pub const WIDTH: u32 = 32;
     pub mod func { // bits 31:29, inferred
         pub const SHIFT: u32 = 29;
@@ -1072,7 +1072,7 @@ pub mod texenv_mode {
     }
 }
 /// First word of the four-word texture packet; the display driver's YUV blit sends 14 or 15 as the texture type. (inferred)
-pub mod texgen_format {
+pub mod texture_format_word {
     pub const WIDTH: u32 = 32;
     pub mod linear { // bits 31:31, inferred
         pub const SHIFT: u32 = 31;
@@ -1084,7 +1084,7 @@ pub mod texgen_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod tex_type { // bits 30:27, inferred
+    pub mod texture_kind { // bits 30:27, inferred
         pub const SHIFT: u32 = 27;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -1094,7 +1094,7 @@ pub mod texgen_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod buf_depth { // bits 26:25, inferred
+    pub mod size_class { // bits 26:25, inferred
         pub const SHIFT: u32 = 25;
         pub const MASK: u32 = 0x3;
         pub const fn get(v: u32) -> u32 {
@@ -1104,7 +1104,7 @@ pub mod texgen_format {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod desc_id { // bits 24:19, inferred
+    pub mod buffer_id { // bits 24:19, inferred
         pub const SHIFT: u32 = 19;
         pub const MASK: u32 = 0x3f;
         pub const fn get(v: u32) -> u32 {
@@ -1116,7 +1116,7 @@ pub mod texgen_format {
     }
 }
 /// Third word of the texture packet; the fourth is the border colour. (inferred)
-pub mod texgen_lod {
+pub mod texture_lod_range {
     pub const WIDTH: u32 = 32;
     pub mod max_level { // bits 31:28, inferred
         pub const SHIFT: u32 = 28;
@@ -1138,7 +1138,7 @@ pub mod texgen_lod {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod lod_frac_size { // bits 23:21, inferred
+    pub mod frac_bits { // bits 23:21, inferred
         pub const SHIFT: u32 = 21;
         pub const MASK: u32 = 0x7;
         pub const fn get(v: u32) -> u32 {
@@ -1160,7 +1160,7 @@ pub mod texgen_lod {
     }
 }
 /// Second word of the texture packet. (inferred)
-pub mod texgen_mode {
+pub mod texture_sampling {
     pub const WIDTH: u32 = 32;
     pub mod min_filter { // bits 31:29, inferred
         pub const SHIFT: u32 = 29;
@@ -1202,7 +1202,7 @@ pub mod texgen_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod map_height { // bits 23:20, inferred
+    pub mod height_code { // bits 23:20, inferred
         pub const SHIFT: u32 = 20;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -1212,7 +1212,7 @@ pub mod texgen_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod map_width { // bits 19:16, inferred
+    pub mod width_code { // bits 19:16, inferred
         pub const SHIFT: u32 = 16;
         pub const MASK: u32 = 0xf;
         pub const fn get(v: u32) -> u32 {
@@ -1224,9 +1224,9 @@ pub mod texgen_mode {
     }
 }
 /// Transform mode word , the draw flags word. (inferred)
-pub mod xform_mode {
+pub mod transform_flags {
     pub const WIDTH: u32 = 32;
-    pub mod en_viewport_xform { // bits 31:31, inferred
+    pub mod viewport_xform_on { // bits 31:31, inferred
         pub const SHIFT: u32 = 31;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -1236,7 +1236,7 @@ pub mod xform_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_model_xform { // bits 30:30, inferred
+    pub mod model_xform_on { // bits 30:30, inferred
         pub const SHIFT: u32 = 30;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -1246,7 +1246,7 @@ pub mod xform_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_tex_xform { // bits 29:29, inferred
+    pub mod tex_xform_on { // bits 29:29, inferred
         pub const SHIFT: u32 = 29;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
@@ -1256,7 +1256,7 @@ pub mod xform_mode {
             (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
         }
     }
-    pub mod en_clip_check { // bits 28:28, inferred
+    pub mod clip_check_on { // bits 28:28, inferred
         pub const SHIFT: u32 = 28;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {

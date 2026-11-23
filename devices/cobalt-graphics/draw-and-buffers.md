@@ -20,7 +20,7 @@ decision is **established** (the routines named were read in disassembly); what 
 | Condition | Draw flags bits 31:30 | Meaning |
 |---|---|---|
 | mask bit `0x400` set: the primitive is drawn by a host fill routine | `00` | the host sends window x, y, z (the vertex record's `window`, `+0x40`) and the context's w |
-| else, engine transform not allowed or not requested | `10` | the host sends the four clip coordinates (`clip`, `+0x20`), which it computed; the vendor's names for the bits are `enViewportXform` (31) and `enModelXform` (30), so the engine applies only the viewport transform |
+| else, engine transform not allowed or not requested | `10` | the host sends the four clip coordinates (`clip`, `+0x20`), which it computed; the bits are `viewport_xform_on` (31) and `model_xform_on` (30), so the engine applies only the viewport transform |
 | else, engine transform on | `11` | the vertex packets carry the four object coordinates (`obj`, `+0x00`), and the modelview-projection matrix is resent if it changed (`__glCoPassMVPMatrix`); the vertex-send routine tests bit 30 first, so `11` reads as `01`: the engine applies the model transform, and the viewport transform if bit 31 is also set |
 
 Engine transform is on when (`gc+0x2d583` is nonzero and `gc+0x2d960` is nonzero) or bit 2 of `gc+0x2e494` (`glCoStateFlags1`) is set
@@ -93,7 +93,7 @@ Flag `0x20` is added when the type is not 4 and the texture matrix flag
 `vertex.enableTexMatrix` (`gc+0x2d96e`) is clear. The flags go to `texture.controlWord` (`gc+0x2da78`), which the four
 code generators (`GenerateValidate`, `GenerateCalcTexture` and their Pentium III versions) read to emit x86 code for
 the vertex path. The texture coordinate the engine gets is the packet `0x198da080` the host fills, and the engine's own
-transform mode has no texture bit that anything sets (`enTexXform` stays clear).
+transform mode has no texture bit that anything sets (`tex_xform_on` stays clear).
 
 `__glCoPickPhase1Procs` makes no engine-or-host choice about transform or texture coordinates; it neither reads
 `gc+0x2d583` nor `gc+0x2d960`. It is the first stage of state validation: it folds the dirty-state words, installs the
@@ -360,7 +360,7 @@ hardware rectangle clear, `0x99ce00a0` (and `0x9e7200a0`, a second register bank
 4. the minimum corner as `y << 16 | tile column`;
 5. the maximum corner, same form.
 
-That is the order both builders write and the vendor's `CoClearModeReg` declares (descriptor, mask, value, start, end); an earlier
+That is the order both builders write and the clear-rectangle packet declares (descriptor, mask, value, start, end); an earlier
 reading of this list had the value first. The second bank (`0x9e7200a0`) is chosen by the context's `fastClear` byte
 (`gc+0x2e2cc` (`fastClear`)), not by a second buffer.
 

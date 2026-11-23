@@ -1,7 +1,7 @@
 /* generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 */
+/* input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140 */
 /* Rendering engine register window */
 #ifndef RENG_GEN_H
 #define RENG_GEN_H
@@ -23,25 +23,25 @@
 /*
  * Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.
  */
-/* tlb_desc: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database */
-#define RENG_TLB_DESC_OFFSET                         0xc000u /* inferred */
-#define RENG_TLB_DESC_COUNT                          64
-#define RENG_TLB_DESC_STRIDE                         8
-#define RENG_TLB_DESC_OFFSET_SHIFT                   21 /* inferred */
-#define RENG_TLB_DESC_OFFSET_MASK                    0x7ffu
-#define RENG_TLB_DESC_OFFSET_INPLACE                 (RENG_TLB_DESC_OFFSET_MASK << RENG_TLB_DESC_OFFSET_SHIFT)
-#define RENG_TLB_DESC_TILES_PER_ROW_SHIFT            14 /* inferred */
-#define RENG_TLB_DESC_TILES_PER_ROW_MASK             0x7fu
-#define RENG_TLB_DESC_TILES_PER_ROW_INPLACE          (RENG_TLB_DESC_TILES_PER_ROW_MASK << RENG_TLB_DESC_TILES_PER_ROW_SHIFT)
-#define RENG_TLB_DESC_TILE_WIDTH_SHIFT               13 /* inferred */
-#define RENG_TLB_DESC_TILE_WIDTH_MASK                0x1u
-#define RENG_TLB_DESC_TILE_WIDTH_INPLACE             (RENG_TLB_DESC_TILE_WIDTH_MASK << RENG_TLB_DESC_TILE_WIDTH_SHIFT)
-#define RENG_TLB_DESC_PAGE_SIZE_SHIFT                10 /* inferred */
-#define RENG_TLB_DESC_PAGE_SIZE_MASK                 0x7u
-#define RENG_TLB_DESC_PAGE_SIZE_INPLACE              (RENG_TLB_DESC_PAGE_SIZE_MASK << RENG_TLB_DESC_PAGE_SIZE_SHIFT)
-#define RENG_TLB_DESC_PAGE_TYPE_SHIFT                9 /* inferred */
-#define RENG_TLB_DESC_PAGE_TYPE_MASK                 0x1u
-#define RENG_TLB_DESC_PAGE_TYPE_INPLACE              (RENG_TLB_DESC_PAGE_TYPE_MASK << RENG_TLB_DESC_PAGE_TYPE_SHIFT)
+/* buffer_desc: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers */
+#define RENG_BUFFER_DESC_OFFSET                      0xc000u /* inferred */
+#define RENG_BUFFER_DESC_COUNT                       64
+#define RENG_BUFFER_DESC_STRIDE                      8
+#define RENG_BUFFER_DESC_OFFSET_SHIFT                21 /* inferred */
+#define RENG_BUFFER_DESC_OFFSET_MASK                 0x7ffu
+#define RENG_BUFFER_DESC_OFFSET_INPLACE              (RENG_BUFFER_DESC_OFFSET_MASK << RENG_BUFFER_DESC_OFFSET_SHIFT)
+#define RENG_BUFFER_DESC_ROW_TILES_SHIFT             14 /* inferred */
+#define RENG_BUFFER_DESC_ROW_TILES_MASK              0x7fu
+#define RENG_BUFFER_DESC_ROW_TILES_INPLACE           (RENG_BUFFER_DESC_ROW_TILES_MASK << RENG_BUFFER_DESC_ROW_TILES_SHIFT)
+#define RENG_BUFFER_DESC_TILE_SIZE_SEL_SHIFT         13 /* inferred */
+#define RENG_BUFFER_DESC_TILE_SIZE_SEL_MASK          0x1u
+#define RENG_BUFFER_DESC_TILE_SIZE_SEL_INPLACE       (RENG_BUFFER_DESC_TILE_SIZE_SEL_MASK << RENG_BUFFER_DESC_TILE_SIZE_SEL_SHIFT)
+#define RENG_BUFFER_DESC_TILE_PAGES_LOG4_SHIFT       10 /* inferred */
+#define RENG_BUFFER_DESC_TILE_PAGES_LOG4_MASK        0x7u
+#define RENG_BUFFER_DESC_TILE_PAGES_LOG4_INPLACE     (RENG_BUFFER_DESC_TILE_PAGES_LOG4_MASK << RENG_BUFFER_DESC_TILE_PAGES_LOG4_SHIFT)
+#define RENG_BUFFER_DESC_POOL_FLAG_SHIFT             9 /* inferred */
+#define RENG_BUFFER_DESC_POOL_FLAG_MASK              0x1u
+#define RENG_BUFFER_DESC_POOL_FLAG_INPLACE           (RENG_BUFFER_DESC_POOL_FLAG_MASK << RENG_BUFFER_DESC_POOL_FLAG_SHIFT)
 
 /*
  * Starts the engine on a packet position and reports where it is. A write is the packet position (in 32-byte units from the pool base) shifted to bit 12, bit 11 and the idle count; the driver writes 2 as the idle count with every start and 0x40 with 0xfffff in the position field at start-up. A read returns the position in bits 31:12, and zero there means none, in which case the driver reads the chain register instead.
@@ -54,9 +54,9 @@
 #define RENG_EXEC_CTL_START_SHIFT                    11 /* inferred */
 #define RENG_EXEC_CTL_START_MASK                     0x1u
 #define RENG_EXEC_CTL_START_INPLACE                  (RENG_EXEC_CTL_START_MASK << RENG_EXEC_CTL_START_SHIFT)
-#define RENG_EXEC_CTL_IDLE_COUNT_SHIFT               0 /* inferred */
-#define RENG_EXEC_CTL_IDLE_COUNT_MASK                0x7ffu
-#define RENG_EXEC_CTL_IDLE_COUNT_INPLACE             (RENG_EXEC_CTL_IDLE_COUNT_MASK << RENG_EXEC_CTL_IDLE_COUNT_SHIFT)
+#define RENG_EXEC_CTL_IDLE_WAIT_SHIFT                0 /* inferred */
+#define RENG_EXEC_CTL_IDLE_WAIT_MASK                 0x7ffu
+#define RENG_EXEC_CTL_IDLE_WAIT_INPLACE              (RENG_EXEC_CTL_IDLE_WAIT_MASK << RENG_EXEC_CTL_IDLE_WAIT_SHIFT)
 
 /*
  * Written with a single bit from three routines. Two write it when work is appended to a non-deferred node or a timer event fires, with the current queue at 2, a node in the hardware and that node's chunk count 0. The third, which suspends a node, writes it when the node's status bits 3:1 are clear, its chunk count is below 1, status bit 9 is clear and the status byte above bit 7 is non-zero.
@@ -145,386 +145,386 @@
 /*
  * The third word of the long chain packet. The kernel driver keeps a per-context current-texture id and writes it here when it starts the context and reads it back at a stop; the OpenGL driver zeroes it before it frees the pages of the bound texture.
  */
-/* tex_id: rw32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch, stop-event and bind routines; the OpenGL driver's texture-free packet */
-#define RENG_TEX_ID_OFFSET                           0x185d0u /* inferred */
+/* bound_texture_id: rw32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch, stop-event and bind routines; the OpenGL driver's texture-free packet */
+#define RENG_BOUND_TEXTURE_ID_OFFSET                 0x185d0u /* inferred */
 
 /*
- * Written with the outgoing context's dump offset (the field the driver names as its context-switch dump offset) when another context is started, before the new context's start word.
+ * Written with the outgoing context's dump offset (a per-context field the driver keeps for the purpose) when another context is started, before the new context's start word.
  */
 /* ctx_dump: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch */
 #define RENG_CTX_DUMP_OFFSET                         0x18800u /* inferred */
 
 /*
+ * First word of the alpha-test packet; the second is the reference colour.
+ */
+/* word ALPHA_TEST_CONFIG: 32 bits; SGI Cobalt Graphics Driver 5.2.4 alpha-test writer */
+#define RENG_ALPHA_TEST_CONFIG_WIDTH                 32 /* inferred */
+#define RENG_ALPHA_TEST_CONFIG_COMPONENT_ENABLES_SHIFT 28 /* inferred */
+#define RENG_ALPHA_TEST_CONFIG_COMPONENT_ENABLES_MASK 0xfu
+#define RENG_ALPHA_TEST_CONFIG_COMPONENT_ENABLES_INPLACE (RENG_ALPHA_TEST_CONFIG_COMPONENT_ENABLES_MASK << RENG_ALPHA_TEST_CONFIG_COMPONENT_ENABLES_SHIFT)
+#define RENG_ALPHA_TEST_CONFIG_FUNC_SHIFT            25 /* inferred */
+#define RENG_ALPHA_TEST_CONFIG_FUNC_MASK             0x7u
+#define RENG_ALPHA_TEST_CONFIG_FUNC_INPLACE          (RENG_ALPHA_TEST_CONFIG_FUNC_MASK << RENG_ALPHA_TEST_CONFIG_FUNC_SHIFT)
+
+/*
  * First word of the blend packet; the second is the constant colour.
  */
-/* word BLEND_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer */
-#define RENG_BLEND_MODE_WIDTH                        32 /* inferred */
-#define RENG_BLEND_MODE_DST_FUNC_SHIFT               28 /* inferred */
-#define RENG_BLEND_MODE_DST_FUNC_MASK                0xfu
-#define RENG_BLEND_MODE_DST_FUNC_INPLACE             (RENG_BLEND_MODE_DST_FUNC_MASK << RENG_BLEND_MODE_DST_FUNC_SHIFT)
-#define RENG_BLEND_MODE_SRC_FUNC_SHIFT               24 /* inferred */
-#define RENG_BLEND_MODE_SRC_FUNC_MASK                0xfu
-#define RENG_BLEND_MODE_SRC_FUNC_INPLACE             (RENG_BLEND_MODE_SRC_FUNC_MASK << RENG_BLEND_MODE_SRC_FUNC_SHIFT)
-#define RENG_BLEND_MODE_OP_SHIFT                     20 /* inferred */
-#define RENG_BLEND_MODE_OP_MASK                      0xfu
-#define RENG_BLEND_MODE_OP_INPLACE                   (RENG_BLEND_MODE_OP_MASK << RENG_BLEND_MODE_OP_SHIFT)
+/* word BLEND_CONFIG: 32 bits; SGI Cobalt Graphics Driver 5.2.4 blend writer */
+#define RENG_BLEND_CONFIG_WIDTH                      32 /* inferred */
+#define RENG_BLEND_CONFIG_DST_FACTOR_SHIFT           28 /* inferred */
+#define RENG_BLEND_CONFIG_DST_FACTOR_MASK            0xfu
+#define RENG_BLEND_CONFIG_DST_FACTOR_INPLACE         (RENG_BLEND_CONFIG_DST_FACTOR_MASK << RENG_BLEND_CONFIG_DST_FACTOR_SHIFT)
+#define RENG_BLEND_CONFIG_SRC_FACTOR_SHIFT           24 /* inferred */
+#define RENG_BLEND_CONFIG_SRC_FACTOR_MASK            0xfu
+#define RENG_BLEND_CONFIG_SRC_FACTOR_INPLACE         (RENG_BLEND_CONFIG_SRC_FACTOR_MASK << RENG_BLEND_CONFIG_SRC_FACTOR_SHIFT)
+#define RENG_BLEND_CONFIG_OP_SHIFT                   20 /* inferred */
+#define RENG_BLEND_CONFIG_OP_MASK                    0xfu
+#define RENG_BLEND_CONFIG_OP_INPLACE                 (RENG_BLEND_CONFIG_OP_MASK << RENG_BLEND_CONFIG_OP_SHIFT)
 
 /*
  * Draw-buffer descriptor.
  */
-/* word COLOR_FORMAT: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers */
-#define RENG_COLOR_FORMAT_WIDTH                      32 /* inferred */
-#define RENG_COLOR_FORMAT_LINEAR_SHIFT               31 /* inferred */
-#define RENG_COLOR_FORMAT_LINEAR_MASK                0x1u
-#define RENG_COLOR_FORMAT_LINEAR_INPLACE             (RENG_COLOR_FORMAT_LINEAR_MASK << RENG_COLOR_FORMAT_LINEAR_SHIFT)
-#define RENG_COLOR_FORMAT_COLOR_TYPE_SHIFT           27 /* inferred */
-#define RENG_COLOR_FORMAT_COLOR_TYPE_MASK            0xfu
-#define RENG_COLOR_FORMAT_COLOR_TYPE_INPLACE         (RENG_COLOR_FORMAT_COLOR_TYPE_MASK << RENG_COLOR_FORMAT_COLOR_TYPE_SHIFT)
-#define RENG_COLOR_FORMAT_BUF_DEPTH_SHIFT            25 /* inferred */
-#define RENG_COLOR_FORMAT_BUF_DEPTH_MASK             0x3u
-#define RENG_COLOR_FORMAT_BUF_DEPTH_INPLACE          (RENG_COLOR_FORMAT_BUF_DEPTH_MASK << RENG_COLOR_FORMAT_BUF_DEPTH_SHIFT)
-#define RENG_COLOR_FORMAT_DESC_ID_SHIFT              19 /* inferred */
-#define RENG_COLOR_FORMAT_DESC_ID_MASK               0x3fu
-#define RENG_COLOR_FORMAT_DESC_ID_INPLACE            (RENG_COLOR_FORMAT_DESC_ID_MASK << RENG_COLOR_FORMAT_DESC_ID_SHIFT)
-#define RENG_COLOR_FORMAT_SPAN_MODE_SHIFT            18 /* inferred */
-#define RENG_COLOR_FORMAT_SPAN_MODE_MASK             0x1u
-#define RENG_COLOR_FORMAT_SPAN_MODE_INPLACE          (RENG_COLOR_FORMAT_SPAN_MODE_MASK << RENG_COLOR_FORMAT_SPAN_MODE_SHIFT)
-
-/*
- * First word of the alpha-test packet; the second is the reference colour.
- */
-/* word COLOR_TEST_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoColorTestModeReg, alpha-test writer */
-#define RENG_COLOR_TEST_MODE_WIDTH                   32 /* inferred */
-#define RENG_COLOR_TEST_MODE_EN_COMP_SHIFT           28 /* inferred */
-#define RENG_COLOR_TEST_MODE_EN_COMP_MASK            0xfu
-#define RENG_COLOR_TEST_MODE_EN_COMP_INPLACE         (RENG_COLOR_TEST_MODE_EN_COMP_MASK << RENG_COLOR_TEST_MODE_EN_COMP_SHIFT)
-#define RENG_COLOR_TEST_MODE_FUNC_SHIFT              25 /* inferred */
-#define RENG_COLOR_TEST_MODE_FUNC_MASK               0x7u
-#define RENG_COLOR_TEST_MODE_FUNC_INPLACE            (RENG_COLOR_TEST_MODE_FUNC_MASK << RENG_COLOR_TEST_MODE_FUNC_SHIFT)
-
-/*
- * Depth test word.
- */
-/* word DEPTH_TEST: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers */
-#define RENG_DEPTH_TEST_WIDTH                        32 /* inferred */
-#define RENG_DEPTH_TEST_FUNC_SHIFT                   29 /* inferred */
-#define RENG_DEPTH_TEST_FUNC_MASK                    0x7u
-#define RENG_DEPTH_TEST_FUNC_INPLACE                 (RENG_DEPTH_TEST_FUNC_MASK << RENG_DEPTH_TEST_FUNC_SHIFT)
-#define RENG_DEPTH_TEST_INIT_OCCLUSION_TEST_SHIFT    28 /* inferred */
-#define RENG_DEPTH_TEST_INIT_OCCLUSION_TEST_MASK     0x1u
-#define RENG_DEPTH_TEST_INIT_OCCLUSION_TEST_INPLACE  (RENG_DEPTH_TEST_INIT_OCCLUSION_TEST_MASK << RENG_DEPTH_TEST_INIT_OCCLUSION_TEST_SHIFT)
-#define RENG_DEPTH_TEST_EN_OCCLUSION_TEST_SHIFT      27 /* inferred */
-#define RENG_DEPTH_TEST_EN_OCCLUSION_TEST_MASK       0x1u
-#define RENG_DEPTH_TEST_EN_OCCLUSION_TEST_INPLACE    (RENG_DEPTH_TEST_EN_OCCLUSION_TEST_MASK << RENG_DEPTH_TEST_EN_OCCLUSION_TEST_SHIFT)
-#define RENG_DEPTH_TEST_EQUAL_RANGE_SHIFT            23 /* inferred */
-#define RENG_DEPTH_TEST_EQUAL_RANGE_MASK             0xfu
-#define RENG_DEPTH_TEST_EQUAL_RANGE_INPLACE          (RENG_DEPTH_TEST_EQUAL_RANGE_MASK << RENG_DEPTH_TEST_EQUAL_RANGE_SHIFT)
-
-/*
- * Pixel-pipe mode word.
- */
-/* word DRAW_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver */
-#define RENG_DRAW_MODE_WIDTH                         32 /* inferred */
-#define RENG_DRAW_MODE_EN_STENCIL_TEST_SHIFT         31 /* inferred */
-#define RENG_DRAW_MODE_EN_STENCIL_TEST_MASK          0x1u
-#define RENG_DRAW_MODE_EN_STENCIL_TEST_INPLACE       (RENG_DRAW_MODE_EN_STENCIL_TEST_MASK << RENG_DRAW_MODE_EN_STENCIL_TEST_SHIFT)
-#define RENG_DRAW_MODE_EN_DEPTH_MASK_SHIFT           30 /* inferred */
-#define RENG_DRAW_MODE_EN_DEPTH_MASK_MASK            0x1u
-#define RENG_DRAW_MODE_EN_DEPTH_MASK_INPLACE         (RENG_DRAW_MODE_EN_DEPTH_MASK_MASK << RENG_DRAW_MODE_EN_DEPTH_MASK_SHIFT)
-#define RENG_DRAW_MODE_EN_DEPTH_TEST_SHIFT           29 /* inferred */
-#define RENG_DRAW_MODE_EN_DEPTH_TEST_MASK            0x1u
-#define RENG_DRAW_MODE_EN_DEPTH_TEST_INPLACE         (RENG_DRAW_MODE_EN_DEPTH_TEST_MASK << RENG_DRAW_MODE_EN_DEPTH_TEST_SHIFT)
-#define RENG_DRAW_MODE_EN_DEPTH_OFFSET_SHIFT         28 /* inferred */
-#define RENG_DRAW_MODE_EN_DEPTH_OFFSET_MASK          0x1u
-#define RENG_DRAW_MODE_EN_DEPTH_OFFSET_INPLACE       (RENG_DRAW_MODE_EN_DEPTH_OFFSET_MASK << RENG_DRAW_MODE_EN_DEPTH_OFFSET_SHIFT)
-#define RENG_DRAW_MODE_EN_COLOR_DISCARD_SHIFT        27 /* inferred */
-#define RENG_DRAW_MODE_EN_COLOR_DISCARD_MASK         0x1u
-#define RENG_DRAW_MODE_EN_COLOR_DISCARD_INPLACE      (RENG_DRAW_MODE_EN_COLOR_DISCARD_MASK << RENG_DRAW_MODE_EN_COLOR_DISCARD_SHIFT)
-#define RENG_DRAW_MODE_EN_COLOR_MASK_SHIFT           26 /* inferred */
-#define RENG_DRAW_MODE_EN_COLOR_MASK_MASK            0x1u
-#define RENG_DRAW_MODE_EN_COLOR_MASK_INPLACE         (RENG_DRAW_MODE_EN_COLOR_MASK_MASK << RENG_DRAW_MODE_EN_COLOR_MASK_SHIFT)
-#define RENG_DRAW_MODE_EN_DITHER_SHIFT               25 /* inferred */
-#define RENG_DRAW_MODE_EN_DITHER_MASK                0x1u
-#define RENG_DRAW_MODE_EN_DITHER_INPLACE             (RENG_DRAW_MODE_EN_DITHER_MASK << RENG_DRAW_MODE_EN_DITHER_SHIFT)
-#define RENG_DRAW_MODE_EN_LOGIC_OP_SHIFT             24 /* inferred */
-#define RENG_DRAW_MODE_EN_LOGIC_OP_MASK              0x1u
-#define RENG_DRAW_MODE_EN_LOGIC_OP_INPLACE           (RENG_DRAW_MODE_EN_LOGIC_OP_MASK << RENG_DRAW_MODE_EN_LOGIC_OP_SHIFT)
-#define RENG_DRAW_MODE_EN_BLEND_SHIFT                23 /* inferred */
-#define RENG_DRAW_MODE_EN_BLEND_MASK                 0x1u
-#define RENG_DRAW_MODE_EN_BLEND_INPLACE              (RENG_DRAW_MODE_EN_BLEND_MASK << RENG_DRAW_MODE_EN_BLEND_SHIFT)
-#define RENG_DRAW_MODE_EN_COLOR_TEST_SHIFT           22 /* inferred */
-#define RENG_DRAW_MODE_EN_COLOR_TEST_MASK            0x1u
-#define RENG_DRAW_MODE_EN_COLOR_TEST_INPLACE         (RENG_DRAW_MODE_EN_COLOR_TEST_MASK << RENG_DRAW_MODE_EN_COLOR_TEST_SHIFT)
-#define RENG_DRAW_MODE_EN_FOG_SHIFT                  21 /* inferred */
-#define RENG_DRAW_MODE_EN_FOG_MASK                   0x1u
-#define RENG_DRAW_MODE_EN_FOG_INPLACE                (RENG_DRAW_MODE_EN_FOG_MASK << RENG_DRAW_MODE_EN_FOG_SHIFT)
-#define RENG_DRAW_MODE_EN_COLOR_MATRIX_SHIFT         20 /* inferred */
-#define RENG_DRAW_MODE_EN_COLOR_MATRIX_MASK          0x1u
-#define RENG_DRAW_MODE_EN_COLOR_MATRIX_INPLACE       (RENG_DRAW_MODE_EN_COLOR_MATRIX_MASK << RENG_DRAW_MODE_EN_COLOR_MATRIX_SHIFT)
-#define RENG_DRAW_MODE_EN_PIXEL_XFER_SHIFT           19 /* inferred */
-#define RENG_DRAW_MODE_EN_PIXEL_XFER_MASK            0x1u
-#define RENG_DRAW_MODE_EN_PIXEL_XFER_INPLACE         (RENG_DRAW_MODE_EN_PIXEL_XFER_MASK << RENG_DRAW_MODE_EN_PIXEL_XFER_SHIFT)
-#define RENG_DRAW_MODE_EN_TEXTURE_SHIFT              18 /* inferred */
-#define RENG_DRAW_MODE_EN_TEXTURE_MASK               0x1u
-#define RENG_DRAW_MODE_EN_TEXTURE_INPLACE            (RENG_DRAW_MODE_EN_TEXTURE_MASK << RENG_DRAW_MODE_EN_TEXTURE_SHIFT)
-#define RENG_DRAW_MODE_EN_SECOND_COLOR_SHIFT         17 /* inferred */
-#define RENG_DRAW_MODE_EN_SECOND_COLOR_MASK          0x1u
-#define RENG_DRAW_MODE_EN_SECOND_COLOR_INPLACE       (RENG_DRAW_MODE_EN_SECOND_COLOR_MASK << RENG_DRAW_MODE_EN_SECOND_COLOR_SHIFT)
-#define RENG_DRAW_MODE_EN_SMOOTH_SHADE_SHIFT         16 /* inferred */
-#define RENG_DRAW_MODE_EN_SMOOTH_SHADE_MASK          0x1u
-#define RENG_DRAW_MODE_EN_SMOOTH_SHADE_INPLACE       (RENG_DRAW_MODE_EN_SMOOTH_SHADE_MASK << RENG_DRAW_MODE_EN_SMOOTH_SHADE_SHIFT)
-#define RENG_DRAW_MODE_EN_OPAQ_STIPPLE_SHIFT         15 /* inferred */
-#define RENG_DRAW_MODE_EN_OPAQ_STIPPLE_MASK          0x1u
-#define RENG_DRAW_MODE_EN_OPAQ_STIPPLE_INPLACE       (RENG_DRAW_MODE_EN_OPAQ_STIPPLE_MASK << RENG_DRAW_MODE_EN_OPAQ_STIPPLE_SHIFT)
-#define RENG_DRAW_MODE_EN_POLY_STIPPLE_SHIFT         14 /* inferred */
-#define RENG_DRAW_MODE_EN_POLY_STIPPLE_MASK          0x1u
-#define RENG_DRAW_MODE_EN_POLY_STIPPLE_INPLACE       (RENG_DRAW_MODE_EN_POLY_STIPPLE_MASK << RENG_DRAW_MODE_EN_POLY_STIPPLE_SHIFT)
-#define RENG_DRAW_MODE_EN_LINE_STIPPLE_SHIFT         13 /* inferred */
-#define RENG_DRAW_MODE_EN_LINE_STIPPLE_MASK          0x1u
-#define RENG_DRAW_MODE_EN_LINE_STIPPLE_INPLACE       (RENG_DRAW_MODE_EN_LINE_STIPPLE_MASK << RENG_DRAW_MODE_EN_LINE_STIPPLE_SHIFT)
-#define RENG_DRAW_MODE_RESERVED_SHIFT                0 /* unknown */
-#define RENG_DRAW_MODE_RESERVED_MASK                 0x1fffu
-#define RENG_DRAW_MODE_RESERVED_INPLACE              (RENG_DRAW_MODE_RESERVED_MASK << RENG_DRAW_MODE_RESERVED_SHIFT)
+/* word COLOR_BUFFER_DESC: 32 bits; SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers */
+#define RENG_COLOR_BUFFER_DESC_WIDTH                 32 /* inferred */
+#define RENG_COLOR_BUFFER_DESC_LINEAR_SHIFT          31 /* inferred */
+#define RENG_COLOR_BUFFER_DESC_LINEAR_MASK           0x1u
+#define RENG_COLOR_BUFFER_DESC_LINEAR_INPLACE        (RENG_COLOR_BUFFER_DESC_LINEAR_MASK << RENG_COLOR_BUFFER_DESC_LINEAR_SHIFT)
+#define RENG_COLOR_BUFFER_DESC_PIXEL_KIND_SHIFT      27 /* inferred */
+#define RENG_COLOR_BUFFER_DESC_PIXEL_KIND_MASK       0xfu
+#define RENG_COLOR_BUFFER_DESC_PIXEL_KIND_INPLACE    (RENG_COLOR_BUFFER_DESC_PIXEL_KIND_MASK << RENG_COLOR_BUFFER_DESC_PIXEL_KIND_SHIFT)
+#define RENG_COLOR_BUFFER_DESC_SIZE_CLASS_SHIFT      25 /* inferred */
+#define RENG_COLOR_BUFFER_DESC_SIZE_CLASS_MASK       0x3u
+#define RENG_COLOR_BUFFER_DESC_SIZE_CLASS_INPLACE    (RENG_COLOR_BUFFER_DESC_SIZE_CLASS_MASK << RENG_COLOR_BUFFER_DESC_SIZE_CLASS_SHIFT)
+#define RENG_COLOR_BUFFER_DESC_BUFFER_ID_SHIFT       19 /* inferred */
+#define RENG_COLOR_BUFFER_DESC_BUFFER_ID_MASK        0x3fu
+#define RENG_COLOR_BUFFER_DESC_BUFFER_ID_INPLACE     (RENG_COLOR_BUFFER_DESC_BUFFER_ID_MASK << RENG_COLOR_BUFFER_DESC_BUFFER_ID_SHIFT)
+#define RENG_COLOR_BUFFER_DESC_SPAN_FLAG_SHIFT       18 /* inferred */
+#define RENG_COLOR_BUFFER_DESC_SPAN_FLAG_MASK        0x1u
+#define RENG_COLOR_BUFFER_DESC_SPAN_FLAG_INPLACE     (RENG_COLOR_BUFFER_DESC_SPAN_FLAG_MASK << RENG_COLOR_BUFFER_DESC_SPAN_FLAG_SHIFT)
 
 /*
  * A corner: x in the low half, y in the high half (signed 16-bit).
  */
-/* word FB_ADDR: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoFbAddrType, scissor and clear-rectangle writers */
-#define RENG_FB_ADDR_WIDTH                           32 /* inferred */
-#define RENG_FB_ADDR_Y_SHIFT                         16 /* inferred */
-#define RENG_FB_ADDR_Y_MASK                          0xffffu
-#define RENG_FB_ADDR_Y_INPLACE                       (RENG_FB_ADDR_Y_MASK << RENG_FB_ADDR_Y_SHIFT)
-#define RENG_FB_ADDR_X_SHIFT                         0 /* inferred */
-#define RENG_FB_ADDR_X_MASK                          0xffffu
-#define RENG_FB_ADDR_X_INPLACE                       (RENG_FB_ADDR_X_MASK << RENG_FB_ADDR_X_SHIFT)
+/* word CORNER_XY: 32 bits; SGI Cobalt Graphics Driver 5.2.4 scissor and clear-rectangle writers */
+#define RENG_CORNER_XY_WIDTH                         32 /* inferred */
+#define RENG_CORNER_XY_Y_SHIFT                       16 /* inferred */
+#define RENG_CORNER_XY_Y_MASK                        0xffffu
+#define RENG_CORNER_XY_Y_INPLACE                     (RENG_CORNER_XY_Y_MASK << RENG_CORNER_XY_Y_SHIFT)
+#define RENG_CORNER_XY_X_SHIFT                       0 /* inferred */
+#define RENG_CORNER_XY_X_MASK                        0xffffu
+#define RENG_CORNER_XY_X_INPLACE                     (RENG_CORNER_XY_X_MASK << RENG_CORNER_XY_X_SHIFT)
 
 /*
- * Lighting mode word.
+ * Depth test word.
  */
-/* word LIGHT_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers */
-#define RENG_LIGHT_MODE_WIDTH                        32 /* inferred */
-#define RENG_LIGHT_MODE_TWO_SIDED_SHIFT              31 /* inferred */
-#define RENG_LIGHT_MODE_TWO_SIDED_MASK               0x1u
-#define RENG_LIGHT_MODE_TWO_SIDED_INPLACE            (RENG_LIGHT_MODE_TWO_SIDED_MASK << RENG_LIGHT_MODE_TWO_SIDED_SHIFT)
-#define RENG_LIGHT_MODE_EN_LIGHT3_SHIFT              30 /* inferred */
-#define RENG_LIGHT_MODE_EN_LIGHT3_MASK               0x1u
-#define RENG_LIGHT_MODE_EN_LIGHT3_INPLACE            (RENG_LIGHT_MODE_EN_LIGHT3_MASK << RENG_LIGHT_MODE_EN_LIGHT3_SHIFT)
-#define RENG_LIGHT_MODE_EN_LIGHT2_SHIFT              29 /* inferred */
-#define RENG_LIGHT_MODE_EN_LIGHT2_MASK               0x1u
-#define RENG_LIGHT_MODE_EN_LIGHT2_INPLACE            (RENG_LIGHT_MODE_EN_LIGHT2_MASK << RENG_LIGHT_MODE_EN_LIGHT2_SHIFT)
-#define RENG_LIGHT_MODE_EN_LIGHT1_SHIFT              28 /* inferred */
-#define RENG_LIGHT_MODE_EN_LIGHT1_MASK               0x1u
-#define RENG_LIGHT_MODE_EN_LIGHT1_INPLACE            (RENG_LIGHT_MODE_EN_LIGHT1_MASK << RENG_LIGHT_MODE_EN_LIGHT1_SHIFT)
-#define RENG_LIGHT_MODE_EN_LIGHT0_SHIFT              27 /* inferred */
-#define RENG_LIGHT_MODE_EN_LIGHT0_MASK               0x1u
-#define RENG_LIGHT_MODE_EN_LIGHT0_INPLACE            (RENG_LIGHT_MODE_EN_LIGHT0_MASK << RENG_LIGHT_MODE_EN_LIGHT0_SHIFT)
-#define RENG_LIGHT_MODE_EN_NORMALIZE_SHIFT           26 /* inferred */
-#define RENG_LIGHT_MODE_EN_NORMALIZE_MASK            0x1u
-#define RENG_LIGHT_MODE_EN_NORMALIZE_INPLACE         (RENG_LIGHT_MODE_EN_NORMALIZE_MASK << RENG_LIGHT_MODE_EN_NORMALIZE_SHIFT)
-#define RENG_LIGHT_MODE_EN_SPECULAR_SHIFT            25 /* inferred */
-#define RENG_LIGHT_MODE_EN_SPECULAR_MASK             0x1u
-#define RENG_LIGHT_MODE_EN_SPECULAR_INPLACE          (RENG_LIGHT_MODE_EN_SPECULAR_MASK << RENG_LIGHT_MODE_EN_SPECULAR_SHIFT)
-#define RENG_LIGHT_MODE_SPEC_ONLY_SHIFT              24 /* inferred */
-#define RENG_LIGHT_MODE_SPEC_ONLY_MASK               0x1u
-#define RENG_LIGHT_MODE_SPEC_ONLY_INPLACE            (RENG_LIGHT_MODE_SPEC_ONLY_MASK << RENG_LIGHT_MODE_SPEC_ONLY_SHIFT)
-#define RENG_LIGHT_MODE_EN_LIGHTING_SHIFT            23 /* inferred */
-#define RENG_LIGHT_MODE_EN_LIGHTING_MASK             0x1u
-#define RENG_LIGHT_MODE_EN_LIGHTING_INPLACE          (RENG_LIGHT_MODE_EN_LIGHTING_MASK << RENG_LIGHT_MODE_EN_LIGHTING_SHIFT)
-
-/*
- * Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.
- */
-/* word LINK_WORD: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers */
-#define RENG_LINK_WORD_WIDTH                         32 /* inferred */
-#define RENG_LINK_WORD_NEXT_SHIFT                    12 /* inferred */
-#define RENG_LINK_WORD_NEXT_MASK                     0xfffffu
-#define RENG_LINK_WORD_NEXT_INPLACE                  (RENG_LINK_WORD_NEXT_MASK << RENG_LINK_WORD_NEXT_SHIFT)
-#define RENG_LINK_WORD_SIZE_SHIFT                    3 /* inferred */
-#define RENG_LINK_WORD_SIZE_MASK                     0x1ffu
-#define RENG_LINK_WORD_SIZE_INPLACE                  (RENG_LINK_WORD_SIZE_MASK << RENG_LINK_WORD_SIZE_SHIFT)
-#define RENG_LINK_WORD_SYNC_SHIFT                    2 /* inferred */
-#define RENG_LINK_WORD_SYNC_MASK                     0x1u
-#define RENG_LINK_WORD_SYNC_INPLACE                  (RENG_LINK_WORD_SYNC_MASK << RENG_LINK_WORD_SYNC_SHIFT)
-#define RENG_LINK_WORD_INTR_SHIFT                    1 /* inferred */
-#define RENG_LINK_WORD_INTR_MASK                     0x1u
-#define RENG_LINK_WORD_INTR_INPLACE                  (RENG_LINK_WORD_INTR_MASK << RENG_LINK_WORD_INTR_SHIFT)
-#define RENG_LINK_WORD_READY_SHIFT                   0 /* inferred */
-#define RENG_LINK_WORD_READY_MASK                    0x1u
-#define RENG_LINK_WORD_READY_INPLACE                 (RENG_LINK_WORD_READY_MASK << RENG_LINK_WORD_READY_SHIFT)
-
-/*
- * Logic operation word.
- */
-/* word LOGIC_OP: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoLogicOpReg, logic-operation writer */
-#define RENG_LOGIC_OP_WIDTH                          32 /* inferred */
-#define RENG_LOGIC_OP_OP_SHIFT                       28 /* inferred */
-#define RENG_LOGIC_OP_OP_MASK                        0xfu
-#define RENG_LOGIC_OP_OP_INPLACE                     (RENG_LOGIC_OP_OP_MASK << RENG_LOGIC_OP_OP_SHIFT)
-
-/*
- * Primitive mode word.
- */
-/* word PRIM_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver */
-#define RENG_PRIM_MODE_WIDTH                         32 /* inferred */
-#define RENG_PRIM_MODE_PRIM_TYPE_SHIFT               29 /* inferred */
-#define RENG_PRIM_MODE_PRIM_TYPE_MASK                0x7u
-#define RENG_PRIM_MODE_PRIM_TYPE_INPLACE             (RENG_PRIM_MODE_PRIM_TYPE_MASK << RENG_PRIM_MODE_PRIM_TYPE_SHIFT)
-#define RENG_PRIM_MODE_AA_LINE_SHIFT                 28 /* inferred */
-#define RENG_PRIM_MODE_AA_LINE_MASK                  0x1u
-#define RENG_PRIM_MODE_AA_LINE_INPLACE               (RENG_PRIM_MODE_AA_LINE_MASK << RENG_PRIM_MODE_AA_LINE_SHIFT)
-#define RENG_PRIM_MODE_CLOSED_LINE_SHIFT             27 /* inferred */
-#define RENG_PRIM_MODE_CLOSED_LINE_MASK              0x1u
-#define RENG_PRIM_MODE_CLOSED_LINE_INPLACE           (RENG_PRIM_MODE_CLOSED_LINE_MASK << RENG_PRIM_MODE_CLOSED_LINE_SHIFT)
-#define RENG_PRIM_MODE_LINE_WIDTH_SHIFT              15 /* inferred */
-#define RENG_PRIM_MODE_LINE_WIDTH_MASK               0xfffu
-#define RENG_PRIM_MODE_LINE_WIDTH_INPLACE            (RENG_PRIM_MODE_LINE_WIDTH_MASK << RENG_PRIM_MODE_LINE_WIDTH_SHIFT)
-#define RENG_PRIM_MODE_CULL_FACE_SHIFT               13 /* inferred */
-#define RENG_PRIM_MODE_CULL_FACE_MASK                0x3u
-#define RENG_PRIM_MODE_CULL_FACE_INPLACE             (RENG_PRIM_MODE_CULL_FACE_MASK << RENG_PRIM_MODE_CULL_FACE_SHIFT)
-#define RENG_PRIM_MODE_FRONT_FACE_SHIFT              12 /* inferred */
-#define RENG_PRIM_MODE_FRONT_FACE_MASK               0x1u
-#define RENG_PRIM_MODE_FRONT_FACE_INPLACE            (RENG_PRIM_MODE_FRONT_FACE_MASK << RENG_PRIM_MODE_FRONT_FACE_SHIFT)
-#define RENG_PRIM_MODE_BACK_FACE_LINE_SHIFT          11 /* inferred */
-#define RENG_PRIM_MODE_BACK_FACE_LINE_MASK           0x1u
-#define RENG_PRIM_MODE_BACK_FACE_LINE_INPLACE        (RENG_PRIM_MODE_BACK_FACE_LINE_MASK << RENG_PRIM_MODE_BACK_FACE_LINE_SHIFT)
-#define RENG_PRIM_MODE_PRIM_DIR_SHIFT                9 /* inferred */
-#define RENG_PRIM_MODE_PRIM_DIR_MASK                 0x3u
-#define RENG_PRIM_MODE_PRIM_DIR_INPLACE              (RENG_PRIM_MODE_PRIM_DIR_MASK << RENG_PRIM_MODE_PRIM_DIR_SHIFT)
-#define RENG_PRIM_MODE_SEL_PRIM_DIR_SHIFT            8 /* inferred */
-#define RENG_PRIM_MODE_SEL_PRIM_DIR_MASK             0x1u
-#define RENG_PRIM_MODE_SEL_PRIM_DIR_INPLACE          (RENG_PRIM_MODE_SEL_PRIM_DIR_MASK << RENG_PRIM_MODE_SEL_PRIM_DIR_SHIFT)
-#define RENG_PRIM_MODE_RESERVED_SHIFT                0 /* unknown */
-#define RENG_PRIM_MODE_RESERVED_MASK                 0xffu
-#define RENG_PRIM_MODE_RESERVED_INPLACE              (RENG_PRIM_MODE_RESERVED_MASK << RENG_PRIM_MODE_RESERVED_SHIFT)
-
-/*
- * First word of the stencil packet.
- */
-/* word STENCIL_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers */
-#define RENG_STENCIL_MODE_WIDTH                      32 /* inferred */
-#define RENG_STENCIL_MODE_DPPASS_SHIFT               28 /* inferred */
-#define RENG_STENCIL_MODE_DPPASS_MASK                0xfu
-#define RENG_STENCIL_MODE_DPPASS_INPLACE             (RENG_STENCIL_MODE_DPPASS_MASK << RENG_STENCIL_MODE_DPPASS_SHIFT)
-#define RENG_STENCIL_MODE_DPFAIL_SHIFT               24 /* inferred */
-#define RENG_STENCIL_MODE_DPFAIL_MASK                0xfu
-#define RENG_STENCIL_MODE_DPFAIL_INPLACE             (RENG_STENCIL_MODE_DPFAIL_MASK << RENG_STENCIL_MODE_DPFAIL_SHIFT)
-#define RENG_STENCIL_MODE_SFAIL_SHIFT                20 /* inferred */
-#define RENG_STENCIL_MODE_SFAIL_MASK                 0xfu
-#define RENG_STENCIL_MODE_SFAIL_INPLACE              (RENG_STENCIL_MODE_SFAIL_MASK << RENG_STENCIL_MODE_SFAIL_SHIFT)
-#define RENG_STENCIL_MODE_FUNC_SHIFT                 16 /* inferred */
-#define RENG_STENCIL_MODE_FUNC_MASK                  0xfu
-#define RENG_STENCIL_MODE_FUNC_INPLACE               (RENG_STENCIL_MODE_FUNC_MASK << RENG_STENCIL_MODE_FUNC_SHIFT)
-#define RENG_STENCIL_MODE_MASK_SHIFT                 8 /* inferred */
-#define RENG_STENCIL_MODE_MASK_MASK                  0xffu
-#define RENG_STENCIL_MODE_MASK_INPLACE               (RENG_STENCIL_MODE_MASK_MASK << RENG_STENCIL_MODE_MASK_SHIFT)
-#define RENG_STENCIL_MODE_REF_SHIFT                  0 /* inferred */
-#define RENG_STENCIL_MODE_REF_MASK                   0xffu
-#define RENG_STENCIL_MODE_REF_INPLACE                (RENG_STENCIL_MODE_REF_MASK << RENG_STENCIL_MODE_REF_SHIFT)
+/* word DEPTH_COMPARE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 depth-test writers */
+#define RENG_DEPTH_COMPARE_WIDTH                     32 /* inferred */
+#define RENG_DEPTH_COMPARE_FUNC_SHIFT                29 /* inferred */
+#define RENG_DEPTH_COMPARE_FUNC_MASK                 0x7u
+#define RENG_DEPTH_COMPARE_FUNC_INPLACE              (RENG_DEPTH_COMPARE_FUNC_MASK << RENG_DEPTH_COMPARE_FUNC_SHIFT)
+#define RENG_DEPTH_COMPARE_OCCLUSION_RESET_SHIFT     28 /* inferred */
+#define RENG_DEPTH_COMPARE_OCCLUSION_RESET_MASK      0x1u
+#define RENG_DEPTH_COMPARE_OCCLUSION_RESET_INPLACE   (RENG_DEPTH_COMPARE_OCCLUSION_RESET_MASK << RENG_DEPTH_COMPARE_OCCLUSION_RESET_SHIFT)
+#define RENG_DEPTH_COMPARE_OCCLUSION_ON_SHIFT        27 /* inferred */
+#define RENG_DEPTH_COMPARE_OCCLUSION_ON_MASK         0x1u
+#define RENG_DEPTH_COMPARE_OCCLUSION_ON_INPLACE      (RENG_DEPTH_COMPARE_OCCLUSION_ON_MASK << RENG_DEPTH_COMPARE_OCCLUSION_ON_SHIFT)
+#define RENG_DEPTH_COMPARE_EQUAL_WINDOW_SHIFT        23 /* inferred */
+#define RENG_DEPTH_COMPARE_EQUAL_WINDOW_MASK         0xfu
+#define RENG_DEPTH_COMPARE_EQUAL_WINDOW_INPLACE      (RENG_DEPTH_COMPARE_EQUAL_WINDOW_MASK << RENG_DEPTH_COMPARE_EQUAL_WINDOW_SHIFT)
 
 /*
  * Depth and stencil buffer descriptor.
  */
-/* word SZ_FORMAT: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers */
-#define RENG_SZ_FORMAT_WIDTH                         32 /* inferred */
-#define RENG_SZ_FORMAT_SZ_TYPE_SHIFT                 31 /* inferred */
-#define RENG_SZ_FORMAT_SZ_TYPE_MASK                  0x1u
-#define RENG_SZ_FORMAT_SZ_TYPE_INPLACE               (RENG_SZ_FORMAT_SZ_TYPE_MASK << RENG_SZ_FORMAT_SZ_TYPE_SHIFT)
-#define RENG_SZ_FORMAT_BUF_DEPTH_SHIFT               29 /* inferred */
-#define RENG_SZ_FORMAT_BUF_DEPTH_MASK                0x3u
-#define RENG_SZ_FORMAT_BUF_DEPTH_INPLACE             (RENG_SZ_FORMAT_BUF_DEPTH_MASK << RENG_SZ_FORMAT_BUF_DEPTH_SHIFT)
-#define RENG_SZ_FORMAT_DESC_ID_SHIFT                 23 /* inferred */
-#define RENG_SZ_FORMAT_DESC_ID_MASK                  0x3fu
-#define RENG_SZ_FORMAT_DESC_ID_INPLACE               (RENG_SZ_FORMAT_DESC_ID_MASK << RENG_SZ_FORMAT_DESC_ID_SHIFT)
+/* word DEPTH_STENCIL_BUFFER_DESC: 32 bits; SGI Cobalt Graphics Driver 5.2.4 depth and stencil descriptor writers */
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_WIDTH         32 /* inferred */
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_KIND_FLAG_SHIFT 31 /* inferred */
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_KIND_FLAG_MASK 0x1u
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_KIND_FLAG_INPLACE (RENG_DEPTH_STENCIL_BUFFER_DESC_KIND_FLAG_MASK << RENG_DEPTH_STENCIL_BUFFER_DESC_KIND_FLAG_SHIFT)
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_SIZE_CLASS_SHIFT 29 /* inferred */
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_SIZE_CLASS_MASK 0x3u
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_SIZE_CLASS_INPLACE (RENG_DEPTH_STENCIL_BUFFER_DESC_SIZE_CLASS_MASK << RENG_DEPTH_STENCIL_BUFFER_DESC_SIZE_CLASS_SHIFT)
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_BUFFER_ID_SHIFT 23 /* inferred */
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_BUFFER_ID_MASK 0x3fu
+#define RENG_DEPTH_STENCIL_BUFFER_DESC_BUFFER_ID_INPLACE (RENG_DEPTH_STENCIL_BUFFER_DESC_BUFFER_ID_MASK << RENG_DEPTH_STENCIL_BUFFER_DESC_BUFFER_ID_SHIFT)
+
+/*
+ * Lighting mode word.
+ */
+/* word LIGHTING_FLAGS: 32 bits; SGI Cobalt Graphics Driver 5.2.4 lighting-path writers */
+#define RENG_LIGHTING_FLAGS_WIDTH                    32 /* inferred */
+#define RENG_LIGHTING_FLAGS_TWO_SIDED_SHIFT          31 /* inferred */
+#define RENG_LIGHTING_FLAGS_TWO_SIDED_MASK           0x1u
+#define RENG_LIGHTING_FLAGS_TWO_SIDED_INPLACE        (RENG_LIGHTING_FLAGS_TWO_SIDED_MASK << RENG_LIGHTING_FLAGS_TWO_SIDED_SHIFT)
+#define RENG_LIGHTING_FLAGS_LIGHT3_ON_SHIFT          30 /* inferred */
+#define RENG_LIGHTING_FLAGS_LIGHT3_ON_MASK           0x1u
+#define RENG_LIGHTING_FLAGS_LIGHT3_ON_INPLACE        (RENG_LIGHTING_FLAGS_LIGHT3_ON_MASK << RENG_LIGHTING_FLAGS_LIGHT3_ON_SHIFT)
+#define RENG_LIGHTING_FLAGS_LIGHT2_ON_SHIFT          29 /* inferred */
+#define RENG_LIGHTING_FLAGS_LIGHT2_ON_MASK           0x1u
+#define RENG_LIGHTING_FLAGS_LIGHT2_ON_INPLACE        (RENG_LIGHTING_FLAGS_LIGHT2_ON_MASK << RENG_LIGHTING_FLAGS_LIGHT2_ON_SHIFT)
+#define RENG_LIGHTING_FLAGS_LIGHT1_ON_SHIFT          28 /* inferred */
+#define RENG_LIGHTING_FLAGS_LIGHT1_ON_MASK           0x1u
+#define RENG_LIGHTING_FLAGS_LIGHT1_ON_INPLACE        (RENG_LIGHTING_FLAGS_LIGHT1_ON_MASK << RENG_LIGHTING_FLAGS_LIGHT1_ON_SHIFT)
+#define RENG_LIGHTING_FLAGS_LIGHT0_ON_SHIFT          27 /* inferred */
+#define RENG_LIGHTING_FLAGS_LIGHT0_ON_MASK           0x1u
+#define RENG_LIGHTING_FLAGS_LIGHT0_ON_INPLACE        (RENG_LIGHTING_FLAGS_LIGHT0_ON_MASK << RENG_LIGHTING_FLAGS_LIGHT0_ON_SHIFT)
+#define RENG_LIGHTING_FLAGS_NORMALIZE_ON_SHIFT       26 /* inferred */
+#define RENG_LIGHTING_FLAGS_NORMALIZE_ON_MASK        0x1u
+#define RENG_LIGHTING_FLAGS_NORMALIZE_ON_INPLACE     (RENG_LIGHTING_FLAGS_NORMALIZE_ON_MASK << RENG_LIGHTING_FLAGS_NORMALIZE_ON_SHIFT)
+#define RENG_LIGHTING_FLAGS_SPECULAR_ON_SHIFT        25 /* inferred */
+#define RENG_LIGHTING_FLAGS_SPECULAR_ON_MASK         0x1u
+#define RENG_LIGHTING_FLAGS_SPECULAR_ON_INPLACE      (RENG_LIGHTING_FLAGS_SPECULAR_ON_MASK << RENG_LIGHTING_FLAGS_SPECULAR_ON_SHIFT)
+#define RENG_LIGHTING_FLAGS_SPECULAR_ONLY_SHIFT      24 /* inferred */
+#define RENG_LIGHTING_FLAGS_SPECULAR_ONLY_MASK       0x1u
+#define RENG_LIGHTING_FLAGS_SPECULAR_ONLY_INPLACE    (RENG_LIGHTING_FLAGS_SPECULAR_ONLY_MASK << RENG_LIGHTING_FLAGS_SPECULAR_ONLY_SHIFT)
+#define RENG_LIGHTING_FLAGS_LIT_ON_SHIFT             23 /* inferred */
+#define RENG_LIGHTING_FLAGS_LIT_ON_MASK              0x1u
+#define RENG_LIGHTING_FLAGS_LIT_ON_INPLACE           (RENG_LIGHTING_FLAGS_LIT_ON_MASK << RENG_LIGHTING_FLAGS_LIT_ON_SHIFT)
+
+/*
+ * Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.
+ */
+/* word NODE_LINK: 32 bits; SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers */
+#define RENG_NODE_LINK_WIDTH                         32 /* inferred */
+#define RENG_NODE_LINK_NEXT_SHIFT                    12 /* inferred */
+#define RENG_NODE_LINK_NEXT_MASK                     0xfffffu
+#define RENG_NODE_LINK_NEXT_INPLACE                  (RENG_NODE_LINK_NEXT_MASK << RENG_NODE_LINK_NEXT_SHIFT)
+#define RENG_NODE_LINK_SIZE_SHIFT                    3 /* inferred */
+#define RENG_NODE_LINK_SIZE_MASK                     0x1ffu
+#define RENG_NODE_LINK_SIZE_INPLACE                  (RENG_NODE_LINK_SIZE_MASK << RENG_NODE_LINK_SIZE_SHIFT)
+#define RENG_NODE_LINK_SYNC_SHIFT                    2 /* inferred */
+#define RENG_NODE_LINK_SYNC_MASK                     0x1u
+#define RENG_NODE_LINK_SYNC_INPLACE                  (RENG_NODE_LINK_SYNC_MASK << RENG_NODE_LINK_SYNC_SHIFT)
+#define RENG_NODE_LINK_INTERRUPT_SHIFT               1 /* inferred */
+#define RENG_NODE_LINK_INTERRUPT_MASK                0x1u
+#define RENG_NODE_LINK_INTERRUPT_INPLACE             (RENG_NODE_LINK_INTERRUPT_MASK << RENG_NODE_LINK_INTERRUPT_SHIFT)
+#define RENG_NODE_LINK_READY_SHIFT                   0 /* inferred */
+#define RENG_NODE_LINK_READY_MASK                    0x1u
+#define RENG_NODE_LINK_READY_INPLACE                 (RENG_NODE_LINK_READY_MASK << RENG_NODE_LINK_READY_SHIFT)
+
+/*
+ * Pixel-pipe mode word.
+ */
+/* word PIXEL_PIPE_FLAGS: 32 bits; SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver */
+#define RENG_PIXEL_PIPE_FLAGS_WIDTH                  32 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_STENCIL_TEST_ON_SHIFT  31 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_STENCIL_TEST_ON_MASK   0x1u
+#define RENG_PIXEL_PIPE_FLAGS_STENCIL_TEST_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_STENCIL_TEST_ON_MASK << RENG_PIXEL_PIPE_FLAGS_STENCIL_TEST_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_WRITE_ON_SHIFT   30 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_WRITE_ON_MASK    0x1u
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_WRITE_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_DEPTH_WRITE_ON_MASK << RENG_PIXEL_PIPE_FLAGS_DEPTH_WRITE_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_TEST_ON_SHIFT    29 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_TEST_ON_MASK     0x1u
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_TEST_ON_INPLACE  (RENG_PIXEL_PIPE_FLAGS_DEPTH_TEST_ON_MASK << RENG_PIXEL_PIPE_FLAGS_DEPTH_TEST_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_OFFSET_ON_SHIFT  28 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_OFFSET_ON_MASK   0x1u
+#define RENG_PIXEL_PIPE_FLAGS_DEPTH_OFFSET_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_DEPTH_OFFSET_ON_MASK << RENG_PIXEL_PIPE_FLAGS_DEPTH_OFFSET_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_COLOR_DISCARD_ON_SHIFT 27 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_COLOR_DISCARD_ON_MASK  0x1u
+#define RENG_PIXEL_PIPE_FLAGS_COLOR_DISCARD_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_COLOR_DISCARD_ON_MASK << RENG_PIXEL_PIPE_FLAGS_COLOR_DISCARD_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_COLOR_MASK_ON_SHIFT    26 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_COLOR_MASK_ON_MASK     0x1u
+#define RENG_PIXEL_PIPE_FLAGS_COLOR_MASK_ON_INPLACE  (RENG_PIXEL_PIPE_FLAGS_COLOR_MASK_ON_MASK << RENG_PIXEL_PIPE_FLAGS_COLOR_MASK_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_DITHER_ON_SHIFT        25 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_DITHER_ON_MASK         0x1u
+#define RENG_PIXEL_PIPE_FLAGS_DITHER_ON_INPLACE      (RENG_PIXEL_PIPE_FLAGS_DITHER_ON_MASK << RENG_PIXEL_PIPE_FLAGS_DITHER_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_LOGIC_OP_ON_SHIFT      24 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_LOGIC_OP_ON_MASK       0x1u
+#define RENG_PIXEL_PIPE_FLAGS_LOGIC_OP_ON_INPLACE    (RENG_PIXEL_PIPE_FLAGS_LOGIC_OP_ON_MASK << RENG_PIXEL_PIPE_FLAGS_LOGIC_OP_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_BLEND_ON_SHIFT         23 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_BLEND_ON_MASK          0x1u
+#define RENG_PIXEL_PIPE_FLAGS_BLEND_ON_INPLACE       (RENG_PIXEL_PIPE_FLAGS_BLEND_ON_MASK << RENG_PIXEL_PIPE_FLAGS_BLEND_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_ALPHA_TEST_ON_SHIFT    22 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_ALPHA_TEST_ON_MASK     0x1u
+#define RENG_PIXEL_PIPE_FLAGS_ALPHA_TEST_ON_INPLACE  (RENG_PIXEL_PIPE_FLAGS_ALPHA_TEST_ON_MASK << RENG_PIXEL_PIPE_FLAGS_ALPHA_TEST_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_FOG_ON_SHIFT           21 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_FOG_ON_MASK            0x1u
+#define RENG_PIXEL_PIPE_FLAGS_FOG_ON_INPLACE         (RENG_PIXEL_PIPE_FLAGS_FOG_ON_MASK << RENG_PIXEL_PIPE_FLAGS_FOG_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_MATRIX_CONVERT_ON_SHIFT 20 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_MATRIX_CONVERT_ON_MASK 0x1u
+#define RENG_PIXEL_PIPE_FLAGS_MATRIX_CONVERT_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_MATRIX_CONVERT_ON_MASK << RENG_PIXEL_PIPE_FLAGS_MATRIX_CONVERT_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_PIXEL_TRANSFER_ON_SHIFT 19 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_PIXEL_TRANSFER_ON_MASK 0x1u
+#define RENG_PIXEL_PIPE_FLAGS_PIXEL_TRANSFER_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_PIXEL_TRANSFER_ON_MASK << RENG_PIXEL_PIPE_FLAGS_PIXEL_TRANSFER_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_TEXTURE_ON_SHIFT       18 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_TEXTURE_ON_MASK        0x1u
+#define RENG_PIXEL_PIPE_FLAGS_TEXTURE_ON_INPLACE     (RENG_PIXEL_PIPE_FLAGS_TEXTURE_ON_MASK << RENG_PIXEL_PIPE_FLAGS_TEXTURE_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_SECONDARY_COLOR_ON_SHIFT 17 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_SECONDARY_COLOR_ON_MASK 0x1u
+#define RENG_PIXEL_PIPE_FLAGS_SECONDARY_COLOR_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_SECONDARY_COLOR_ON_MASK << RENG_PIXEL_PIPE_FLAGS_SECONDARY_COLOR_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_SMOOTH_SHADE_ON_SHIFT  16 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_SMOOTH_SHADE_ON_MASK   0x1u
+#define RENG_PIXEL_PIPE_FLAGS_SMOOTH_SHADE_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_SMOOTH_SHADE_ON_MASK << RENG_PIXEL_PIPE_FLAGS_SMOOTH_SHADE_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_OPAQUE_STIPPLE_ON_SHIFT 15 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_OPAQUE_STIPPLE_ON_MASK 0x1u
+#define RENG_PIXEL_PIPE_FLAGS_OPAQUE_STIPPLE_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_OPAQUE_STIPPLE_ON_MASK << RENG_PIXEL_PIPE_FLAGS_OPAQUE_STIPPLE_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_POLYGON_STIPPLE_ON_SHIFT 14 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_POLYGON_STIPPLE_ON_MASK 0x1u
+#define RENG_PIXEL_PIPE_FLAGS_POLYGON_STIPPLE_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_POLYGON_STIPPLE_ON_MASK << RENG_PIXEL_PIPE_FLAGS_POLYGON_STIPPLE_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_LINE_STIPPLE_ON_SHIFT  13 /* inferred */
+#define RENG_PIXEL_PIPE_FLAGS_LINE_STIPPLE_ON_MASK   0x1u
+#define RENG_PIXEL_PIPE_FLAGS_LINE_STIPPLE_ON_INPLACE (RENG_PIXEL_PIPE_FLAGS_LINE_STIPPLE_ON_MASK << RENG_PIXEL_PIPE_FLAGS_LINE_STIPPLE_ON_SHIFT)
+#define RENG_PIXEL_PIPE_FLAGS_RESERVED_SHIFT         0 /* unknown */
+#define RENG_PIXEL_PIPE_FLAGS_RESERVED_MASK          0x1fffu
+#define RENG_PIXEL_PIPE_FLAGS_RESERVED_INPLACE       (RENG_PIXEL_PIPE_FLAGS_RESERVED_MASK << RENG_PIXEL_PIPE_FLAGS_RESERVED_SHIFT)
+
+/*
+ * Primitive mode word.
+ */
+/* word PRIMITIVE_SETUP: 32 bits; SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver */
+#define RENG_PRIMITIVE_SETUP_WIDTH                   32 /* inferred */
+#define RENG_PRIMITIVE_SETUP_PRIMITIVE_KIND_SHIFT    29 /* inferred */
+#define RENG_PRIMITIVE_SETUP_PRIMITIVE_KIND_MASK     0x7u
+#define RENG_PRIMITIVE_SETUP_PRIMITIVE_KIND_INPLACE  (RENG_PRIMITIVE_SETUP_PRIMITIVE_KIND_MASK << RENG_PRIMITIVE_SETUP_PRIMITIVE_KIND_SHIFT)
+#define RENG_PRIMITIVE_SETUP_LINE_ANTIALIAS_SHIFT    28 /* inferred */
+#define RENG_PRIMITIVE_SETUP_LINE_ANTIALIAS_MASK     0x1u
+#define RENG_PRIMITIVE_SETUP_LINE_ANTIALIAS_INPLACE  (RENG_PRIMITIVE_SETUP_LINE_ANTIALIAS_MASK << RENG_PRIMITIVE_SETUP_LINE_ANTIALIAS_SHIFT)
+#define RENG_PRIMITIVE_SETUP_LINE_LOOP_SHIFT         27 /* inferred */
+#define RENG_PRIMITIVE_SETUP_LINE_LOOP_MASK          0x1u
+#define RENG_PRIMITIVE_SETUP_LINE_LOOP_INPLACE       (RENG_PRIMITIVE_SETUP_LINE_LOOP_MASK << RENG_PRIMITIVE_SETUP_LINE_LOOP_SHIFT)
+#define RENG_PRIMITIVE_SETUP_LINE_WIDTH_SHIFT        15 /* inferred */
+#define RENG_PRIMITIVE_SETUP_LINE_WIDTH_MASK         0xfffu
+#define RENG_PRIMITIVE_SETUP_LINE_WIDTH_INPLACE      (RENG_PRIMITIVE_SETUP_LINE_WIDTH_MASK << RENG_PRIMITIVE_SETUP_LINE_WIDTH_SHIFT)
+#define RENG_PRIMITIVE_SETUP_CULL_FACE_SHIFT         13 /* inferred */
+#define RENG_PRIMITIVE_SETUP_CULL_FACE_MASK          0x3u
+#define RENG_PRIMITIVE_SETUP_CULL_FACE_INPLACE       (RENG_PRIMITIVE_SETUP_CULL_FACE_MASK << RENG_PRIMITIVE_SETUP_CULL_FACE_SHIFT)
+#define RENG_PRIMITIVE_SETUP_FRONT_FACE_SHIFT        12 /* inferred */
+#define RENG_PRIMITIVE_SETUP_FRONT_FACE_MASK         0x1u
+#define RENG_PRIMITIVE_SETUP_FRONT_FACE_INPLACE      (RENG_PRIMITIVE_SETUP_FRONT_FACE_MASK << RENG_PRIMITIVE_SETUP_FRONT_FACE_SHIFT)
+#define RENG_PRIMITIVE_SETUP_BACK_FACE_AS_LINE_SHIFT 11 /* inferred */
+#define RENG_PRIMITIVE_SETUP_BACK_FACE_AS_LINE_MASK  0x1u
+#define RENG_PRIMITIVE_SETUP_BACK_FACE_AS_LINE_INPLACE (RENG_PRIMITIVE_SETUP_BACK_FACE_AS_LINE_MASK << RENG_PRIMITIVE_SETUP_BACK_FACE_AS_LINE_SHIFT)
+#define RENG_PRIMITIVE_SETUP_DIRECTION_10_9_SHIFT    9 /* inferred */
+#define RENG_PRIMITIVE_SETUP_DIRECTION_10_9_MASK     0x3u
+#define RENG_PRIMITIVE_SETUP_DIRECTION_10_9_INPLACE  (RENG_PRIMITIVE_SETUP_DIRECTION_10_9_MASK << RENG_PRIMITIVE_SETUP_DIRECTION_10_9_SHIFT)
+#define RENG_PRIMITIVE_SETUP_DIRECTION_SELECT_8_SHIFT 8 /* inferred */
+#define RENG_PRIMITIVE_SETUP_DIRECTION_SELECT_8_MASK 0x1u
+#define RENG_PRIMITIVE_SETUP_DIRECTION_SELECT_8_INPLACE (RENG_PRIMITIVE_SETUP_DIRECTION_SELECT_8_MASK << RENG_PRIMITIVE_SETUP_DIRECTION_SELECT_8_SHIFT)
+#define RENG_PRIMITIVE_SETUP_RESERVED_SHIFT          0 /* unknown */
+#define RENG_PRIMITIVE_SETUP_RESERVED_MASK           0xffu
+#define RENG_PRIMITIVE_SETUP_RESERVED_INPLACE        (RENG_PRIMITIVE_SETUP_RESERVED_MASK << RENG_PRIMITIVE_SETUP_RESERVED_SHIFT)
+
+/*
+ * Logic operation word.
+ */
+/* word RASTER_LOGIC: 32 bits; SGI Cobalt Graphics Driver 5.2.4 logic-operation writer */
+#define RENG_RASTER_LOGIC_WIDTH                      32 /* inferred */
+#define RENG_RASTER_LOGIC_OP_SHIFT                   28 /* inferred */
+#define RENG_RASTER_LOGIC_OP_MASK                    0xfu
+#define RENG_RASTER_LOGIC_OP_INPLACE                 (RENG_RASTER_LOGIC_OP_MASK << RENG_RASTER_LOGIC_OP_SHIFT)
+
+/*
+ * First word of the stencil packet.
+ */
+/* word STENCIL_CONFIG: 32 bits; SGI Cobalt Graphics Driver 5.2.4 stencil writers */
+#define RENG_STENCIL_CONFIG_WIDTH                    32 /* inferred */
+#define RENG_STENCIL_CONFIG_PASS_OP_SHIFT            28 /* inferred */
+#define RENG_STENCIL_CONFIG_PASS_OP_MASK             0xfu
+#define RENG_STENCIL_CONFIG_PASS_OP_INPLACE          (RENG_STENCIL_CONFIG_PASS_OP_MASK << RENG_STENCIL_CONFIG_PASS_OP_SHIFT)
+#define RENG_STENCIL_CONFIG_DEPTH_FAIL_OP_SHIFT      24 /* inferred */
+#define RENG_STENCIL_CONFIG_DEPTH_FAIL_OP_MASK       0xfu
+#define RENG_STENCIL_CONFIG_DEPTH_FAIL_OP_INPLACE    (RENG_STENCIL_CONFIG_DEPTH_FAIL_OP_MASK << RENG_STENCIL_CONFIG_DEPTH_FAIL_OP_SHIFT)
+#define RENG_STENCIL_CONFIG_STENCIL_FAIL_OP_SHIFT    20 /* inferred */
+#define RENG_STENCIL_CONFIG_STENCIL_FAIL_OP_MASK     0xfu
+#define RENG_STENCIL_CONFIG_STENCIL_FAIL_OP_INPLACE  (RENG_STENCIL_CONFIG_STENCIL_FAIL_OP_MASK << RENG_STENCIL_CONFIG_STENCIL_FAIL_OP_SHIFT)
+#define RENG_STENCIL_CONFIG_FUNC_SHIFT               16 /* inferred */
+#define RENG_STENCIL_CONFIG_FUNC_MASK                0xfu
+#define RENG_STENCIL_CONFIG_FUNC_INPLACE             (RENG_STENCIL_CONFIG_FUNC_MASK << RENG_STENCIL_CONFIG_FUNC_SHIFT)
+#define RENG_STENCIL_CONFIG_MASK_SHIFT               8 /* inferred */
+#define RENG_STENCIL_CONFIG_MASK_MASK                0xffu
+#define RENG_STENCIL_CONFIG_MASK_INPLACE             (RENG_STENCIL_CONFIG_MASK_MASK << RENG_STENCIL_CONFIG_MASK_SHIFT)
+#define RENG_STENCIL_CONFIG_REF_SHIFT                0 /* inferred */
+#define RENG_STENCIL_CONFIG_REF_MASK                 0xffu
+#define RENG_STENCIL_CONFIG_REF_INPLACE              (RENG_STENCIL_CONFIG_REF_MASK << RENG_STENCIL_CONFIG_REF_SHIFT)
 
 /*
  * First word of the two-word texture-environment packet; the second is the environment colour.
  */
-/* word TEXENV_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoTexEnvModeReg, texture-environment writers */
-#define RENG_TEXENV_MODE_WIDTH                       32 /* inferred */
-#define RENG_TEXENV_MODE_FUNC_SHIFT                  29 /* inferred */
-#define RENG_TEXENV_MODE_FUNC_MASK                   0x7u
-#define RENG_TEXENV_MODE_FUNC_INPLACE                (RENG_TEXENV_MODE_FUNC_MASK << RENG_TEXENV_MODE_FUNC_SHIFT)
-#define RENG_TEXENV_MODE_TYPE_SHIFT                  25 /* inferred */
-#define RENG_TEXENV_MODE_TYPE_MASK                   0xfu
-#define RENG_TEXENV_MODE_TYPE_INPLACE                (RENG_TEXENV_MODE_TYPE_MASK << RENG_TEXENV_MODE_TYPE_SHIFT)
+/* word TEXTURE_APPLY: 32 bits; SGI Cobalt Graphics Driver 5.2.4 texture-environment writers */
+#define RENG_TEXTURE_APPLY_WIDTH                     32 /* inferred */
+#define RENG_TEXTURE_APPLY_FUNC_SHIFT                29 /* inferred */
+#define RENG_TEXTURE_APPLY_FUNC_MASK                 0x7u
+#define RENG_TEXTURE_APPLY_FUNC_INPLACE              (RENG_TEXTURE_APPLY_FUNC_MASK << RENG_TEXTURE_APPLY_FUNC_SHIFT)
+#define RENG_TEXTURE_APPLY_TYPE_SHIFT                25 /* inferred */
+#define RENG_TEXTURE_APPLY_TYPE_MASK                 0xfu
+#define RENG_TEXTURE_APPLY_TYPE_INPLACE              (RENG_TEXTURE_APPLY_TYPE_MASK << RENG_TEXTURE_APPLY_TYPE_SHIFT)
 
 /*
  * First word of the four-word texture packet; the display driver's YUV blit sends 14 or 15 as the texture type.
  */
-/* word TEXGEN_FORMAT: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers */
-#define RENG_TEXGEN_FORMAT_WIDTH                     32 /* inferred */
-#define RENG_TEXGEN_FORMAT_LINEAR_SHIFT              31 /* inferred */
-#define RENG_TEXGEN_FORMAT_LINEAR_MASK               0x1u
-#define RENG_TEXGEN_FORMAT_LINEAR_INPLACE            (RENG_TEXGEN_FORMAT_LINEAR_MASK << RENG_TEXGEN_FORMAT_LINEAR_SHIFT)
-#define RENG_TEXGEN_FORMAT_TEX_TYPE_SHIFT            27 /* inferred */
-#define RENG_TEXGEN_FORMAT_TEX_TYPE_MASK             0xfu
-#define RENG_TEXGEN_FORMAT_TEX_TYPE_INPLACE          (RENG_TEXGEN_FORMAT_TEX_TYPE_MASK << RENG_TEXGEN_FORMAT_TEX_TYPE_SHIFT)
-#define RENG_TEXGEN_FORMAT_BUF_DEPTH_SHIFT           25 /* inferred */
-#define RENG_TEXGEN_FORMAT_BUF_DEPTH_MASK            0x3u
-#define RENG_TEXGEN_FORMAT_BUF_DEPTH_INPLACE         (RENG_TEXGEN_FORMAT_BUF_DEPTH_MASK << RENG_TEXGEN_FORMAT_BUF_DEPTH_SHIFT)
-#define RENG_TEXGEN_FORMAT_DESC_ID_SHIFT             19 /* inferred */
-#define RENG_TEXGEN_FORMAT_DESC_ID_MASK              0x3fu
-#define RENG_TEXGEN_FORMAT_DESC_ID_INPLACE           (RENG_TEXGEN_FORMAT_DESC_ID_MASK << RENG_TEXGEN_FORMAT_DESC_ID_SHIFT)
+/* word TEXTURE_FORMAT_WORD: 32 bits; SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers */
+#define RENG_TEXTURE_FORMAT_WORD_WIDTH               32 /* inferred */
+#define RENG_TEXTURE_FORMAT_WORD_LINEAR_SHIFT        31 /* inferred */
+#define RENG_TEXTURE_FORMAT_WORD_LINEAR_MASK         0x1u
+#define RENG_TEXTURE_FORMAT_WORD_LINEAR_INPLACE      (RENG_TEXTURE_FORMAT_WORD_LINEAR_MASK << RENG_TEXTURE_FORMAT_WORD_LINEAR_SHIFT)
+#define RENG_TEXTURE_FORMAT_WORD_TEXTURE_KIND_SHIFT  27 /* inferred */
+#define RENG_TEXTURE_FORMAT_WORD_TEXTURE_KIND_MASK   0xfu
+#define RENG_TEXTURE_FORMAT_WORD_TEXTURE_KIND_INPLACE (RENG_TEXTURE_FORMAT_WORD_TEXTURE_KIND_MASK << RENG_TEXTURE_FORMAT_WORD_TEXTURE_KIND_SHIFT)
+#define RENG_TEXTURE_FORMAT_WORD_SIZE_CLASS_SHIFT    25 /* inferred */
+#define RENG_TEXTURE_FORMAT_WORD_SIZE_CLASS_MASK     0x3u
+#define RENG_TEXTURE_FORMAT_WORD_SIZE_CLASS_INPLACE  (RENG_TEXTURE_FORMAT_WORD_SIZE_CLASS_MASK << RENG_TEXTURE_FORMAT_WORD_SIZE_CLASS_SHIFT)
+#define RENG_TEXTURE_FORMAT_WORD_BUFFER_ID_SHIFT     19 /* inferred */
+#define RENG_TEXTURE_FORMAT_WORD_BUFFER_ID_MASK      0x3fu
+#define RENG_TEXTURE_FORMAT_WORD_BUFFER_ID_INPLACE   (RENG_TEXTURE_FORMAT_WORD_BUFFER_ID_MASK << RENG_TEXTURE_FORMAT_WORD_BUFFER_ID_SHIFT)
 
 /*
  * Third word of the texture packet; the fourth is the border colour.
  */
-/* word TEXGEN_LOD: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg */
-#define RENG_TEXGEN_LOD_WIDTH                        32 /* inferred */
-#define RENG_TEXGEN_LOD_MAX_LEVEL_SHIFT              28 /* inferred */
-#define RENG_TEXGEN_LOD_MAX_LEVEL_MASK               0xfu
-#define RENG_TEXGEN_LOD_MAX_LEVEL_INPLACE            (RENG_TEXGEN_LOD_MAX_LEVEL_MASK << RENG_TEXGEN_LOD_MAX_LEVEL_SHIFT)
-#define RENG_TEXGEN_LOD_MIN_LEVEL_SHIFT              24 /* inferred */
-#define RENG_TEXGEN_LOD_MIN_LEVEL_MASK               0xfu
-#define RENG_TEXGEN_LOD_MIN_LEVEL_INPLACE            (RENG_TEXGEN_LOD_MIN_LEVEL_MASK << RENG_TEXGEN_LOD_MIN_LEVEL_SHIFT)
-#define RENG_TEXGEN_LOD_LOD_FRAC_SIZE_SHIFT          21 /* inferred */
-#define RENG_TEXGEN_LOD_LOD_FRAC_SIZE_MASK           0x7u
-#define RENG_TEXGEN_LOD_LOD_FRAC_SIZE_INPLACE        (RENG_TEXGEN_LOD_LOD_FRAC_SIZE_MASK << RENG_TEXGEN_LOD_LOD_FRAC_SIZE_SHIFT)
-#define RENG_TEXGEN_LOD_LOD_BIAS_SHIFT               11 /* inferred */
-#define RENG_TEXGEN_LOD_LOD_BIAS_MASK                0x3ffu
-#define RENG_TEXGEN_LOD_LOD_BIAS_INPLACE             (RENG_TEXGEN_LOD_LOD_BIAS_MASK << RENG_TEXGEN_LOD_LOD_BIAS_SHIFT)
+/* word TEXTURE_LOD_RANGE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers */
+#define RENG_TEXTURE_LOD_RANGE_WIDTH                 32 /* inferred */
+#define RENG_TEXTURE_LOD_RANGE_MAX_LEVEL_SHIFT       28 /* inferred */
+#define RENG_TEXTURE_LOD_RANGE_MAX_LEVEL_MASK        0xfu
+#define RENG_TEXTURE_LOD_RANGE_MAX_LEVEL_INPLACE     (RENG_TEXTURE_LOD_RANGE_MAX_LEVEL_MASK << RENG_TEXTURE_LOD_RANGE_MAX_LEVEL_SHIFT)
+#define RENG_TEXTURE_LOD_RANGE_MIN_LEVEL_SHIFT       24 /* inferred */
+#define RENG_TEXTURE_LOD_RANGE_MIN_LEVEL_MASK        0xfu
+#define RENG_TEXTURE_LOD_RANGE_MIN_LEVEL_INPLACE     (RENG_TEXTURE_LOD_RANGE_MIN_LEVEL_MASK << RENG_TEXTURE_LOD_RANGE_MIN_LEVEL_SHIFT)
+#define RENG_TEXTURE_LOD_RANGE_FRAC_BITS_SHIFT       21 /* inferred */
+#define RENG_TEXTURE_LOD_RANGE_FRAC_BITS_MASK        0x7u
+#define RENG_TEXTURE_LOD_RANGE_FRAC_BITS_INPLACE     (RENG_TEXTURE_LOD_RANGE_FRAC_BITS_MASK << RENG_TEXTURE_LOD_RANGE_FRAC_BITS_SHIFT)
+#define RENG_TEXTURE_LOD_RANGE_LOD_BIAS_SHIFT        11 /* inferred */
+#define RENG_TEXTURE_LOD_RANGE_LOD_BIAS_MASK         0x3ffu
+#define RENG_TEXTURE_LOD_RANGE_LOD_BIAS_INPLACE      (RENG_TEXTURE_LOD_RANGE_LOD_BIAS_MASK << RENG_TEXTURE_LOD_RANGE_LOD_BIAS_SHIFT)
 
 /*
  * Second word of the texture packet.
  */
-/* word TEXGEN_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg */
-#define RENG_TEXGEN_MODE_WIDTH                       32 /* inferred */
-#define RENG_TEXGEN_MODE_MIN_FILTER_SHIFT            29 /* inferred */
-#define RENG_TEXGEN_MODE_MIN_FILTER_MASK             0x7u
-#define RENG_TEXGEN_MODE_MIN_FILTER_INPLACE          (RENG_TEXGEN_MODE_MIN_FILTER_MASK << RENG_TEXGEN_MODE_MIN_FILTER_SHIFT)
-#define RENG_TEXGEN_MODE_MAG_FILTER_SHIFT            28 /* inferred */
-#define RENG_TEXGEN_MODE_MAG_FILTER_MASK             0x1u
-#define RENG_TEXGEN_MODE_MAG_FILTER_INPLACE          (RENG_TEXGEN_MODE_MAG_FILTER_MASK << RENG_TEXGEN_MODE_MAG_FILTER_SHIFT)
-#define RENG_TEXGEN_MODE_WRAP_T_SHIFT                26 /* inferred */
-#define RENG_TEXGEN_MODE_WRAP_T_MASK                 0x3u
-#define RENG_TEXGEN_MODE_WRAP_T_INPLACE              (RENG_TEXGEN_MODE_WRAP_T_MASK << RENG_TEXGEN_MODE_WRAP_T_SHIFT)
-#define RENG_TEXGEN_MODE_WRAP_S_SHIFT                24 /* inferred */
-#define RENG_TEXGEN_MODE_WRAP_S_MASK                 0x3u
-#define RENG_TEXGEN_MODE_WRAP_S_INPLACE              (RENG_TEXGEN_MODE_WRAP_S_MASK << RENG_TEXGEN_MODE_WRAP_S_SHIFT)
-#define RENG_TEXGEN_MODE_MAP_HEIGHT_SHIFT            20 /* inferred */
-#define RENG_TEXGEN_MODE_MAP_HEIGHT_MASK             0xfu
-#define RENG_TEXGEN_MODE_MAP_HEIGHT_INPLACE          (RENG_TEXGEN_MODE_MAP_HEIGHT_MASK << RENG_TEXGEN_MODE_MAP_HEIGHT_SHIFT)
-#define RENG_TEXGEN_MODE_MAP_WIDTH_SHIFT             16 /* inferred */
-#define RENG_TEXGEN_MODE_MAP_WIDTH_MASK              0xfu
-#define RENG_TEXGEN_MODE_MAP_WIDTH_INPLACE           (RENG_TEXGEN_MODE_MAP_WIDTH_MASK << RENG_TEXGEN_MODE_MAP_WIDTH_SHIFT)
+/* word TEXTURE_SAMPLING: 32 bits; SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers */
+#define RENG_TEXTURE_SAMPLING_WIDTH                  32 /* inferred */
+#define RENG_TEXTURE_SAMPLING_MIN_FILTER_SHIFT       29 /* inferred */
+#define RENG_TEXTURE_SAMPLING_MIN_FILTER_MASK        0x7u
+#define RENG_TEXTURE_SAMPLING_MIN_FILTER_INPLACE     (RENG_TEXTURE_SAMPLING_MIN_FILTER_MASK << RENG_TEXTURE_SAMPLING_MIN_FILTER_SHIFT)
+#define RENG_TEXTURE_SAMPLING_MAG_FILTER_SHIFT       28 /* inferred */
+#define RENG_TEXTURE_SAMPLING_MAG_FILTER_MASK        0x1u
+#define RENG_TEXTURE_SAMPLING_MAG_FILTER_INPLACE     (RENG_TEXTURE_SAMPLING_MAG_FILTER_MASK << RENG_TEXTURE_SAMPLING_MAG_FILTER_SHIFT)
+#define RENG_TEXTURE_SAMPLING_WRAP_T_SHIFT           26 /* inferred */
+#define RENG_TEXTURE_SAMPLING_WRAP_T_MASK            0x3u
+#define RENG_TEXTURE_SAMPLING_WRAP_T_INPLACE         (RENG_TEXTURE_SAMPLING_WRAP_T_MASK << RENG_TEXTURE_SAMPLING_WRAP_T_SHIFT)
+#define RENG_TEXTURE_SAMPLING_WRAP_S_SHIFT           24 /* inferred */
+#define RENG_TEXTURE_SAMPLING_WRAP_S_MASK            0x3u
+#define RENG_TEXTURE_SAMPLING_WRAP_S_INPLACE         (RENG_TEXTURE_SAMPLING_WRAP_S_MASK << RENG_TEXTURE_SAMPLING_WRAP_S_SHIFT)
+#define RENG_TEXTURE_SAMPLING_HEIGHT_CODE_SHIFT      20 /* inferred */
+#define RENG_TEXTURE_SAMPLING_HEIGHT_CODE_MASK       0xfu
+#define RENG_TEXTURE_SAMPLING_HEIGHT_CODE_INPLACE    (RENG_TEXTURE_SAMPLING_HEIGHT_CODE_MASK << RENG_TEXTURE_SAMPLING_HEIGHT_CODE_SHIFT)
+#define RENG_TEXTURE_SAMPLING_WIDTH_CODE_SHIFT       16 /* inferred */
+#define RENG_TEXTURE_SAMPLING_WIDTH_CODE_MASK        0xfu
+#define RENG_TEXTURE_SAMPLING_WIDTH_CODE_INPLACE     (RENG_TEXTURE_SAMPLING_WIDTH_CODE_MASK << RENG_TEXTURE_SAMPLING_WIDTH_CODE_SHIFT)
 
 /*
  * Transform mode word , the draw flags word.
  */
-/* word XFORM_MODE: 32 bits; SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver */
-#define RENG_XFORM_MODE_WIDTH                        32 /* inferred */
-#define RENG_XFORM_MODE_EN_VIEWPORT_XFORM_SHIFT      31 /* inferred */
-#define RENG_XFORM_MODE_EN_VIEWPORT_XFORM_MASK       0x1u
-#define RENG_XFORM_MODE_EN_VIEWPORT_XFORM_INPLACE    (RENG_XFORM_MODE_EN_VIEWPORT_XFORM_MASK << RENG_XFORM_MODE_EN_VIEWPORT_XFORM_SHIFT)
-#define RENG_XFORM_MODE_EN_MODEL_XFORM_SHIFT         30 /* inferred */
-#define RENG_XFORM_MODE_EN_MODEL_XFORM_MASK          0x1u
-#define RENG_XFORM_MODE_EN_MODEL_XFORM_INPLACE       (RENG_XFORM_MODE_EN_MODEL_XFORM_MASK << RENG_XFORM_MODE_EN_MODEL_XFORM_SHIFT)
-#define RENG_XFORM_MODE_EN_TEX_XFORM_SHIFT           29 /* inferred */
-#define RENG_XFORM_MODE_EN_TEX_XFORM_MASK            0x1u
-#define RENG_XFORM_MODE_EN_TEX_XFORM_INPLACE         (RENG_XFORM_MODE_EN_TEX_XFORM_MASK << RENG_XFORM_MODE_EN_TEX_XFORM_SHIFT)
-#define RENG_XFORM_MODE_EN_CLIP_CHECK_SHIFT          28 /* inferred */
-#define RENG_XFORM_MODE_EN_CLIP_CHECK_MASK           0x1u
-#define RENG_XFORM_MODE_EN_CLIP_CHECK_INPLACE        (RENG_XFORM_MODE_EN_CLIP_CHECK_MASK << RENG_XFORM_MODE_EN_CLIP_CHECK_SHIFT)
+/* word TRANSFORM_FLAGS: 32 bits; SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver */
+#define RENG_TRANSFORM_FLAGS_WIDTH                   32 /* inferred */
+#define RENG_TRANSFORM_FLAGS_VIEWPORT_XFORM_ON_SHIFT 31 /* inferred */
+#define RENG_TRANSFORM_FLAGS_VIEWPORT_XFORM_ON_MASK  0x1u
+#define RENG_TRANSFORM_FLAGS_VIEWPORT_XFORM_ON_INPLACE (RENG_TRANSFORM_FLAGS_VIEWPORT_XFORM_ON_MASK << RENG_TRANSFORM_FLAGS_VIEWPORT_XFORM_ON_SHIFT)
+#define RENG_TRANSFORM_FLAGS_MODEL_XFORM_ON_SHIFT    30 /* inferred */
+#define RENG_TRANSFORM_FLAGS_MODEL_XFORM_ON_MASK     0x1u
+#define RENG_TRANSFORM_FLAGS_MODEL_XFORM_ON_INPLACE  (RENG_TRANSFORM_FLAGS_MODEL_XFORM_ON_MASK << RENG_TRANSFORM_FLAGS_MODEL_XFORM_ON_SHIFT)
+#define RENG_TRANSFORM_FLAGS_TEX_XFORM_ON_SHIFT      29 /* inferred */
+#define RENG_TRANSFORM_FLAGS_TEX_XFORM_ON_MASK       0x1u
+#define RENG_TRANSFORM_FLAGS_TEX_XFORM_ON_INPLACE    (RENG_TRANSFORM_FLAGS_TEX_XFORM_ON_MASK << RENG_TRANSFORM_FLAGS_TEX_XFORM_ON_SHIFT)
+#define RENG_TRANSFORM_FLAGS_CLIP_CHECK_ON_SHIFT     28 /* inferred */
+#define RENG_TRANSFORM_FLAGS_CLIP_CHECK_ON_MASK      0x1u
+#define RENG_TRANSFORM_FLAGS_CLIP_CHECK_ON_INPLACE   (RENG_TRANSFORM_FLAGS_CLIP_CHECK_ON_MASK << RENG_TRANSFORM_FLAGS_CLIP_CHECK_ON_SHIFT)
 
 #define RENG_BLEND_CONSTANT_ALPHA                    0xau /* inferred */
 #define RENG_BLEND_CONSTANT_COLOR                    0x8u /* inferred */

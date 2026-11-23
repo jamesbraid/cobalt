@@ -1,6 +1,6 @@
 // generated from devices/ and formats/ by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22
+// input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140
 #![no_std]
 pub mod rendering_engine;

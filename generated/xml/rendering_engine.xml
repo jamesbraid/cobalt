@@ -2,26 +2,26 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 fb841a578c212e7cf6a2e7317ffba61e7675d09ac68395332fe6ea9bda2c1a22 -->
-<genxml unit="rendering_engine" prefix="RENG" block="RENG" title="Rendering engine register window" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the type declarations in the driver's program database">
+<!-- input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140 -->
+<genxml unit="rendering_engine" prefix="RENG" block="RENG" title="Rendering engine register window" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations">
   <doc>The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is "r" for that reason). Nothing here is a reset value, and no register is read before it is written.</doc>
   <struct name="TLB_ENTRY" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets" register="yes" offset="0x8000" access="w" count="2048" stride="8" reset="unknown">
     <doc>Translation table: one entry per tile of the buffers the engine addresses. A tile is 1, 4, 16, 64 or 256 pages of 4 KB, as the buffer's descriptor says; the packet pool is 16 tiles of 256 pages, so it fills 16 entries. Only the low dword is ever written, with the tile's first 4 KB page frame number masked to 24 bits; entries not in use hold the first entry's value. The packet pool, the display buffers and the textures are named through these entries, so the engine fetches packets through this table rather than by physical address.</doc>
     <field name="page_frame" start="0" size="24" type="uint" grade="inferred"/>
   </struct>
-  <struct name="TLB_DESC" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database" register="yes" offset="0xc000" access="w" count="64" stride="8" reset="unknown">
+  <struct name="BUFFER_DESC" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers" register="yes" offset="0xc000" access="w" count="64" stride="8" reset="unknown">
     <doc>Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.</doc>
     <field name="offset" start="21" size="11" type="uint" grade="inferred"/>
-    <field name="tiles_per_row" start="14" size="7" type="uint" grade="inferred"/>
-    <field name="tile_width" start="13" size="1" type="uint" grade="inferred"/>
-    <field name="page_size" start="10" size="3" type="uint" grade="inferred"/>
-    <field name="page_type" start="9" size="1" type="uint" grade="inferred"/>
+    <field name="row_tiles" start="14" size="7" type="uint" grade="inferred"/>
+    <field name="tile_size_sel" start="13" size="1" type="uint" grade="inferred"/>
+    <field name="tile_pages_log4" start="10" size="3" type="uint" grade="inferred"/>
+    <field name="pool_flag" start="9" size="1" type="uint" grade="inferred"/>
   </struct>
   <struct name="EXEC_CTL" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines" register="yes" offset="0x10000" access="rw" reset="unknown">
     <doc>Starts the engine on a packet position and reports where it is. A write is the packet position (in 32-byte units from the pool base) shifted to bit 12, bit 11 and the idle count; the driver writes 2 as the idle count with every start and 0x40 with 0xfffff in the position field at start-up. A read returns the position in bits 31:12, and zero there means none, in which case the driver reads the chain register instead.</doc>
     <field name="pkt_pos" start="12" size="20" type="uint" grade="inferred"/>
     <field name="start" start="11" size="1" type="uint" grade="inferred"/>
-    <field name="idle_count" start="0" size="11" type="uint" grade="inferred"/>
+    <field name="idle_wait" start="0" size="11" type="uint" grade="inferred"/>
   </struct>
   <struct name="DOORBELL" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, the routines that queue work or resume a suspended context" register="yes" offset="0x10008" access="w" reset="unknown">
     <doc>Written with a single bit from three routines. Two write it when work is appended to a non-deferred node or a timer event fires, with the current queue at 2, a node in the hardware and that node's chunk count 0. The third, which suspends a node, writes it when the node's status bits 3:1 are clear, its chunk count is below 1, status bit 9 is clear and the status byte above bit 7 is non-zero.</doc>
@@ -58,152 +58,152 @@
     <field name="node_pos" start="12" size="20" type="uint" grade="inferred"/>
     <field name="seq_lo" start="0" size="12" type="uint" grade="inferred"/>
   </struct>
-  <struct name="TEX_ID" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch, stop-event and bind routines; the OpenGL driver's texture-free packet" register="yes" offset="0x185d0" access="rw" reset="unknown">
+  <struct name="BOUND_TEXTURE_ID" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch, stop-event and bind routines; the OpenGL driver's texture-free packet" register="yes" offset="0x185d0" access="rw" reset="unknown">
     <doc>The third word of the long chain packet. The kernel driver keeps a per-context current-texture id and writes it here when it starts the context and reads it back at a stop; the OpenGL driver zeroes it before it frees the pages of the bound texture.</doc>
   </struct>
   <struct name="CTX_DUMP" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch" register="yes" offset="0x18800" access="w" reset="unknown">
-    <doc>Written with the outgoing context's dump offset (the field the driver names as its context-switch dump offset) when another context is started, before the new context's start word.</doc>
+    <doc>Written with the outgoing context's dump offset (a per-context field the driver keeps for the purpose) when another context is started, before the new context's start word.</doc>
   </struct>
-  <struct name="BLEND_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoBlendModeReg, blend writer">
-    <doc>First word of the blend packet; the second is the constant colour.</doc>
-    <field name="dst_func" start="28" size="4" type="uint" grade="inferred"/>
-    <field name="src_func" start="24" size="4" type="uint" grade="inferred"/>
-    <field name="op" start="20" size="4" type="uint" grade="inferred"/>
-  </struct>
-  <struct name="COLOR_FORMAT" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers">
-    <doc>Draw-buffer descriptor.</doc>
-    <field name="linear" start="31" size="1" type="uint" grade="inferred"/>
-    <field name="color_type" start="27" size="4" type="uint" grade="inferred"/>
-    <field name="buf_depth" start="25" size="2" type="uint" grade="inferred"/>
-    <field name="desc_id" start="19" size="6" type="uint" grade="inferred"/>
-    <field name="span_mode" start="18" size="1" type="uint" grade="inferred"/>
-  </struct>
-  <struct name="COLOR_TEST_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoColorTestModeReg, alpha-test writer">
+  <struct name="ALPHA_TEST_CONFIG" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 alpha-test writer">
     <doc>First word of the alpha-test packet; the second is the reference colour.</doc>
-    <field name="en_comp" start="28" size="4" type="uint" grade="inferred"/>
+    <field name="component_enables" start="28" size="4" type="uint" grade="inferred"/>
     <field name="func" start="25" size="3" type="uint" grade="inferred"/>
   </struct>
-  <struct name="DEPTH_TEST" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoDepthTestReg, depth-test writers">
-    <doc>Depth test word.</doc>
-    <field name="func" start="29" size="3" type="uint" grade="inferred"/>
-    <field name="init_occlusion_test" start="28" size="1" type="uint" grade="inferred"/>
-    <field name="en_occlusion_test" start="27" size="1" type="uint" grade="inferred"/>
-    <field name="equal_range" start="23" size="4" type="uint" grade="inferred"/>
+  <struct name="BLEND_CONFIG" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 blend writer">
+    <doc>First word of the blend packet; the second is the constant colour.</doc>
+    <field name="dst_factor" start="28" size="4" type="uint" grade="inferred"/>
+    <field name="src_factor" start="24" size="4" type="uint" grade="inferred"/>
+    <field name="op" start="20" size="4" type="uint" grade="inferred"/>
   </struct>
-  <struct name="DRAW_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoDrawModeReg, pixel-pipe mode-word writers in the OpenGL driver">
-    <doc>Pixel-pipe mode word.</doc>
-    <field name="en_stencil_test" start="31" size="1" type="uint" grade="inferred"/>
-    <field name="en_depth_mask" start="30" size="1" type="uint" grade="inferred"/>
-    <field name="en_depth_test" start="29" size="1" type="uint" grade="inferred"/>
-    <field name="en_depth_offset" start="28" size="1" type="uint" grade="inferred"/>
-    <field name="en_color_discard" start="27" size="1" type="uint" grade="inferred"/>
-    <field name="en_color_mask" start="26" size="1" type="uint" grade="inferred"/>
-    <field name="en_dither" start="25" size="1" type="uint" grade="inferred"/>
-    <field name="en_logic_op" start="24" size="1" type="uint" grade="inferred"/>
-    <field name="en_blend" start="23" size="1" type="uint" grade="inferred"/>
-    <field name="en_color_test" start="22" size="1" type="uint" grade="inferred"/>
-    <field name="en_fog" start="21" size="1" type="uint" grade="inferred"/>
-    <field name="en_color_matrix" start="20" size="1" type="uint" grade="inferred"/>
-    <field name="en_pixel_xfer" start="19" size="1" type="uint" grade="inferred"/>
-    <field name="en_texture" start="18" size="1" type="uint" grade="inferred"/>
-    <field name="en_second_color" start="17" size="1" type="uint" grade="inferred"/>
-    <field name="en_smooth_shade" start="16" size="1" type="uint" grade="inferred"/>
-    <field name="en_opaq_stipple" start="15" size="1" type="uint" grade="inferred"/>
-    <field name="en_poly_stipple" start="14" size="1" type="uint" grade="inferred"/>
-    <field name="en_line_stipple" start="13" size="1" type="uint" grade="inferred"/>
-    <field name="reserved" start="0" size="13" type="uint" grade="unknown"/>
+  <struct name="COLOR_BUFFER_DESC" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 draw-buffer descriptor writers">
+    <doc>Draw-buffer descriptor.</doc>
+    <field name="linear" start="31" size="1" type="uint" grade="inferred"/>
+    <field name="pixel_kind" start="27" size="4" type="uint" grade="inferred"/>
+    <field name="size_class" start="25" size="2" type="uint" grade="inferred"/>
+    <field name="buffer_id" start="19" size="6" type="uint" grade="inferred"/>
+    <field name="span_flag" start="18" size="1" type="uint" grade="inferred"/>
   </struct>
-  <struct name="FB_ADDR" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoFbAddrType, scissor and clear-rectangle writers">
+  <struct name="CORNER_XY" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 scissor and clear-rectangle writers">
     <doc>A corner: x in the low half, y in the high half (signed 16-bit).</doc>
     <field name="y" start="16" size="16" type="uint" grade="inferred"/>
     <field name="x" start="0" size="16" type="uint" grade="inferred"/>
   </struct>
-  <struct name="LIGHT_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoLightModeReg, lighting-path writers">
+  <struct name="DEPTH_COMPARE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 depth-test writers">
+    <doc>Depth test word.</doc>
+    <field name="func" start="29" size="3" type="uint" grade="inferred"/>
+    <field name="occlusion_reset" start="28" size="1" type="uint" grade="inferred"/>
+    <field name="occlusion_on" start="27" size="1" type="uint" grade="inferred"/>
+    <field name="equal_window" start="23" size="4" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="DEPTH_STENCIL_BUFFER_DESC" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 depth and stencil descriptor writers">
+    <doc>Depth and stencil buffer descriptor.</doc>
+    <field name="kind_flag" start="31" size="1" type="uint" grade="inferred"/>
+    <field name="size_class" start="29" size="2" type="uint" grade="inferred"/>
+    <field name="buffer_id" start="23" size="6" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="LIGHTING_FLAGS" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 lighting-path writers">
     <doc>Lighting mode word.</doc>
     <field name="two_sided" start="31" size="1" type="uint" grade="inferred"/>
-    <field name="en_light3" start="30" size="1" type="uint" grade="inferred"/>
-    <field name="en_light2" start="29" size="1" type="uint" grade="inferred"/>
-    <field name="en_light1" start="28" size="1" type="uint" grade="inferred"/>
-    <field name="en_light0" start="27" size="1" type="uint" grade="inferred"/>
-    <field name="en_normalize" start="26" size="1" type="uint" grade="inferred"/>
-    <field name="en_specular" start="25" size="1" type="uint" grade="inferred"/>
-    <field name="spec_only" start="24" size="1" type="uint" grade="inferred"/>
-    <field name="en_lighting" start="23" size="1" type="uint" grade="inferred"/>
+    <field name="light3_on" start="30" size="1" type="uint" grade="inferred"/>
+    <field name="light2_on" start="29" size="1" type="uint" grade="inferred"/>
+    <field name="light1_on" start="28" size="1" type="uint" grade="inferred"/>
+    <field name="light0_on" start="27" size="1" type="uint" grade="inferred"/>
+    <field name="normalize_on" start="26" size="1" type="uint" grade="inferred"/>
+    <field name="specular_on" start="25" size="1" type="uint" grade="inferred"/>
+    <field name="specular_only" start="24" size="1" type="uint" grade="inferred"/>
+    <field name="lit_on" start="23" size="1" type="uint" grade="inferred"/>
   </struct>
-  <struct name="LINK_WORD" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoPktDescType, packet link-word writers in both drivers">
+  <struct name="NODE_LINK" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers">
     <doc>Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.</doc>
     <field name="next" start="12" size="20" type="uint" grade="inferred"/>
     <field name="size" start="3" size="9" type="uint" grade="inferred"/>
     <field name="sync" start="2" size="1" type="uint" grade="inferred"/>
-    <field name="intr" start="1" size="1" type="uint" grade="inferred"/>
+    <field name="interrupt" start="1" size="1" type="uint" grade="inferred"/>
     <field name="ready" start="0" size="1" type="uint" grade="inferred"/>
   </struct>
-  <struct name="LOGIC_OP" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoLogicOpReg, logic-operation writer">
-    <doc>Logic operation word.</doc>
-    <field name="op" start="28" size="4" type="uint" grade="inferred"/>
+  <struct name="PIXEL_PIPE_FLAGS" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 pixel-pipe mode-word writers in the OpenGL driver">
+    <doc>Pixel-pipe mode word.</doc>
+    <field name="stencil_test_on" start="31" size="1" type="uint" grade="inferred"/>
+    <field name="depth_write_on" start="30" size="1" type="uint" grade="inferred"/>
+    <field name="depth_test_on" start="29" size="1" type="uint" grade="inferred"/>
+    <field name="depth_offset_on" start="28" size="1" type="uint" grade="inferred"/>
+    <field name="color_discard_on" start="27" size="1" type="uint" grade="inferred"/>
+    <field name="color_mask_on" start="26" size="1" type="uint" grade="inferred"/>
+    <field name="dither_on" start="25" size="1" type="uint" grade="inferred"/>
+    <field name="logic_op_on" start="24" size="1" type="uint" grade="inferred"/>
+    <field name="blend_on" start="23" size="1" type="uint" grade="inferred"/>
+    <field name="alpha_test_on" start="22" size="1" type="uint" grade="inferred"/>
+    <field name="fog_on" start="21" size="1" type="uint" grade="inferred"/>
+    <field name="matrix_convert_on" start="20" size="1" type="uint" grade="inferred"/>
+    <field name="pixel_transfer_on" start="19" size="1" type="uint" grade="inferred"/>
+    <field name="texture_on" start="18" size="1" type="uint" grade="inferred"/>
+    <field name="secondary_color_on" start="17" size="1" type="uint" grade="inferred"/>
+    <field name="smooth_shade_on" start="16" size="1" type="uint" grade="inferred"/>
+    <field name="opaque_stipple_on" start="15" size="1" type="uint" grade="inferred"/>
+    <field name="polygon_stipple_on" start="14" size="1" type="uint" grade="inferred"/>
+    <field name="line_stipple_on" start="13" size="1" type="uint" grade="inferred"/>
+    <field name="reserved" start="0" size="13" type="uint" grade="unknown"/>
   </struct>
-  <struct name="PRIM_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoPrimModeReg, primitive-mode writers in the OpenGL driver">
+  <struct name="PRIMITIVE_SETUP" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 primitive-mode writers in the OpenGL driver">
     <doc>Primitive mode word.</doc>
-    <field name="prim_type" start="29" size="3" type="uint" grade="inferred"/>
-    <field name="aa_line" start="28" size="1" type="uint" grade="inferred"/>
-    <field name="closed_line" start="27" size="1" type="uint" grade="inferred"/>
+    <field name="primitive_kind" start="29" size="3" type="uint" grade="inferred"/>
+    <field name="line_antialias" start="28" size="1" type="uint" grade="inferred"/>
+    <field name="line_loop" start="27" size="1" type="uint" grade="inferred"/>
     <field name="line_width" start="15" size="12" type="uint" grade="inferred"/>
     <field name="cull_face" start="13" size="2" type="uint" grade="inferred"/>
     <field name="front_face" start="12" size="1" type="uint" grade="inferred"/>
-    <field name="back_face_line" start="11" size="1" type="uint" grade="inferred"/>
-    <field name="prim_dir" start="9" size="2" type="uint" grade="inferred"/>
-    <field name="sel_prim_dir" start="8" size="1" type="uint" grade="inferred"/>
+    <field name="back_face_as_line" start="11" size="1" type="uint" grade="inferred"/>
+    <field name="direction_10_9" start="9" size="2" type="uint" grade="inferred"/>
+    <field name="direction_select_8" start="8" size="1" type="uint" grade="inferred"/>
     <field name="reserved" start="0" size="8" type="uint" grade="unknown"/>
   </struct>
-  <struct name="STENCIL_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoStencilModeReg, stencil writers">
+  <struct name="RASTER_LOGIC" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 logic-operation writer">
+    <doc>Logic operation word.</doc>
+    <field name="op" start="28" size="4" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="STENCIL_CONFIG" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 stencil writers">
     <doc>First word of the stencil packet.</doc>
-    <field name="dppass" start="28" size="4" type="uint" grade="inferred"/>
-    <field name="dpfail" start="24" size="4" type="uint" grade="inferred"/>
-    <field name="sfail" start="20" size="4" type="uint" grade="inferred"/>
+    <field name="pass_op" start="28" size="4" type="uint" grade="inferred"/>
+    <field name="depth_fail_op" start="24" size="4" type="uint" grade="inferred"/>
+    <field name="stencil_fail_op" start="20" size="4" type="uint" grade="inferred"/>
     <field name="func" start="16" size="4" type="uint" grade="inferred"/>
     <field name="mask" start="8" size="8" type="uint" grade="inferred"/>
     <field name="ref" start="0" size="8" type="uint" grade="inferred"/>
   </struct>
-  <struct name="SZ_FORMAT" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoSzFormatReg, depth and stencil descriptor writers">
-    <doc>Depth and stencil buffer descriptor.</doc>
-    <field name="sz_type" start="31" size="1" type="uint" grade="inferred"/>
-    <field name="buf_depth" start="29" size="2" type="uint" grade="inferred"/>
-    <field name="desc_id" start="23" size="6" type="uint" grade="inferred"/>
-  </struct>
-  <struct name="TEXENV_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoTexEnvModeReg, texture-environment writers">
+  <struct name="TEXTURE_APPLY" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 texture-environment writers">
     <doc>First word of the two-word texture-environment packet; the second is the environment colour.</doc>
     <field name="func" start="29" size="3" type="uint" grade="inferred"/>
     <field name="type" start="25" size="4" type="uint" grade="inferred"/>
   </struct>
-  <struct name="TEXGEN_FORMAT" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoTexGenFormatReg, texture-parameter writers in both drivers">
+  <struct name="TEXTURE_FORMAT_WORD" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers">
     <doc>First word of the four-word texture packet; the display driver's YUV blit sends 14 or 15 as the texture type.</doc>
     <field name="linear" start="31" size="1" type="uint" grade="inferred"/>
-    <field name="tex_type" start="27" size="4" type="uint" grade="inferred"/>
-    <field name="buf_depth" start="25" size="2" type="uint" grade="inferred"/>
-    <field name="desc_id" start="19" size="6" type="uint" grade="inferred"/>
+    <field name="texture_kind" start="27" size="4" type="uint" grade="inferred"/>
+    <field name="size_class" start="25" size="2" type="uint" grade="inferred"/>
+    <field name="buffer_id" start="19" size="6" type="uint" grade="inferred"/>
   </struct>
-  <struct name="TEXGEN_LOD" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoTexGenLodReg">
+  <struct name="TEXTURE_LOD_RANGE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers">
     <doc>Third word of the texture packet; the fourth is the border colour.</doc>
     <field name="max_level" start="28" size="4" type="uint" grade="inferred"/>
     <field name="min_level" start="24" size="4" type="uint" grade="inferred"/>
-    <field name="lod_frac_size" start="21" size="3" type="uint" grade="inferred"/>
+    <field name="frac_bits" start="21" size="3" type="uint" grade="inferred"/>
     <field name="lod_bias" start="11" size="10" type="uint" grade="inferred"/>
   </struct>
-  <struct name="TEXGEN_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoTexGenModeReg">
+  <struct name="TEXTURE_SAMPLING" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 texture-parameter writers in both drivers">
     <doc>Second word of the texture packet.</doc>
     <field name="min_filter" start="29" size="3" type="uint" grade="inferred"/>
     <field name="mag_filter" start="28" size="1" type="uint" grade="inferred"/>
     <field name="wrap_t" start="26" size="2" type="uint" grade="inferred"/>
     <field name="wrap_s" start="24" size="2" type="uint" grade="inferred"/>
-    <field name="map_height" start="20" size="4" type="uint" grade="inferred"/>
-    <field name="map_width" start="16" size="4" type="uint" grade="inferred"/>
+    <field name="height_code" start="20" size="4" type="uint" grade="inferred"/>
+    <field name="width_code" start="16" size="4" type="uint" grade="inferred"/>
   </struct>
-  <struct name="XFORM_MODE" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 type CoXformModeReg, draw-flags writers in the OpenGL driver">
+  <struct name="TRANSFORM_FLAGS" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 draw-flags writers in the OpenGL driver">
     <doc>Transform mode word , the draw flags word.</doc>
-    <field name="en_viewport_xform" start="31" size="1" type="uint" grade="inferred"/>
-    <field name="en_model_xform" start="30" size="1" type="uint" grade="inferred"/>
-    <field name="en_tex_xform" start="29" size="1" type="uint" grade="inferred"/>
-    <field name="en_clip_check" start="28" size="1" type="uint" grade="inferred"/>
+    <field name="viewport_xform_on" start="31" size="1" type="uint" grade="inferred"/>
+    <field name="model_xform_on" start="30" size="1" type="uint" grade="inferred"/>
+    <field name="tex_xform_on" start="29" size="1" type="uint" grade="inferred"/>
+    <field name="clip_check_on" start="28" size="1" type="uint" grade="inferred"/>
   </struct>
   <constant name="BLEND_CONSTANT_ALPHA" value="0xa" grade="inferred"/>
   <constant name="BLEND_CONSTANT_COLOR" value="0x8" grade="inferred"/>
