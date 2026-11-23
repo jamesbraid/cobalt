@@ -1,0 +1,669 @@
+unit = "arsenic"
+prefix = "ARS"
+block = "ARS"
+title = "Arsenic display back end register block"
+doc = "The display back end of the graphics subsystem: the register block the NT 4.0 miniport and display driver, the Windows 2000 display drivers, the firmware and the Linux frame buffer driver program. Offsets are from the start of the block, which the display miniport maps; all accesses are 32 bits wide and uncached, with a few byte loads of live words noted per register. The retrace latch is a separate 32-bit window outside the block and sits in its own address space. Access records what the drivers do to the register. Reset values are unknown for every register: no shipped software reads one before writing it, and both drivers only ever see a post-firmware state. Register names are the ones the public Linux header uses, which the miniport symbol tables also carry; field names are the Linux header names where it defines one and our own plain description otherwise."
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+public_from = ["SGI Cobalt Graphics Driver 5.2.4", "Linux frame buffer driver", "SGI Visual Workstation PROM 1.1005"]
+# Register names are the shipped 5.2.4 pack's own, from the miniport program database (sgcomp.pdb, the gberegs structure), and match the
+# public Linux struct asregs (include/video/sgivw.h). The defs tooling has no name_source value for a shipped binary, so "ours" stands in.
+# Field names are the Linux header's where it defines one; the rest, and the retrace register, are our own plain description.
+name_source = "ours"
+
+[spaces.retrace]
+unit = "byte"
+doc = "The 32-bit retrace latch window, a mapping separate from the main block; its offset 0 is the window base."
+
+# Enums
+[enums.frame_depth]
+values = { bpp8 = { value = 0, grade = "established" }, bpp16 = { value = 1, grade = "established" }, bpp32 = { value = 2, grade = "established" } }
+
+[enums.did_pixel_type]
+doc = "Pixel type of a window in the per-window mode table: the values the Linux header names. Which hardware path each selects is inferred from the O2 display back end."
+values = { index8 = { value = 0, grade = "inferred" }, index12 = { value = 1, grade = "inferred" }, rg3b2 = { value = 2, grade = "inferred" }, rgb4 = { value = 3, grade = "inferred" }, argb5 = { value = 4, grade = "inferred" }, rgb8 = { value = 5, grade = "inferred" }, rgba5 = { value = 6, grade = "inferred" }, rgb10 = { value = 7, grade = "inferred" } }
+
+[enums.did_buffer_mode]
+values = { both = { value = 3, grade = "inferred" } }
+
+[registers.ctrlstat]
+offset = 0x0
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "General control and status. The mode-set routine of the NT miniport writes the value with the clock selector at 3 as its last step; Linux writes the selector at 2 before programming and 3 afterwards when bit 25 reads set; the firmware does the same, and with a flat panel ORs in bit 26 instead of writing the selector 3. The firmware reads the low nibble as the chip revision (a real 320 shows display engine 002). Linux treats a clock selector below 2 as not scanning out from the internal dot clock."
+[registers.ctrlstat.fields]
+chipid = { bits = [3, 0], grade = "inferred", doc = "chip revision as the firmware reads it" }
+sense_n = { bits = [4, 4], grade = "unknown", doc = "named in the Linux header; no shipped driver reads or writes it" }
+bit25 = { bits = [25, 25], grade = "unknown", doc = "meaning unknown; the firmware writes the selector 3 only when this reads set, so a model should read it as 1" }
+bit26 = { bits = [26, 26], grade = "unknown", doc = "set by the firmware and the NT 4.0 HAL when a flat panel answered; meaning unknown" }
+pclksel = { bits = [29, 28], grade = "inferred", doc = "dot clock source: 3 selects the internal dot clock in every writer" }
+
+[registers.dotclock]
+offset = 0x4
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Dot clock PLL. Software writes M-1 and N-1. The output is 27 MHz times M over N, divided by 2 to the P; that reproduces the clock column of 26 of the 27 rows of the NT mode table to within 1.4 percent. No lock bit is read and every wait is a plain delay. The NT miniport clears everything above bit 15, restarts the PLL through a fixed sequence with RUN set and cleared and 40 ms, one second and 100 ms delays, then writes the final value without RUN, waits 40 ms and sets RUN; Linux and the firmware write the final value with RUN and wait 11 ms; the NT 4.0 HAL clears the bits above 15 and writes the value with RUN with no wait."
+[registers.dotclock.fields]
+m = { bits = [7, 0], grade = "inferred", doc = "feedback multiplier minus 1" }
+n = { bits = [13, 8], grade = "inferred", doc = "reference divider minus 1" }
+p = { bits = [15, 14], grade = "inferred", doc = "output divider as a power of two" }
+run = { bits = [20, 20], grade = "inferred", doc = "PLL run" }
+
+[registers.i2c]
+offset = 0x8
+width = 32
+access = "rw"
+grade = "established"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, bit-bang routines and the EDID reader"
+doc = "CRT I2C lines (DDC). One register is both the write and the read-back location. Writing a bit as 1 pulls the line low and writing 0 lets it float high; a read returns 1 when the line is low. With no device both lines read 0. The EDID reader tries device write addresses 0xa2, 0xa6 and 0xa0 in that order."
+[registers.i2c.fields]
+sda = { bits = [0, 0], grade = "established", doc = "data line" }
+scl = { bits = [1, 1], grade = "established", doc = "clock line" }
+
+[registers.sysclk]
+offset = 0xc
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only)"
+doc = "System clock PLL. Neither driver, the firmware nor the HAL touches it; the Linux header names it as the system clock PLL control. Nothing shipped depends on its contents."
+
+[registers.i2cfp]
+offset = 0x10
+width = 32
+access = "rw"
+grade = "established"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, bit-bang routines and the flat-panel status routines"
+doc = "Flat-panel I2C lines, the same layout and sense as the CRT register. The flat-panel status device answers at write address 0x70 and read address 0x71; bits 7:5 of its status byte are the panel id (5 is the 1600 by 1024 digital panel) and bit 2 is power-save. The firmware reads it twice when the first try gets no answer, and when the CRT EDID reader finds a flat panel it uses this register instead of the CRT one."
+[registers.i2cfp.fields]
+sda = { bits = [0, 0], grade = "established", doc = "data line" }
+scl = { bits = [1, 1], grade = "established", doc = "clock line" }
+
+[registers.id]
+offset = 0x14
+width = 32
+access = "r"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, adapter attach check; the firmware self-test"
+doc = "Device id. The NT miniport compares the whole dword with the value in the ID constant and does not attach otherwise; the Windows 2000 drivers compare the low 16 bits; the firmware self-test compares the whole dword. A read of that value passes every reader (established as the check; what the value means is inferred)."
+
+[registers.config]
+offset = 0x18
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Output configuration. The NT miniport writes bits 7, 6, 5, 2 and 0, adds 1 when the mode asks for sync on green, always adds 3, and clears bit 0 when a flat panel answered unless the mode carries the key flag. Linux defines a frame-buffer value that sets bits 7, 5, 2, 1 and 0 but never writes the register; the firmware writes that value; the NT 4.0 HAL writes the same and ORs in bit 3. The Windows 2000 frame buffer driver writes bits 7, 5, 2 and 0, with bit 3 added for a flat panel, and its boot video driver one further value. Nothing shipped writes bit 6 or bit 1 on its own. A model should accept any value. The firmware self-test walks bits 7:5 and 3:0 (bit 4 is not tested)."
+[registers.config.fields]
+vdac_enable = { bits = [0, 0], grade = "inferred", doc = "video DAC enable" }
+vdac_gsync = { bits = [1, 1], grade = "inferred", doc = "sync on green" }
+vdac_pblank = { bits = [2, 2], grade = "inferred", doc = "pixel blank" }
+fpenable = { bits = [3, 3], grade = "inferred", doc = "flat panel enable" }
+lendian = { bits = [5, 5], grade = "inferred", doc = "little-endian pixel memory; not settled" }
+tilehist = { bits = [6, 6], grade = "inferred", doc = "tile history" }
+ext_addr = { bits = [7, 7], grade = "inferred", doc = "extended addressing" }
+
+[registers.bist]
+offset = 0x1c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Built-in self-test. Neither driver reads it. The firmware self-test writes 0, polls bit 31 for completion and reports a failure when any of bits 27:24 is set. Release 1.0006 also compares the register with a mask of 0x0ff0ffff for zero. The layout of the failure bits is unknown."
+[registers.bist.fields]
+done = { bits = [31, 31], grade = "inferred", doc = "self-test complete" }
+fail = { bits = [27, 24], grade = "inferred", doc = "failure bits; layout unknown" }
+
+[registers.vt_xy]
+offset = 0x10000
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, scan-line and mode-set routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Current dot coordinates. The live line is read from bits 23:12 (the scan-line poll); bit 31 is the timing counter freeze: it reads back what software set by writing the top bit and clears when software writes 0. Software tests the freeze bit with a byte load of the top byte, and the NT miniport, the Windows 2000 frame buffer driver, the NT 4.0 HAL and the firmware all do. The firmware's non-graphics console path writes the freeze bit alone."
+[registers.vt_xy.fields]
+x = { bits = [11, 0], grade = "inferred", doc = "live horizontal position" }
+y = { bits = [23, 12], grade = "inferred", doc = "live line" }
+vt_freeze = { bits = [31, 31], grade = "inferred", doc = "timing counter frozen" }
+
+[registers.vt_xymax]
+offset = 0x10004
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Totals: horizontal total in 11:0 and vertical total in 23:12. Software writes 0 while it programs the other windows and the real totals afterwards."
+[registers.vt_xymax.fields]
+vt_maxx = { bits = [11, 0], grade = "inferred", doc = "horizontal total" }
+vt_maxy = { bits = [23, 12], grade = "inferred", doc = "vertical total" }
+
+[registers.vt_vsync]
+offset = 0x10008
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Vertical sync window, in lines."
+[registers.vt_vsync.fields]
+vt_vsync_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_vsync_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_hsync]
+offset = 0x1000c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Horizontal sync window, in dots."
+[registers.vt_hsync.fields]
+vt_hsync_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_hsync_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_vblank]
+offset = 0x10010
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Vertical blank window, in lines."
+[registers.vt_vblank.fields]
+vt_vblank_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_vblank_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_hblank]
+offset = 0x10014
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Horizontal blank window. NT and the firmware write ON as the blank start less 5 (wrapped by the total) and OFF as the blank end less 3; Linux writes ON as the blank start."
+[registers.vt_hblank.fields]
+vt_hblank_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_hblank_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_flags]
+offset = 0x10018
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set, power-state and retrace routines"
+doc = "Polarity and blanking flags of the timing signals. The mode set writes bit 2 for the horizontal flag of the mode record and bit 0 for the vertical one, after writing 0x40 and then 0. The power-state routine edits bits 1 and 3 for the standby, suspend and off states (bit 1 for standby, bit 3 for suspend, both for the rest); which signal each gates is inferred from the VESA states, bit 1 horizontal and bit 3 vertical. The retrace handler sets bit 6 in stereo modes and clears it again when free-running. The firmware self-test walks bits 6:0. The firmware does not write the register."
+[registers.vt_flags.fields]
+vdrv_invert = { bits = [0, 0], grade = "inferred", doc = "invert vertical sync drive" }
+hsync_off = { bits = [1, 1], grade = "inferred", doc = "power state: stop horizontal sync; which signal is inferred" }
+hdrv_invert = { bits = [2, 2], grade = "inferred", doc = "invert horizontal sync drive" }
+vsync_off = { bits = [3, 3], grade = "inferred", doc = "power state: stop vertical sync; which signal is inferred" }
+bit6 = { bits = [6, 6], grade = "unknown", doc = "written 0x40 then 0 at mode set; set by the stereo retrace handler; meaning unknown" }
+
+[registers.vt_f2rf_lock]
+offset = 0x1001c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set and retrace routines"
+doc = "Frame-to-field and frame-lock line. The NT miniport writes the blank-start line in 23:12 and 0xfff in 11:0 for a mono mode, and the blank-start line in both halves for a stereo mode. Linux does not write it. The retrace handler reads it in stereo and discards the value; the read may have a side effect. Which half is which is inferred from the order of the names in the Linux header comment."
+[registers.vt_f2rf_lock.fields]
+f2rf_y = { bits = [23, 12], grade = "inferred", doc = "frame-to-field line" }
+framelock_y = { bits = [11, 0], grade = "inferred", doc = "frame-lock line" }
+
+[registers.vt_intr01]
+offset = 0x10020
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, interrupt routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Scan-line interrupt lines 1 (11:0) and 0 (23:12). The NT miniport parks both at 0xfff and then arms line 0 at the screen height less an allowance, and line 1 at the height plus one (plus two with flat-panel timing). The firmware's hand-over routine parks both and writes 0x1fff. No shipped handler for these interrupts was found."
+[registers.vt_intr01.fields]
+intr1_y = { bits = [11, 0], grade = "inferred", doc = "line of scan-line interrupt 1" }
+intr0_y = { bits = [23, 12], grade = "inferred", doc = "line of scan-line interrupt 0" }
+
+[registers.vt_intr23]
+offset = 0x10024
+width = 32
+access = "rw"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, interrupt routines"
+doc = "The same for scan-line interrupts 3 (11:0) and 2 (23:12). The NT miniport accepts an interrupt number below 4 and a line below 4096."
+[registers.vt_intr23.fields]
+intr3_y = { bits = [11, 0], grade = "inferred", doc = "line of scan-line interrupt 3" }
+intr2_y = { bits = [23, 12], grade = "inferred", doc = "line of scan-line interrupt 2" }
+
+[registers.fp_hdrv]
+offset = 0x10028
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Flat-panel horizontal drive window. With a panel the NT miniport sets OFF to the width; the firmware writes the panel's value for panel id 5 and leaves the low 12 bits at the width."
+[registers.fp_hdrv.fields]
+fp_hdrv_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+fp_hdrv_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.fp_vdrv]
+offset = 0x1002c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Flat-panel vertical drive window. ON is 1 and OFF is the row count plus one, so a 1024-row panel leaves 0x401 in the low 12 bits, which the Windows 2000 drivers read back to recognise a panel. Without a panel OFF is 0."
+[registers.fp_vdrv.fields]
+fp_vdrv_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+fp_vdrv_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.fp_de]
+offset = 0x10030
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Flat-panel data enable window. The NT miniport writes 0xffffff; the firmware writes the panel's value, 0x640 in 11:0 for panel id 5."
+[registers.fp_de.fields]
+fp_de_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+fp_de_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_hpixen]
+offset = 0x10034
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Internal horizontal pixel enable window. ON is the blank end less 19 (wrapped by the total) and OFF is ON plus the width less 2 (wrapped). Software writes 0xffffff first and the real value last."
+[registers.vt_hpixen.fields]
+vt_hpixen_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_hpixen_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_vpixen]
+offset = 0x10038
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Internal vertical pixel enable window. ON is the vertical blank end and OFF the vertical blank start."
+[registers.vt_vpixen.fields]
+vt_vpixen_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_vpixen_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_hcmap]
+offset = 0x1003c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Colour-map write window, horizontal: the blank start and end (Linux writes the end less 3)."
+[registers.vt_hcmap.fields]
+vt_hcmap_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_hcmap_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.vt_vcmap]
+offset = 0x10040
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
+doc = "Colour-map write window, vertical: the blank start and end."
+[registers.vt_vcmap.fields]
+vt_vcmap_on = { bits = [23, 12], grade = "inferred", doc = "start of the window (ON)" }
+vt_vcmap_off = { bits = [11, 0], grade = "inferred", doc = "end of the window (OFF)" }
+
+[registers.did_start_xy]
+offset = 0x10044
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Start position for the per-window id fetch. Y is the vertical blank start less the end less 1, a small negative number written as 12-bit two's complement; X is the horizontal blank end less 20, wrapped by the total. The Windows 2000 boot video driver writes 0xffffffff."
+[registers.did_start_xy.fields]
+did_starty = { bits = [23, 12], grade = "inferred", doc = "start line" }
+did_startx = { bits = [11, 0], grade = "inferred", doc = "start dot" }
+
+[registers.crs_start_xy]
+offset = 0x10048
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Start position for the cursor. Y is one more than the id fetch's Y; X is the horizontal blank end less 54 (the Linux header calls 54 the cursor magic number), wrapped by the total."
+[registers.crs_start_xy.fields]
+crs_starty = { bits = [23, 12], grade = "inferred", doc = "start line" }
+crs_startx = { bits = [11, 0], grade = "inferred", doc = "start dot" }
+
+[registers.vc_start_xy]
+offset = 0x1004c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Start position for the video capture. Y is the same as the id fetch's; X is the horizontal blank end less 4 (not wrapped)."
+[registers.vc_start_xy.fields]
+vc_starty = { bits = [23, 12], grade = "inferred", doc = "start line" }
+vc_startx = { bits = [11, 0], grade = "inferred", doc = "start dot" }
+
+[registers.ovr_width_tile]
+offset = 0x20000
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Overlay plane width. Whole 512-byte tile columns in 12:5 and the remainder in 32-byte units in 4:0; FIFO reset in bit 13 is pulsed set then clear. The overlay is always 8 bits per pixel. The NT miniport writes the full width then pulses; the firmware writes the FIFO reset bit alone, then 0, with the width zero. The firmware self-test walks bits 13:0."
+[registers.ovr_width_tile.fields]
+ovr_width_tile = { bits = [12, 5], grade = "inferred", doc = "whole tile columns" }
+ovr_rhs = { bits = [4, 0], grade = "inferred", doc = "remainder in 32-byte units" }
+ovr_fifo_reset = { bits = [13, 13], grade = "inferred", doc = "FIFO reset, pulsed" }
+
+[registers.ovr_inhwctrl]
+offset = 0x20004
+width = 32
+access = "r"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, overlay stop routine"
+doc = "Live copy of the overlay control word. The NT miniport, the firmware and the Windows 2000 frame buffer driver poll bit 0 with a byte load until it clears (the firmware polls it until it reads set); the NT 4.0 HAL reads it as a dword. Bit 0 must follow its shadow within the 200 ms the drivers allow."
+[registers.ovr_inhwctrl.fields]
+ovr_dma_enable = { bits = [0, 0], grade = "inferred", doc = "overlay fetch active" }
+
+[registers.ovr_control]
+offset = 0x20008
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, display driver overlay routines"
+doc = "Overlay control, the shadow word taken at the start of vertical blank. Bit 0 enables fetch; the rest is the overlay's tile-list pointer. The miniport loads the pointer without bit 0; the display driver writes the pointer with bit 0 set to start the fetch and the pointer alone to stop it. The firmware self-test walks bits 31:5 and 1:0."
+[registers.ovr_control.fields]
+ovr_dma_enable = { bits = [0, 0], grade = "inferred", doc = "overlay fetch enable" }
+ovr_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "physical address of the overlay tile list, 512-byte aligned; the field span is by analogy with the normal plane" }
+
+[registers.frm_size_tile]
+offset = 0x30000
+width = 32
+access = "rw"
+grade = "established"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Normal plane width and depth. Whole tile columns in 12:5 and the remainder in 32-byte units in 4:0, depth in 14:13, FIFO reset in bit 15 pulsed. A tile is 512 bytes by 128 lines, so a 32-bit mode has 128 pixels per tile column and a 16-bit mode 256. The NT miniport writes the value twice around the reset pulse; the firmware does the same. Linux, NT and the O2 display back end page agree. The firmware self-test walks bits 15:0."
+[registers.frm_size_tile.fields]
+frm_width_tile = { bits = [12, 5], grade = "established", doc = "whole 512-byte tile columns" }
+frm_rhs = { bits = [4, 0], grade = "established", doc = "remainder in 32-byte units" }
+frm_depth = { bits = [14, 13], grade = "established", enum = "frame_depth", doc = "pixel depth; the value 3 is not used by any driver" }
+frm_fifo_reset = { bits = [15, 15], grade = "established", doc = "FIFO reset, pulsed set then clear" }
+
+[registers.frm_size_pixel]
+offset = 0x30004
+width = 32
+access = "rw"
+grade = "established"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Normal plane height in lines, in 31:16. The firmware self-test walks only those bits."
+[registers.frm_size_pixel.fields]
+fb_height_pix = { bits = [31, 16], grade = "established", doc = "height in lines" }
+
+[registers.frm_inhwctrl]
+offset = 0x30008
+width = 32
+access = "r"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, page-flip and stop routines"
+doc = "Live copy of the normal plane control word. Completion of a page flip is this word matching the value written; stop waits for bit 0 to clear. Software reads bit 0 with a byte load in the NT miniport, the Windows 2000 frame buffer driver and the firmware, and as a dword in the Windows 2000 boot video driver and the NT 4.0 HAL; a model must answer a byte read with the matching byte. The firmware waits forever for bit 0 to read set after it starts the plane. Bit 0 must clear within 200 ms of its shadow and follow it at the start of vertical blank."
+[registers.frm_inhwctrl.fields]
+frm_dma_enable = { bits = [0, 0], grade = "inferred", doc = "normal plane fetch active" }
+frm_linear = { bits = [1, 1], grade = "inferred", doc = "linear form, copy of the shadow" }
+frm_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "copy of the shadow's address field" }
+
+[registers.frm_control]
+offset = 0x3000c
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, start, flip and stop routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Normal plane control, the shadow word taken at the start of vertical blank. Bit 0 enables fetch; bit 1 selects the linear form, in which the pointer is the frame buffer's physical address shifted right 9 and the line pitch is the tile-column count rounded up times 512 bytes (Linux, both Windows 2000 drivers and the firmware set it, the SGI 5.2.4 miniport does not and gives its tile list instead). In the tile-list form the pointer is the physical address of a 512-byte aligned list of 16-bit entries. Both stop DMA by clearing bit 0 and wait up to 20000 ten-microsecond steps for the live copy to follow. The firmware self-test walks bits 31:9 and 1:0."
+[registers.frm_control.fields]
+frm_dma_enable = { bits = [0, 0], grade = "inferred", doc = "normal plane fetch enable" }
+frm_linear = { bits = [1, 1], grade = "inferred", doc = "linear form" }
+frm_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "tile list address, or the frame buffer address in the linear form, shifted right 9" }
+
+[registers.did_inhwctrl]
+offset = 0x40000
+width = 32
+access = "r"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine"
+doc = "Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end."
+[registers.did_inhwctrl.fields]
+did_dma_enable = { bits = [16, 16], grade = "inferred", doc = "id fetch active; the Linux header names bit 0 for this field" }
+
+[registers.did_control]
+offset = 0x40004
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Per-window id fetch control, the shadow word. The NT miniport writes 0 at mode set and clears bit 16 to stop; the firmware writes 0. The firmware self-test walks all 32 bits."
+[registers.did_control.fields]
+did_dma_enable = { bits = [16, 16], grade = "inferred", doc = "id fetch enable; the Linux header names bit 0 for this field" }
+
+[registers.mode_regs]
+offset = 0x48000
+width = 32
+access = "w"
+count = 32
+stride = 4
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers"
+doc = "Per-window mode table of 32 words, the window id table. Linux fills all 32 identically (8 bits per pixel as index, 16 as RGBA5, 32 as RGB8); the firmware and the Windows 2000 boot video driver write 3 into all 32; the Windows 2000 frame buffer driver writes only the first word, 3 for 8 bits per pixel and 0x17 for 32. The SGI 5.2.4 miniport does not write the table."
+[registers.mode_regs.fields]
+wid_buf = { bits = [1, 0], grade = "inferred", enum = "did_buffer_mode", doc = "buffer mode; 3 selects both buffers" }
+wid_typ = { bits = [4, 2], grade = "inferred", enum = "did_pixel_type", doc = "pixel type" }
+
+[registers.cmap]
+offset = 0x50000
+width = 32
+access = "w"
+count = 6144
+stride = 4
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, colour register routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Colour map, 6144 entries in the Linux declaration (the O2 display back end specification says 4608), one dword each. Both drivers write an entry as red in 31:24, green in 23:16 and blue in 15:8. Before every 32nd entry the NT miniport waits on the FIFO status; the Windows 2000 boot video driver waits before every entry."
+[registers.cmap.fields]
+red = { bits = [31, 24], grade = "inferred" }
+green = { bits = [23, 16], grade = "inferred" }
+blue = { bits = [15, 8], grade = "inferred" }
+
+[registers.cm_fifo]
+offset = 0x58000
+width = 32
+access = "r"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, colour register routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Colour map FIFO status. Linux waits until it reads non-zero and then writes that many entries. The NT miniport, before every 32nd entry, spins until the low six bits read zero or the value reaches 0x30. The firmware waits while the low six bits are non-zero and above 0x10 is not reached. The Windows 2000 boot video driver needs the low six bits above 0x30. A value of 0x3f satisfies all four readers and 0x40 fails the boot video driver. Meaning inferred as a free-entry count."
+[registers.cm_fifo.fields]
+free_entries = { bits = [5, 0], grade = "inferred", doc = "free entries in the colour map write FIFO" }
+
+[registers.gmap]
+offset = 0x60000
+width = 32
+access = "rw"
+count = 256
+stride = 4
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Gamma map, 256 dwords. Linux, the firmware and the Windows 2000 boot video driver write the identity ramp (i times 0x01010100). The NT miniport copies dwords from the registry value and from the private gamma control request, and reads the table back for that request. What the hardware does with the words is inferred."
+[registers.gmap.fields]
+red = { bits = [31, 24], grade = "inferred" }
+green = { bits = [23, 16], grade = "inferred" }
+blue = { bits = [15, 8], grade = "inferred" }
+
+[registers.gmap10]
+offset = 0x68000
+width = 32
+access = "rw"
+count = 1024
+stride = 4
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines"
+doc = "10-bit gamma map, 1024 dwords. The same two NT paths write it when the size selector is 10 or the registry value is 4096 bytes long. The field layout of an entry is unknown."
+
+[registers.crs_pos]
+offset = 0x70000
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits."
+[registers.crs_pos.fields]
+x = { bits = [11, 0], grade = "inferred", doc = "horizontal position less hot spot" }
+y = { bits = [27, 16], grade = "inferred", doc = "vertical position less hot spot" }
+
+[registers.crs_ctl]
+offset = 0x70004
+width = 32
+access = "rw"
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Cursor control. The display driver writes 1 to show and 0 to hide; the NT 4.0 HAL's stop clears bit 0 with a read-modify-write; every other writer writes 0. The firmware self-test walks bits 1:0, so bit 1 is implemented and unused."
+[registers.crs_ctl.fields]
+show = { bits = [0, 0], grade = "inferred", doc = "cursor visible" }
+bit1 = { bits = [1, 1], grade = "unknown", doc = "stored but no shipped writer sets it" }
+
+[registers.crs_cmap]
+offset = 0x70008
+width = 32
+access = "rw"
+count = 3
+stride = 4
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Cursor colours, three entries. The display driver writes each as red in 31:24, green in 23:16 and blue in 15:8 (the colour list's entries 1 to 3 go to these three words) and at start-up sets the first to 0 and the last to 0xffffff00; the firmware writes 0xffffff00 and 0xff000000 to the first two. The firmware self-test walks bits 31:8."
+[registers.crs_cmap.fields]
+red = { bits = [31, 24], grade = "inferred" }
+green = { bits = [23, 16], grade = "inferred" }
+blue = { bits = [15, 8], grade = "inferred" }
+
+[registers.crs_glyph]
+offset = 0x78000
+width = 32
+access = "rw"
+count = 64
+stride = 4
+grade = "inferred"
+from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end."
+[registers.crs_glyph.fields]
+px0 = { bits = [31, 30], grade = "inferred" }
+px1 = { bits = [29, 28], grade = "inferred" }
+px2 = { bits = [27, 26], grade = "inferred" }
+px3 = { bits = [25, 24], grade = "inferred" }
+px4 = { bits = [23, 22], grade = "inferred" }
+px5 = { bits = [21, 20], grade = "inferred" }
+px6 = { bits = [19, 18], grade = "inferred" }
+px7 = { bits = [17, 16], grade = "inferred" }
+px8 = { bits = [15, 14], grade = "inferred" }
+px9 = { bits = [13, 12], grade = "inferred" }
+px10 = { bits = [11, 10], grade = "inferred" }
+px11 = { bits = [9, 8], grade = "inferred" }
+px12 = { bits = [7, 6], grade = "inferred" }
+px13 = { bits = [5, 4], grade = "inferred" }
+px14 = { bits = [3, 2], grade = "inferred" }
+px15 = { bits = [1, 0], grade = "inferred" }
+
+[registers.vc_0]
+offset = 0x80000
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 0. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0x00ffffff, the only statement of how many bits are implemented."
+
+[registers.vc_1]
+offset = 0x80004
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 1. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0x00ffffff, the only statement of how many bits are implemented."
+
+[registers.vc_2]
+offset = 0x80008
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 2. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0x1f, the only statement of how many bits are implemented."
+
+[registers.vc_3]
+offset = 0x8000c
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 3. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test does not walk it."
+
+[registers.vc_4]
+offset = 0x80010
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 4. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented."
+
+[registers.vc_5]
+offset = 0x80014
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 5. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented."
+
+[registers.vc_6]
+offset = 0x80018
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 6. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented."
+
+[registers.vc_7]
+offset = 0x8001c
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 7. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test does not walk it."
+
+[registers.vc_8]
+offset = 0x80020
+width = 32
+access = "rw"
+grade = "unknown"
+from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)"
+doc = "Video capture control word 8. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented."
+
+[registers.retrace_status]
+offset = 0x0
+width = 32
+access = "rw"
+space = "retrace"
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, retrace interrupt routine; SGI Visual Workstation PROM 1.1005, display start-up code"
+doc = "Retrace latch in its own 32-bit window, wired to line 24 of the system interrupt controller (latched). The retrace handler reads it, writes back the bitwise complement of what it read and does not read it again; bit 1 set means a frame has ended and is counted. The firmware's hand-over routine writes the complement of the word the same way. That only clears the bits if a written 0 clears a bit and a written 1 leaves it, so the register is write-0-to-clear (inferred). What the other bits are is unknown. The name is ours: the register has no public name."
+[registers.retrace_status.fields]
+frame_end = { bits = [1, 1], grade = "inferred", doc = "a frame has ended" }
+
+[words.TILE_LIST_ENTRY]
+width = 16
+grade = "inferred"
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines"
+doc = "One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits."
+[words.TILE_LIST_ENTRY.fields]
+tile_number = { bits = [15, 0], grade = "inferred", doc = "64 KB tile number" }
+
+[constants]
+ID_VALUE = { value = 1638, grade = "inferred", doc = "value the id register must read; the check is established, what the value means is inferred" }
+CRS_MAGIC = { value = 54, grade = "inferred", doc = "Linux's name for the cursor start offset" }
+CLOCK_REF_KHZ = { value = 27000, grade = "inferred", doc = "dot clock reference, from the Linux header and the formula that fits the NT mode table" }
+TILE_WIDTH_BYTES = { value = 512, grade = "established", doc = "tile width" }
+TILE_HEIGHT_LINES = { value = 128, grade = "established", doc = "tile height" }
+TILE_BYTES = { value = 65536, grade = "established", doc = "memory per tile, one list entry each" }
+TILE_LIST_ALIGN = { value = 512, grade = "established", doc = "alignment of a tile list" }
+NORMAL_TILE_LISTS = { value = 4, grade = "established", doc = "tile lists the NT miniport keeps for the normal plane" }
+CURSOR_PARK_POS = { value = 266342368, grade = "inferred", doc = "value the display driver writes to the cursor position to hide it" }
+COLOR_MAP_FIFO_FREE = { value = 63, grade = "inferred", doc = "value that satisfies every shipped reader of the colour map FIFO status" }

@@ -5,7 +5,7 @@ offset, the display back end of the O2 (see [GBE](https://github.com/jamesbraid/
 fetch, same colour map, gamma, cursor and video-capture blocks. That identity is established for every offset and field
 both drivers touch; for the blocks neither drives (cursor, capture, 10-bit gamma) it is inferred from the identical
 layout, and the GBE page's field tables are the best available description of them, untested on Cobalt. Linux calls
-the block DBE and the NT miniport prefixes its routines with `as`. Back to the [overview](README.md).
+the block DBE and the NT miniport prefixes its routines with `as`. Back to the [overview](README.md). The registers below are also defined, with offsets, widths, fields and grades, in [the Arsenic register definitions](../arsenic/registers.md), from which the generated C, Rust and Python outputs are built. A scan of the NT miniport's and display driver's disassembly for displacements into the block found no access outside the registers on this page.
 
 All accesses are 32 bits wide and uncached (Linux `sgivwfb.h`: "all loads and stores must be 32 bits"). Offsets below
 are from `0xd0000000`.

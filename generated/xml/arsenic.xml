@@ -1,0 +1,327 @@
+<?xml version="1.0" ?>
+<!-- generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source -->
+<!-- SPDX-License-Identifier: BSD-3-Clause -->
+<!-- defs-gen 2 -->
+<!-- input sha256 cd397dc4f087e54858a8a1cc695856a66d6cd1ebf7582c4c86a4b3e7ed27da9a -->
+<genxml unit="arsenic" prefix="ARS" block="ARS" title="Arsenic display back end register block" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport">
+  <doc>The display back end of the graphics subsystem: the register block the NT 4.0 miniport and display driver, the Windows 2000 display drivers, the firmware and the Linux frame buffer driver program. Offsets are from the start of the block, which the display miniport maps; all accesses are 32 bits wide and uncached, with a few byte loads of live words noted per register. The retrace latch is a separate 32-bit window outside the block and sits in its own address space. Access records what the drivers do to the register. Reset values are unknown for every register: no shipped software reads one before writing it, and both drivers only ever see a post-firmware state. Register names are the ones the public Linux header uses, which the miniport symbol tables also carry; field names are the Linux header names where it defines one and our own plain description otherwise.</doc>
+  <space name="retrace" unit="byte"/>
+  <enum name="did_buffer_mode">
+    <value name="both" value="3" grade="inferred"/>
+  </enum>
+  <enum name="did_pixel_type">
+    <value name="index8" value="0" grade="inferred"/>
+    <value name="index12" value="1" grade="inferred"/>
+    <value name="rg3b2" value="2" grade="inferred"/>
+    <value name="rgb4" value="3" grade="inferred"/>
+    <value name="argb5" value="4" grade="inferred"/>
+    <value name="rgb8" value="5" grade="inferred"/>
+    <value name="rgba5" value="6" grade="inferred"/>
+    <value name="rgb10" value="7" grade="inferred"/>
+  </enum>
+  <enum name="frame_depth">
+    <value name="bpp8" value="0" grade="established"/>
+    <value name="bpp16" value="1" grade="established"/>
+    <value name="bpp32" value="2" grade="established"/>
+  </enum>
+  <struct name="CTRLSTAT" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x0" access="rw" reset="unknown">
+    <doc>General control and status. The mode-set routine of the NT miniport writes the value with the clock selector at 3 as its last step; Linux writes the selector at 2 before programming and 3 afterwards when bit 25 reads set; the firmware does the same, and with a flat panel ORs in bit 26 instead of writing the selector 3. The firmware reads the low nibble as the chip revision (a real 320 shows display engine 002). Linux treats a clock selector below 2 as not scanning out from the internal dot clock.</doc>
+    <field name="pclksel" start="28" size="2" type="uint" grade="inferred"/>
+    <field name="bit26" start="26" size="1" type="uint" grade="unknown"/>
+    <field name="bit25" start="25" size="1" type="uint" grade="unknown"/>
+    <field name="sense_n" start="4" size="1" type="uint" grade="unknown"/>
+    <field name="chipid" start="0" size="4" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="DOTCLOCK" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x4" access="rw" reset="unknown">
+    <doc>Dot clock PLL. Software writes M-1 and N-1. The output is 27 MHz times M over N, divided by 2 to the P; that reproduces the clock column of 26 of the 27 rows of the NT mode table to within 1.4 percent. No lock bit is read and every wait is a plain delay. The NT miniport clears everything above bit 15, restarts the PLL through a fixed sequence with RUN set and cleared and 40 ms, one second and 100 ms delays, then writes the final value without RUN, waits 40 ms and sets RUN; Linux and the firmware write the final value with RUN and wait 11 ms; the NT 4.0 HAL clears the bits above 15 and writes the value with RUN with no wait.</doc>
+    <field name="run" start="20" size="1" type="uint" grade="inferred"/>
+    <field name="p" start="14" size="2" type="uint" grade="inferred"/>
+    <field name="n" start="8" size="6" type="uint" grade="inferred"/>
+    <field name="m" start="0" size="8" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="I2C" size="4" grade="established" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, bit-bang routines and the EDID reader" register="yes" offset="0x8" access="rw" reset="unknown">
+    <doc>CRT I2C lines (DDC). One register is both the write and the read-back location. Writing a bit as 1 pulls the line low and writing 0 lets it float high; a read returns 1 when the line is low. With no device both lines read 0. The EDID reader tries device write addresses 0xa2, 0xa6 and 0xa0 in that order.</doc>
+    <field name="scl" start="1" size="1" type="uint" grade="established"/>
+    <field name="sda" start="0" size="1" type="uint" grade="established"/>
+  </struct>
+  <struct name="SYSCLK" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only)" register="yes" offset="0xc" access="rw" reset="unknown">
+    <doc>System clock PLL. Neither driver, the firmware nor the HAL touches it; the Linux header names it as the system clock PLL control. Nothing shipped depends on its contents.</doc>
+  </struct>
+  <struct name="I2CFP" size="4" grade="established" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, bit-bang routines and the flat-panel status routines" register="yes" offset="0x10" access="rw" reset="unknown">
+    <doc>Flat-panel I2C lines, the same layout and sense as the CRT register. The flat-panel status device answers at write address 0x70 and read address 0x71; bits 7:5 of its status byte are the panel id (5 is the 1600 by 1024 digital panel) and bit 2 is power-save. The firmware reads it twice when the first try gets no answer, and when the CRT EDID reader finds a flat panel it uses this register instead of the CRT one.</doc>
+    <field name="scl" start="1" size="1" type="uint" grade="established"/>
+    <field name="sda" start="0" size="1" type="uint" grade="established"/>
+  </struct>
+  <struct name="ID" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, adapter attach check; the firmware self-test" register="yes" offset="0x14" access="r" reset="unknown">
+    <doc>Device id. The NT miniport compares the whole dword with the value in the ID constant and does not attach otherwise; the Windows 2000 drivers compare the low 16 bits; the firmware self-test compares the whole dword. A read of that value passes every reader (established as the check; what the value means is inferred).</doc>
+  </struct>
+  <struct name="CONFIG" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x18" access="rw" reset="unknown">
+    <doc>Output configuration. The NT miniport writes bits 7, 6, 5, 2 and 0, adds 1 when the mode asks for sync on green, always adds 3, and clears bit 0 when a flat panel answered unless the mode carries the key flag. Linux defines a frame-buffer value that sets bits 7, 5, 2, 1 and 0 but never writes the register; the firmware writes that value; the NT 4.0 HAL writes the same and ORs in bit 3. The Windows 2000 frame buffer driver writes bits 7, 5, 2 and 0, with bit 3 added for a flat panel, and its boot video driver one further value. Nothing shipped writes bit 6 or bit 1 on its own. A model should accept any value. The firmware self-test walks bits 7:5 and 3:0 (bit 4 is not tested).</doc>
+    <field name="ext_addr" start="7" size="1" type="uint" grade="inferred"/>
+    <field name="tilehist" start="6" size="1" type="uint" grade="inferred"/>
+    <field name="lendian" start="5" size="1" type="uint" grade="inferred"/>
+    <field name="fpenable" start="3" size="1" type="uint" grade="inferred"/>
+    <field name="vdac_pblank" start="2" size="1" type="uint" grade="inferred"/>
+    <field name="vdac_gsync" start="1" size="1" type="uint" grade="inferred"/>
+    <field name="vdac_enable" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="BIST" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x1c" access="rw" reset="unknown">
+    <doc>Built-in self-test. Neither driver reads it. The firmware self-test writes 0, polls bit 31 for completion and reports a failure when any of bits 27:24 is set. Release 1.0006 also compares the register with a mask of 0x0ff0ffff for zero. The layout of the failure bits is unknown.</doc>
+    <field name="done" start="31" size="1" type="uint" grade="inferred"/>
+    <field name="fail" start="24" size="4" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_XY" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, scan-line and mode-set routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10000" access="rw" reset="unknown">
+    <doc>Current dot coordinates. The live line is read from bits 23:12 (the scan-line poll); bit 31 is the timing counter freeze: it reads back what software set by writing the top bit and clears when software writes 0. Software tests the freeze bit with a byte load of the top byte, and the NT miniport, the Windows 2000 frame buffer driver, the NT 4.0 HAL and the firmware all do. The firmware's non-graphics console path writes the freeze bit alone.</doc>
+    <field name="vt_freeze" start="31" size="1" type="uint" grade="inferred"/>
+    <field name="y" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="x" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_XYMAX" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x10004" access="rw" reset="unknown">
+    <doc>Totals: horizontal total in 11:0 and vertical total in 23:12. Software writes 0 while it programs the other windows and the real totals afterwards.</doc>
+    <field name="vt_maxy" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_maxx" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_VSYNC" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x10008" access="rw" reset="unknown">
+    <doc>Vertical sync window, in lines.</doc>
+    <field name="vt_vsync_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_vsync_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_HSYNC" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x1000c" access="rw" reset="unknown">
+    <doc>Horizontal sync window, in dots.</doc>
+    <field name="vt_hsync_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_hsync_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_VBLANK" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x10010" access="rw" reset="unknown">
+    <doc>Vertical blank window, in lines.</doc>
+    <field name="vt_vblank_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_vblank_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_HBLANK" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10014" access="rw" reset="unknown">
+    <doc>Horizontal blank window. NT and the firmware write ON as the blank start less 5 (wrapped by the total) and OFF as the blank end less 3; Linux writes ON as the blank start.</doc>
+    <field name="vt_hblank_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_hblank_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_FLAGS" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set, power-state and retrace routines" register="yes" offset="0x10018" access="rw" reset="unknown">
+    <doc>Polarity and blanking flags of the timing signals. The mode set writes bit 2 for the horizontal flag of the mode record and bit 0 for the vertical one, after writing 0x40 and then 0. The power-state routine edits bits 1 and 3 for the standby, suspend and off states (bit 1 for standby, bit 3 for suspend, both for the rest); which signal each gates is inferred from the VESA states, bit 1 horizontal and bit 3 vertical. The retrace handler sets bit 6 in stereo modes and clears it again when free-running. The firmware self-test walks bits 6:0. The firmware does not write the register.</doc>
+    <field name="bit6" start="6" size="1" type="uint" grade="unknown"/>
+    <field name="vsync_off" start="3" size="1" type="uint" grade="inferred"/>
+    <field name="hdrv_invert" start="2" size="1" type="uint" grade="inferred"/>
+    <field name="hsync_off" start="1" size="1" type="uint" grade="inferred"/>
+    <field name="vdrv_invert" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_F2RF_LOCK" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set and retrace routines" register="yes" offset="0x1001c" access="rw" reset="unknown">
+    <doc>Frame-to-field and frame-lock line. The NT miniport writes the blank-start line in 23:12 and 0xfff in 11:0 for a mono mode, and the blank-start line in both halves for a stereo mode. Linux does not write it. The retrace handler reads it in stereo and discards the value; the read may have a side effect. Which half is which is inferred from the order of the names in the Linux header comment.</doc>
+    <field name="f2rf_y" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="framelock_y" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_INTR01" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, interrupt routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10020" access="rw" reset="unknown">
+    <doc>Scan-line interrupt lines 1 (11:0) and 0 (23:12). The NT miniport parks both at 0xfff and then arms line 0 at the screen height less an allowance, and line 1 at the height plus one (plus two with flat-panel timing). The firmware's hand-over routine parks both and writes 0x1fff. No shipped handler for these interrupts was found.</doc>
+    <field name="intr0_y" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="intr1_y" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_INTR23" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, interrupt routines" register="yes" offset="0x10024" access="rw" reset="unknown">
+    <doc>The same for scan-line interrupts 3 (11:0) and 2 (23:12). The NT miniport accepts an interrupt number below 4 and a line below 4096.</doc>
+    <field name="intr2_y" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="intr3_y" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="FP_HDRV" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10028" access="rw" reset="unknown">
+    <doc>Flat-panel horizontal drive window. With a panel the NT miniport sets OFF to the width; the firmware writes the panel's value for panel id 5 and leaves the low 12 bits at the width.</doc>
+    <field name="fp_hdrv_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="fp_hdrv_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="FP_VDRV" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x1002c" access="rw" reset="unknown">
+    <doc>Flat-panel vertical drive window. ON is 1 and OFF is the row count plus one, so a 1024-row panel leaves 0x401 in the low 12 bits, which the Windows 2000 drivers read back to recognise a panel. Without a panel OFF is 0.</doc>
+    <field name="fp_vdrv_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="fp_vdrv_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="FP_DE" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10030" access="rw" reset="unknown">
+    <doc>Flat-panel data enable window. The NT miniport writes 0xffffff; the firmware writes the panel's value, 0x640 in 11:0 for panel id 5.</doc>
+    <field name="fp_de_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="fp_de_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_HPIXEN" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x10034" access="rw" reset="unknown">
+    <doc>Internal horizontal pixel enable window. ON is the blank end less 19 (wrapped by the total) and OFF is ON plus the width less 2 (wrapped). Software writes 0xffffff first and the real value last.</doc>
+    <field name="vt_hpixen_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_hpixen_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_VPIXEN" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x10038" access="rw" reset="unknown">
+    <doc>Internal vertical pixel enable window. ON is the vertical blank end and OFF the vertical blank start.</doc>
+    <field name="vt_vpixen_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_vpixen_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_HCMAP" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x1003c" access="rw" reset="unknown">
+    <doc>Colour-map write window, horizontal: the blank start and end (Linux writes the end less 3).</doc>
+    <field name="vt_hcmap_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_hcmap_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VT_VCMAP" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine" register="yes" offset="0x10040" access="rw" reset="unknown">
+    <doc>Colour-map write window, vertical: the blank start and end.</doc>
+    <field name="vt_vcmap_on" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vt_vcmap_off" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="DID_START_XY" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10044" access="rw" reset="unknown">
+    <doc>Start position for the per-window id fetch. Y is the vertical blank start less the end less 1, a small negative number written as 12-bit two's complement; X is the horizontal blank end less 20, wrapped by the total. The Windows 2000 boot video driver writes 0xffffffff.</doc>
+    <field name="did_starty" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="did_startx" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="CRS_START_XY" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x10048" access="rw" reset="unknown">
+    <doc>Start position for the cursor. Y is one more than the id fetch's Y; X is the horizontal blank end less 54 (the Linux header calls 54 the cursor magic number), wrapped by the total.</doc>
+    <field name="crs_starty" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="crs_startx" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VC_START_XY" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x1004c" access="rw" reset="unknown">
+    <doc>Start position for the video capture. Y is the same as the id fetch's; X is the horizontal blank end less 4 (not wrapped).</doc>
+    <field name="vc_starty" start="12" size="12" type="uint" grade="inferred"/>
+    <field name="vc_startx" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="OVR_WIDTH_TILE" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x20000" access="rw" reset="unknown">
+    <doc>Overlay plane width. Whole 512-byte tile columns in 12:5 and the remainder in 32-byte units in 4:0; FIFO reset in bit 13 is pulsed set then clear. The overlay is always 8 bits per pixel. The NT miniport writes the full width then pulses; the firmware writes the FIFO reset bit alone, then 0, with the width zero. The firmware self-test walks bits 13:0.</doc>
+    <field name="ovr_fifo_reset" start="13" size="1" type="uint" grade="inferred"/>
+    <field name="ovr_width_tile" start="5" size="8" type="uint" grade="inferred"/>
+    <field name="ovr_rhs" start="0" size="5" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="OVR_INHWCTRL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, overlay stop routine" register="yes" offset="0x20004" access="r" reset="unknown">
+    <doc>Live copy of the overlay control word. The NT miniport, the firmware and the Windows 2000 frame buffer driver poll bit 0 with a byte load until it clears (the firmware polls it until it reads set); the NT 4.0 HAL reads it as a dword. Bit 0 must follow its shadow within the 200 ms the drivers allow.</doc>
+    <field name="ovr_dma_enable" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="OVR_CONTROL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, display driver overlay routines" register="yes" offset="0x20008" access="rw" reset="unknown">
+    <doc>Overlay control, the shadow word taken at the start of vertical blank. Bit 0 enables fetch; the rest is the overlay's tile-list pointer. The miniport loads the pointer without bit 0; the display driver writes the pointer with bit 0 set to start the fetch and the pointer alone to stop it. The firmware self-test walks bits 31:5 and 1:0.</doc>
+    <field name="ovr_tile_ptr" start="9" size="23" type="uint" grade="inferred"/>
+    <field name="ovr_dma_enable" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="FRM_SIZE_TILE" size="4" grade="established" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x30000" access="rw" reset="unknown">
+    <doc>Normal plane width and depth. Whole tile columns in 12:5 and the remainder in 32-byte units in 4:0, depth in 14:13, FIFO reset in bit 15 pulsed. A tile is 512 bytes by 128 lines, so a 32-bit mode has 128 pixels per tile column and a 16-bit mode 256. The NT miniport writes the value twice around the reset pulse; the firmware does the same. Linux, NT and the O2 display back end page agree. The firmware self-test walks bits 15:0.</doc>
+    <field name="frm_fifo_reset" start="15" size="1" type="uint" grade="established"/>
+    <field name="frm_depth" start="13" size="2" type="frame_depth" grade="established"/>
+    <field name="frm_width_tile" start="5" size="8" type="uint" grade="established"/>
+    <field name="frm_rhs" start="0" size="5" type="uint" grade="established"/>
+  </struct>
+  <struct name="FRM_SIZE_PIXEL" size="4" grade="established" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x30004" access="rw" reset="unknown">
+    <doc>Normal plane height in lines, in 31:16. The firmware self-test walks only those bits.</doc>
+    <field name="fb_height_pix" start="16" size="16" type="uint" grade="established"/>
+  </struct>
+  <struct name="FRM_INHWCTRL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, page-flip and stop routines" register="yes" offset="0x30008" access="r" reset="unknown">
+    <doc>Live copy of the normal plane control word. Completion of a page flip is this word matching the value written; stop waits for bit 0 to clear. Software reads bit 0 with a byte load in the NT miniport, the Windows 2000 frame buffer driver and the firmware, and as a dword in the Windows 2000 boot video driver and the NT 4.0 HAL; a model must answer a byte read with the matching byte. The firmware waits forever for bit 0 to read set after it starts the plane. Bit 0 must clear within 200 ms of its shadow and follow it at the start of vertical blank.</doc>
+    <field name="frm_tile_ptr" start="9" size="23" type="uint" grade="inferred"/>
+    <field name="frm_linear" start="1" size="1" type="uint" grade="inferred"/>
+    <field name="frm_dma_enable" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="FRM_CONTROL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, start, flip and stop routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x3000c" access="rw" reset="unknown">
+    <doc>Normal plane control, the shadow word taken at the start of vertical blank. Bit 0 enables fetch; bit 1 selects the linear form, in which the pointer is the frame buffer's physical address shifted right 9 and the line pitch is the tile-column count rounded up times 512 bytes (Linux, both Windows 2000 drivers and the firmware set it, the SGI 5.2.4 miniport does not and gives its tile list instead). In the tile-list form the pointer is the physical address of a 512-byte aligned list of 16-bit entries. Both stop DMA by clearing bit 0 and wait up to 20000 ten-microsecond steps for the live copy to follow. The firmware self-test walks bits 31:9 and 1:0.</doc>
+    <field name="frm_tile_ptr" start="9" size="23" type="uint" grade="inferred"/>
+    <field name="frm_linear" start="1" size="1" type="uint" grade="inferred"/>
+    <field name="frm_dma_enable" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="DID_INHWCTRL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch stop routine" register="yes" offset="0x40000" access="r" reset="unknown">
+    <doc>Live copy of the per-window id fetch control word. The NT miniport tests bit 16 with a byte load of the third byte. Linux names bit 0 and writes 0, which looks wrong against NT and the O2 display back end.</doc>
+    <field name="did_dma_enable" start="16" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="DID_CONTROL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, id fetch routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x40004" access="rw" reset="unknown">
+    <doc>Per-window id fetch control, the shadow word. The NT miniport writes 0 at mode set and clears bit 16 to stop; the firmware writes 0. The firmware self-test walks all 32 bits.</doc>
+    <field name="did_dma_enable" start="16" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="MODE_REGS" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Visual Workstation PROM 1.1005, display start-up code; Windows 2000 boot video and frame buffer drivers" register="yes" offset="0x48000" access="w" count="32" stride="4" reset="unknown">
+    <doc>Per-window mode table of 32 words, the window id table. Linux fills all 32 identically (8 bits per pixel as index, 16 as RGBA5, 32 as RGB8); the firmware and the Windows 2000 boot video driver write 3 into all 32; the Windows 2000 frame buffer driver writes only the first word, 3 for 8 bits per pixel and 0x17 for 32. The SGI 5.2.4 miniport does not write the table.</doc>
+    <field name="wid_typ" start="2" size="3" type="did_pixel_type" grade="inferred"/>
+    <field name="wid_buf" start="0" size="2" type="did_buffer_mode" grade="inferred"/>
+  </struct>
+  <struct name="CMAP" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, colour register routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x50000" access="w" count="6144" stride="4" reset="unknown">
+    <doc>Colour map, 6144 entries in the Linux declaration (the O2 display back end specification says 4608), one dword each. Both drivers write an entry as red in 31:24, green in 23:16 and blue in 15:8. Before every 32nd entry the NT miniport waits on the FIFO status; the Windows 2000 boot video driver waits before every entry.</doc>
+    <field name="red" start="24" size="8" type="uint" grade="inferred"/>
+    <field name="green" start="16" size="8" type="uint" grade="inferred"/>
+    <field name="blue" start="8" size="8" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="CM_FIFO" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, colour register routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x58000" access="r" reset="unknown">
+    <doc>Colour map FIFO status. Linux waits until it reads non-zero and then writes that many entries. The NT miniport, before every 32nd entry, spins until the low six bits read zero or the value reaches 0x30. The firmware waits while the low six bits are non-zero and above 0x10 is not reached. The Windows 2000 boot video driver needs the low six bits above 0x30. A value of 0x3f satisfies all four readers and 0x40 fails the boot video driver. Meaning inferred as a free-entry count.</doc>
+    <field name="free_entries" start="0" size="6" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="GMAP" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x60000" access="rw" count="256" stride="4" reset="unknown">
+    <doc>Gamma map, 256 dwords. Linux, the firmware and the Windows 2000 boot video driver write the identity ramp (i times 0x01010100). The NT miniport copies dwords from the registry value and from the private gamma control request, and reads the table back for that request. What the hardware does with the words is inferred.</doc>
+    <field name="red" start="24" size="8" type="uint" grade="inferred"/>
+    <field name="green" start="16" size="8" type="uint" grade="inferred"/>
+    <field name="blue" start="8" size="8" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="GMAP10" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines" register="yes" offset="0x68000" access="rw" count="1024" stride="4" reset="unknown">
+    <doc>10-bit gamma map, 1024 dwords. The same two NT paths write it when the size selector is 10 or the registry value is 4096 bytes long. The field layout of an entry is unknown.</doc>
+  </struct>
+  <struct name="CRS_POS" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x70000" access="rw" reset="unknown">
+    <doc>Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits.</doc>
+    <field name="y" start="16" size="12" type="uint" grade="inferred"/>
+    <field name="x" start="0" size="12" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="CRS_CTL" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x70004" access="rw" reset="unknown">
+    <doc>Cursor control. The display driver writes 1 to show and 0 to hide; the NT 4.0 HAL's stop clears bit 0 with a read-modify-write; every other writer writes 0. The firmware self-test walks bits 1:0, so bit 1 is implemented and unused.</doc>
+    <field name="bit1" start="1" size="1" type="uint" grade="unknown"/>
+    <field name="show" start="0" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="CRS_CMAP" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x70008" access="rw" count="3" stride="4" reset="unknown">
+    <doc>Cursor colours, three entries. The display driver writes each as red in 31:24, green in 23:16 and blue in 15:8 (the colour list's entries 1 to 3 go to these three words) and at start-up sets the first to 0 and the last to 0xffffff00; the firmware writes 0xffffff00 and 0xff000000 to the first two. The firmware self-test walks bits 31:8.</doc>
+    <field name="red" start="24" size="8" type="uint" grade="inferred"/>
+    <field name="green" start="16" size="8" type="uint" grade="inferred"/>
+    <field name="blue" start="8" size="8" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="CRS_GLYPH" size="4" grade="inferred" from="Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x78000" access="rw" count="64" stride="4" reset="unknown">
+    <doc>Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end.</doc>
+    <field name="px0" start="30" size="2" type="uint" grade="inferred"/>
+    <field name="px1" start="28" size="2" type="uint" grade="inferred"/>
+    <field name="px2" start="26" size="2" type="uint" grade="inferred"/>
+    <field name="px3" start="24" size="2" type="uint" grade="inferred"/>
+    <field name="px4" start="22" size="2" type="uint" grade="inferred"/>
+    <field name="px5" start="20" size="2" type="uint" grade="inferred"/>
+    <field name="px6" start="18" size="2" type="uint" grade="inferred"/>
+    <field name="px7" start="16" size="2" type="uint" grade="inferred"/>
+    <field name="px8" start="14" size="2" type="uint" grade="inferred"/>
+    <field name="px9" start="12" size="2" type="uint" grade="inferred"/>
+    <field name="px10" start="10" size="2" type="uint" grade="inferred"/>
+    <field name="px11" start="8" size="2" type="uint" grade="inferred"/>
+    <field name="px12" start="6" size="2" type="uint" grade="inferred"/>
+    <field name="px13" start="4" size="2" type="uint" grade="inferred"/>
+    <field name="px14" start="2" size="2" type="uint" grade="inferred"/>
+    <field name="px15" start="0" size="2" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="VC_0" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80000" access="rw" reset="unknown">
+    <doc>Video capture control word 0. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0x00ffffff, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="VC_1" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80004" access="rw" reset="unknown">
+    <doc>Video capture control word 1. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0x00ffffff, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="VC_2" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80008" access="rw" reset="unknown">
+    <doc>Video capture control word 2. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0x1f, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="VC_3" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x8000c" access="rw" reset="unknown">
+    <doc>Video capture control word 3. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test does not walk it.</doc>
+  </struct>
+  <struct name="VC_4" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80010" access="rw" reset="unknown">
+    <doc>Video capture control word 4. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="VC_5" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80014" access="rw" reset="unknown">
+    <doc>Video capture control word 5. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="VC_6" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80018" access="rw" reset="unknown">
+    <doc>Video capture control word 6. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="VC_7" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x8001c" access="rw" reset="unknown">
+    <doc>Video capture control word 7. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test does not walk it.</doc>
+  </struct>
+  <struct name="VC_8" size="4" grade="unknown" from="Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Visual Workstation PROM 1.1005, display start-up code (self-test masks)" register="yes" offset="0x80020" access="rw" reset="unknown">
+    <doc>Video capture control word 8. Neither driver touches the capture block; the Linux header names nine words. The video in and out ports raise interrupt pins 16 to 19 of the system interrupt controller. The firmware self-test walks the bits of mask 0xffffffff, the only statement of how many bits are implemented.</doc>
+  </struct>
+  <struct name="RETRACE_STATUS" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, retrace interrupt routine; SGI Visual Workstation PROM 1.1005, display start-up code" register="yes" offset="0x0" access="rw" space="retrace" reset="unknown">
+    <doc>Retrace latch in its own 32-bit window, wired to line 24 of the system interrupt controller (latched). The retrace handler reads it, writes back the bitwise complement of what it read and does not read it again; bit 1 set means a frame has ended and is counted. The firmware's hand-over routine writes the complement of the word the same way. That only clears the bits if a written 0 clears a bit and a written 1 leaves it, so the register is write-0-to-clear (inferred). What the other bits are is unknown. The name is ours: the register has no public name.</doc>
+    <field name="frame_end" start="1" size="1" type="uint" grade="inferred"/>
+  </struct>
+  <struct name="TILE_LIST_ENTRY" size="2" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines">
+    <doc>One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits.</doc>
+    <field name="tile_number" start="0" size="16" type="uint" grade="inferred"/>
+  </struct>
+  <constant name="CLOCK_REF_KHZ" value="0x6978" grade="inferred"/>
+  <constant name="COLOR_MAP_FIFO_FREE" value="0x3f" grade="inferred"/>
+  <constant name="CRS_MAGIC" value="0x36" grade="inferred"/>
+  <constant name="CURSOR_PARK_POS" value="0xfe00fe0" grade="inferred"/>
+  <constant name="ID_VALUE" value="0x666" grade="inferred"/>
+  <constant name="NORMAL_TILE_LISTS" value="0x4" grade="established"/>
+  <constant name="TILE_BYTES" value="0x10000" grade="established"/>
+  <constant name="TILE_HEIGHT_LINES" value="0x80" grade="established"/>
+  <constant name="TILE_LIST_ALIGN" value="0x200" grade="established"/>
+  <constant name="TILE_WIDTH_BYTES" value="0x200" grade="established"/>
+</genxml>
