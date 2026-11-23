@@ -1,7 +1,7 @@
 {
  "license": "BSD-3-Clause",
  "generator": "defs-gen 2",
- "input_sha256": "cd397dc4f087e54858a8a1cc695856a66d6cd1ebf7582c4c86a4b3e7ed27da9a",
+ "input_sha256": "649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b",
  "schema": "defs-flat/1",
  "source": "devices/arsenic/registers.toml",
  "profile": "public",
@@ -1126,7 +1126,7 @@
    "name": "frm_size_tile.frm_depth.bpp8",
    "value": 0,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1134,7 +1134,7 @@
    "name": "frm_size_tile.frm_depth.bpp16",
    "value": 1,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1142,7 +1142,7 @@
    "name": "frm_size_tile.frm_depth.bpp32",
    "value": 2,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1342,7 +1342,7 @@
    "name": "mode_regs.wid_typ.index8",
    "value": 0,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1350,7 +1350,7 @@
    "name": "mode_regs.wid_typ.index12",
    "value": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1358,7 +1358,7 @@
    "name": "mode_regs.wid_typ.rg3b2",
    "value": 2,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1366,7 +1366,7 @@
    "name": "mode_regs.wid_typ.rgb4",
    "value": 3,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1374,7 +1374,7 @@
    "name": "mode_regs.wid_typ.argb5",
    "value": 4,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1382,7 +1382,7 @@
    "name": "mode_regs.wid_typ.rgb8",
    "value": 5,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1390,7 +1390,7 @@
    "name": "mode_regs.wid_typ.rgba5",
    "value": 6,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1398,7 +1398,7 @@
    "name": "mode_regs.wid_typ.rgb10",
    "value": 7,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1415,7 +1415,7 @@
    "name": "mode_regs.wid_buf.both",
    "value": 3,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1972,7 +1972,7 @@
    "value": 27000,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1981,7 +1981,7 @@
    "value": 63,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1990,7 +1990,7 @@
    "value": 54,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -1999,7 +1999,7 @@
    "value": 266342368,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -2008,7 +2008,7 @@
    "value": 1638,
    "count": 1,
    "grade": "inferred",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -2017,7 +2017,7 @@
    "value": 4,
    "count": 1,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -2026,7 +2026,7 @@
    "value": 65536,
    "count": 1,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -2035,7 +2035,7 @@
    "value": 128,
    "count": 1,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -2044,7 +2044,7 @@
    "value": 512,
    "count": 1,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   },
   {
    "unit": "arsenic",
@@ -2053,7 +2053,7 @@
    "value": 512,
    "count": 1,
    "grade": "established",
-   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+   "from": "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
   }
  ]
 }

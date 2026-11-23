@@ -1,7 +1,7 @@
 /* generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 cd397dc4f087e54858a8a1cc695856a66d6cd1ebf7582c4c86a4b3e7ed27da9a */
+/* input sha256 649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b */
 /* Arsenic display back end register block */
 #ifndef ARS_GEN_H
 #define ARS_GEN_H
@@ -103,7 +103,7 @@
 #define ARS_ID_OFFSET                                0x14u /* inferred */
 
 /*
- * Output configuration. The NT miniport writes bits 7, 6, 5, 2 and 0, adds 1 when the mode asks for sync on green, always adds 3, and clears bit 0 when a flat panel answered unless the mode carries the key flag. Linux defines a frame-buffer value that sets bits 7, 5, 2, 1 and 0 but never writes the register; the firmware writes that value; the NT 4.0 HAL writes the same and ORs in bit 3. The Windows 2000 frame buffer driver writes bits 7, 5, 2 and 0, with bit 3 added for a flat panel, and its boot video driver one further value. Nothing shipped writes bit 6 or bit 1 on its own. A model should accept any value. The firmware self-test walks bits 7:5 and 3:0 (bit 4 is not tested).
+ * Output configuration. The NT miniport writes bits 7, 6, 5, 2 and 0, sets bit 0 when the mode asks for sync on green (the sync-on-green bit), always sets bit 3, and clears bit 0 when a flat panel answered unless the mode carries the key flag. Linux defines a frame-buffer value that sets bits 7, 5, 2, 1 and 0 but never writes the register; the firmware writes that value; the NT 4.0 HAL writes the same and ORs in bit 3. The Windows 2000 frame buffer driver writes bits 7, 5, 2 and 0, with bit 3 added for a flat panel, and its boot video driver one further value. Nothing shipped writes bit 6 or bit 1 on its own. A model should accept any value. The firmware self-test walks bits 7:5 and 3:0 (bit 4 is not tested).
  */
 /* config: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine */
 #define ARS_CONFIG_OFFSET                            0x18u /* inferred */
@@ -545,7 +545,7 @@
 #define ARS_CM_FIFO_FREE_ENTRIES_INPLACE             (ARS_CM_FIFO_FREE_ENTRIES_MASK << ARS_CM_FIFO_FREE_ENTRIES_SHIFT)
 
 /*
- * Gamma map, 256 dwords. Linux, the firmware and the Windows 2000 boot video driver write the identity ramp (i times 0x01010100). The NT miniport copies dwords from the registry value and from the private gamma control request, and reads the table back for that request. What the hardware does with the words is inferred.
+ * Gamma map, 256 dwords. Linux, the firmware and the Windows 2000 boot video driver write the identity ramp (i times 0x01010100). The NT miniport copies dwords from the registry value and from the private gamma control request, and reads the table back for that request. What the hardware does with the words is inferred. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* gmap: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines; SGI Visual Workstation PROM 1.1005, display start-up code */
 #define ARS_GMAP_OFFSET                              0x60000u /* inferred */
@@ -562,7 +562,7 @@
 #define ARS_GMAP_BLUE_INPLACE                        (ARS_GMAP_BLUE_MASK << ARS_GMAP_BLUE_SHIFT)
 
 /*
- * 10-bit gamma map, 1024 dwords. The same two NT paths write it when the size selector is 10 or the registry value is 4096 bytes long. The field layout of an entry is unknown.
+ * 10-bit gamma map, 1024 dwords. The same two NT paths write it when the size selector is 10 or the registry value is 4096 bytes long. The field layout of an entry is unknown. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* gmap10: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines */
 #define ARS_GMAP10_OFFSET                            0x68000u /* inferred */
@@ -570,7 +570,7 @@
 #define ARS_GMAP10_STRIDE                            4
 
 /*
- * Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits.
+ * Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* crs_pos: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code */
 #define ARS_CRS_POS_OFFSET                           0x70000u /* inferred */
@@ -582,7 +582,7 @@
 #define ARS_CRS_POS_X_INPLACE                        (ARS_CRS_POS_X_MASK << ARS_CRS_POS_X_SHIFT)
 
 /*
- * Cursor control. The display driver writes 1 to show and 0 to hide; the NT 4.0 HAL's stop clears bit 0 with a read-modify-write; every other writer writes 0. The firmware self-test walks bits 1:0, so bit 1 is implemented and unused.
+ * Cursor control. The display driver writes 1 to show and 0 to hide; the NT 4.0 HAL's stop clears bit 0 with a read-modify-write; every other writer writes 0. The firmware self-test walks bits 1:0, so bit 1 is implemented and unused. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* crs_ctl: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code */
 #define ARS_CRS_CTL_OFFSET                           0x70004u /* inferred */
@@ -594,7 +594,7 @@
 #define ARS_CRS_CTL_SHOW_INPLACE                     (ARS_CRS_CTL_SHOW_MASK << ARS_CRS_CTL_SHOW_SHIFT)
 
 /*
- * Cursor colours, three entries. The display driver writes each as red in 31:24, green in 23:16 and blue in 15:8 (the colour list's entries 1 to 3 go to these three words) and at start-up sets the first to 0 and the last to 0xffffff00; the firmware writes 0xffffff00 and 0xff000000 to the first two. The firmware self-test walks bits 31:8.
+ * Cursor colours, three entries. The display driver writes each as red in 31:24, green in 23:16 and blue in 15:8 (the colour list's entries 1 to 3 go to these three words) and at start-up sets the second to 0 and the third to 0xffffff00; the firmware writes 0xffffff00 and 0xff000000 to the first two. The firmware self-test walks bits 31:8. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* crs_cmap: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code */
 #define ARS_CRS_CMAP_OFFSET                          0x70008u /* inferred */
@@ -611,7 +611,7 @@
 #define ARS_CRS_CMAP_BLUE_INPLACE                    (ARS_CRS_CMAP_BLUE_MASK << ARS_CRS_CMAP_BLUE_SHIFT)
 
 /*
- * Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end.
+ * Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* crs_glyph: rw32, reset unknown; Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code */
 #define ARS_CRS_GLYPH_OFFSET                         0x78000u /* inferred */
@@ -730,7 +730,7 @@
 #define ARS_RETRACE_STATUS_FRAME_END_INPLACE         (ARS_RETRACE_STATUS_FRAME_END_MASK << ARS_RETRACE_STATUS_FRAME_END_SHIFT)
 
 /*
- * One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits.
+ * One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits. The driver writes are established; the grade is for what the hardware does with them.
  */
 /* word TILE_LIST_ENTRY: 16 bits; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines */
 #define ARS_TILE_LIST_ENTRY_WIDTH                    16 /* inferred */

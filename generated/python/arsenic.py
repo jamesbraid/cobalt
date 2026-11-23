@@ -1,7 +1,7 @@
 """generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source
 SPDX-License-Identifier: BSD-3-Clause
 defs-gen 2
-input sha256 cd397dc4f087e54858a8a1cc695856a66d6cd1ebf7582c4c86a4b3e7ed27da9a
+input sha256 649c0f10a1e62af17329ca6674c6795d2517476dfa6eb6c6a864e1efd72dac9b
 Arsenic display back end register block"""
 
 UNIT = 'arsenic'

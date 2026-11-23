@@ -2,12 +2,9 @@ unit = "arsenic"
 prefix = "ARS"
 block = "ARS"
 title = "Arsenic display back end register block"
-doc = "The display back end of the graphics subsystem: the register block the NT 4.0 miniport and display driver, the Windows 2000 display drivers, the firmware and the Linux frame buffer driver program. Offsets are from the start of the block, which the display miniport maps; all accesses are 32 bits wide and uncached, with a few byte loads of live words noted per register. The retrace latch is a separate 32-bit window outside the block and sits in its own address space. Access records what the drivers do to the register. Reset values are unknown for every register: no shipped software reads one before writing it, and both drivers only ever see a post-firmware state. Register names are the ones the public Linux header uses, which the miniport symbol tables also carry; field names are the Linux header names where it defines one and our own plain description otherwise."
-from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport"
+doc = "The display back end of the graphics subsystem: the register block the NT 4.0 miniport and display driver, the Windows 2000 display drivers, the firmware and the Linux frame buffer driver program. Offsets are from the start of the block, which the display miniport maps; all accesses are 32 bits wide and uncached, with a few byte loads of live words noted per register. The retrace latch is a separate 32-bit window outside the block and sits in its own address space. Access records what the drivers do to the register. Reset values are unknown for every register: no shipped software reads one before writing it, and both drivers only ever see a post-firmware state. A register's grade is the grade of its hardware meaning; what the drivers write is recorded in its doc, and where a doc says the driver writes are established, that holds whatever the grade says. Register names are the ones the public Linux header uses, which the miniport symbol tables also carry; field names are the Linux header names where it defines one and our own plain description otherwise."
+from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport and its program database (the gberegs structure); Linux frame buffer driver header (struct asregs and the DBE definitions)"
 public_from = ["SGI Cobalt Graphics Driver 5.2.4", "Linux frame buffer driver", "SGI Visual Workstation PROM 1.1005"]
-# Register names are the shipped 5.2.4 pack's own, from the miniport program database (sgcomp.pdb, the gberegs structure), and match the
-# public Linux struct asregs (include/video/sgivw.h). The defs tooling has no name_source value for a shipped binary, so "ours" stands in.
-# Field names are the Linux header's where it defines one; the rest, and the retrace register, are our own plain description.
 name_source = "ours"
 
 [spaces.retrace]
@@ -96,7 +93,7 @@ width = 32
 access = "rw"
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, mode-set routine"
-doc = "Output configuration. The NT miniport writes bits 7, 6, 5, 2 and 0, adds 1 when the mode asks for sync on green, always adds 3, and clears bit 0 when a flat panel answered unless the mode carries the key flag. Linux defines a frame-buffer value that sets bits 7, 5, 2, 1 and 0 but never writes the register; the firmware writes that value; the NT 4.0 HAL writes the same and ORs in bit 3. The Windows 2000 frame buffer driver writes bits 7, 5, 2 and 0, with bit 3 added for a flat panel, and its boot video driver one further value. Nothing shipped writes bit 6 or bit 1 on its own. A model should accept any value. The firmware self-test walks bits 7:5 and 3:0 (bit 4 is not tested)."
+doc = "Output configuration. The NT miniport writes bits 7, 6, 5, 2 and 0, sets bit 0 when the mode asks for sync on green (the sync-on-green bit), always sets bit 3, and clears bit 0 when a flat panel answered unless the mode carries the key flag. Linux defines a frame-buffer value that sets bits 7, 5, 2, 1 and 0 but never writes the register; the firmware writes that value; the NT 4.0 HAL writes the same and ORs in bit 3. The Windows 2000 frame buffer driver writes bits 7, 5, 2 and 0, with bit 3 added for a flat panel, and its boot video driver one further value. Nothing shipped writes bit 6 or bit 1 on its own. A model should accept any value. The firmware self-test walks bits 7:5 and 3:0 (bit 4 is not tested)."
 [registers.config.fields]
 vdac_enable = { bits = [0, 0], grade = "inferred", doc = "video DAC enable" }
 vdac_gsync = { bits = [1, 1], grade = "inferred", doc = "sync on green" }
@@ -372,7 +369,7 @@ from = "Linux frame buffer driver for the display back end, register block heade
 doc = "Overlay control, the shadow word taken at the start of vertical blank. Bit 0 enables fetch; the rest is the overlay's tile-list pointer. The miniport loads the pointer without bit 0; the display driver writes the pointer with bit 0 set to start the fetch and the pointer alone to stop it. The firmware self-test walks bits 31:5 and 1:0."
 [registers.ovr_control.fields]
 ovr_dma_enable = { bits = [0, 0], grade = "inferred", doc = "overlay fetch enable" }
-ovr_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "physical address of the overlay tile list, 512-byte aligned; the field span is by analogy with the normal plane" }
+ovr_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "address bits 31:9 of the overlay tile list, 512-byte aligned; the span is by analogy with the normal plane" }
 
 [registers.frm_size_tile]
 offset = 0x30000
@@ -406,8 +403,8 @@ from = "Linux frame buffer driver for the display back end, register block heade
 doc = "Live copy of the normal plane control word. Completion of a page flip is this word matching the value written; stop waits for bit 0 to clear. Software reads bit 0 with a byte load in the NT miniport, the Windows 2000 frame buffer driver and the firmware, and as a dword in the Windows 2000 boot video driver and the NT 4.0 HAL; a model must answer a byte read with the matching byte. The firmware waits forever for bit 0 to read set after it starts the plane. Bit 0 must clear within 200 ms of its shadow and follow it at the start of vertical blank."
 [registers.frm_inhwctrl.fields]
 frm_dma_enable = { bits = [0, 0], grade = "inferred", doc = "normal plane fetch active" }
-frm_linear = { bits = [1, 1], grade = "inferred", doc = "linear form, copy of the shadow" }
-frm_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "copy of the shadow's address field" }
+frm_linear = { bits = [1, 1], grade = "inferred", doc = "linear form, copy of the shadow; by analogy with the normal plane" }
+frm_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "address bits 31:9, copy of the shadow's address field; by analogy with the normal plane" }
 
 [registers.frm_control]
 offset = 0x3000c
@@ -419,7 +416,7 @@ doc = "Normal plane control, the shadow word taken at the start of vertical blan
 [registers.frm_control.fields]
 frm_dma_enable = { bits = [0, 0], grade = "inferred", doc = "normal plane fetch enable" }
 frm_linear = { bits = [1, 1], grade = "inferred", doc = "linear form" }
-frm_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "tile list address, or the frame buffer address in the linear form, shifted right 9" }
+frm_tile_ptr = { bits = [31, 9], grade = "inferred", doc = "address bits 31:9: the tile list address, or the frame buffer address in the linear form, shifted right 9" }
 
 [registers.did_inhwctrl]
 offset = 0x40000
@@ -486,7 +483,7 @@ count = 256
 stride = 4
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines; SGI Visual Workstation PROM 1.1005, display start-up code"
-doc = "Gamma map, 256 dwords. Linux, the firmware and the Windows 2000 boot video driver write the identity ramp (i times 0x01010100). The NT miniport copies dwords from the registry value and from the private gamma control request, and reads the table back for that request. What the hardware does with the words is inferred."
+doc = "Gamma map, 256 dwords. Linux, the firmware and the Windows 2000 boot video driver write the identity ramp (i times 0x01010100). The NT miniport copies dwords from the registry value and from the private gamma control request, and reads the table back for that request. What the hardware does with the words is inferred. The driver writes are established; the grade is for what the hardware does with them."
 [registers.gmap.fields]
 red = { bits = [31, 24], grade = "inferred" }
 green = { bits = [23, 16], grade = "inferred" }
@@ -500,7 +497,7 @@ count = 1024
 stride = 4
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver (name only); SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, gamma routines"
-doc = "10-bit gamma map, 1024 dwords. The same two NT paths write it when the size selector is 10 or the registry value is 4096 bytes long. The field layout of an entry is unknown."
+doc = "10-bit gamma map, 1024 dwords. The same two NT paths write it when the size selector is 10 or the registry value is 4096 bytes long. The field layout of an entry is unknown. The driver writes are established; the grade is for what the hardware does with them."
 
 [registers.crs_pos]
 offset = 0x70000
@@ -508,7 +505,7 @@ width = 32
 access = "rw"
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
-doc = "Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits."
+doc = "Cursor position. The display driver writes the pointer position less the hot spot, masked to 12 bits, x in 11:0 and y in 27:16; a hidden cursor is parked with the value of the cursor park constant. Every other writer only writes 0. What the hardware does with the hot-spot-adjusted position is inferred from the O2 display back end. The firmware self-test walks all 32 bits. The driver writes are established; the grade is for what the hardware does with them."
 [registers.crs_pos.fields]
 x = { bits = [11, 0], grade = "inferred", doc = "horizontal position less hot spot" }
 y = { bits = [27, 16], grade = "inferred", doc = "vertical position less hot spot" }
@@ -519,7 +516,7 @@ width = 32
 access = "rw"
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
-doc = "Cursor control. The display driver writes 1 to show and 0 to hide; the NT 4.0 HAL's stop clears bit 0 with a read-modify-write; every other writer writes 0. The firmware self-test walks bits 1:0, so bit 1 is implemented and unused."
+doc = "Cursor control. The display driver writes 1 to show and 0 to hide; the NT 4.0 HAL's stop clears bit 0 with a read-modify-write; every other writer writes 0. The firmware self-test walks bits 1:0, so bit 1 is implemented and unused. The driver writes are established; the grade is for what the hardware does with them."
 [registers.crs_ctl.fields]
 show = { bits = [0, 0], grade = "inferred", doc = "cursor visible" }
 bit1 = { bits = [1, 1], grade = "unknown", doc = "stored but no shipped writer sets it" }
@@ -532,7 +529,7 @@ count = 3
 stride = 4
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
-doc = "Cursor colours, three entries. The display driver writes each as red in 31:24, green in 23:16 and blue in 15:8 (the colour list's entries 1 to 3 go to these three words) and at start-up sets the first to 0 and the last to 0xffffff00; the firmware writes 0xffffff00 and 0xff000000 to the first two. The firmware self-test walks bits 31:8."
+doc = "Cursor colours, three entries. The display driver writes each as red in 31:24, green in 23:16 and blue in 15:8 (the colour list's entries 1 to 3 go to these three words) and at start-up sets the second to 0 and the third to 0xffffff00; the firmware writes 0xffffff00 and 0xff000000 to the first two. The firmware self-test walks bits 31:8. The driver writes are established; the grade is for what the hardware does with them."
 [registers.crs_cmap.fields]
 red = { bits = [31, 24], grade = "inferred" }
 green = { bits = [23, 16], grade = "inferred" }
@@ -546,7 +543,7 @@ count = 64
 stride = 4
 grade = "inferred"
 from = "Linux frame buffer driver for the display back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display driver, pointer routines; SGI Visual Workstation PROM 1.1005, display start-up code"
-doc = "Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end."
+doc = "Cursor glyph, 64 dwords: a 32 by 32 pointer, two dwords per row, 2 bits per pixel packed from the top of the dword, 0 for transparent and 1 to 3 for the entry of the cursor colour list. The display driver rewrites all 64 for a pointer of at most 32 by 32 pixels and three colours and draws any other pointer in software. The scan order and the colour index are inferred from the O2 display back end. The driver writes are established; the grade is for what the hardware does with them."
 [registers.crs_glyph.fields]
 px0 = { bits = [31, 30], grade = "inferred" }
 px1 = { bits = [29, 28], grade = "inferred" }
@@ -652,7 +649,7 @@ frame_end = { bits = [1, 1], grade = "inferred", doc = "a frame has ended" }
 width = 16
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, frame start and flip routines"
-doc = "One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits."
+doc = "One entry of a tile list in main memory: the tile's first 4 KB page frame number shifted right 4 and truncated to 16 bits, so bit 15 is physical address bit 31 and no bit is an attribute. All four routines that write a list store exactly this. A list is 512-byte aligned, non-cached and (height + 127) / 128 rows of one entry per 64 KB tile; lists 0 to 3 belong to the normal plane (the current one flips by exclusive-or with 1) and list 4 to the overlay. That the engine reads an entry this way is inferred from the O2 display back end, whose tile pointer is 16 bits. The driver writes are established; the grade is for what the hardware does with them."
 [words.TILE_LIST_ENTRY.fields]
 tile_number = { bits = [15, 0], grade = "inferred", doc = "64 KB tile number" }
 

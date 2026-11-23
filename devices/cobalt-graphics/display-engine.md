@@ -22,7 +22,7 @@ any register: neither driver reads one before writing, and both only ever see a 
 | `0x004` | dotclock | PLL: `M` `[7:0]`, `N` `[13:8]`, `P` `[15:14]`, `RUN` `[20]`. Both drivers write `M-1` and `N-1`. Output is 27 MHz times `M` over `N`, divided by 2 to the `P`; reproduces the clock column of 26 of the 27 NT table rows to within 1.4 percent (see below) | L, N | inferred (fields), inferred (formula) |
 | `0x008` | i2c | CRT I2C lines (DDC). NT's `CoDDC_GetEDID` reads an EDID over it, or over `i2cfp` when a flat panel answered the probe. Bit 0 SDA, bit 1 SCL, 1 pulls the line low (see below) | L, N | established (NT) |
 | `0x00c` | sysclk | system clock PLL. Neither driver touches it | L (name only) | unknown |
-| `0x010` | i2cfp | flat-panel I2C lines, bit-banged. See below | L, N | inferred |
+| `0x010` | i2cfp | flat-panel I2C lines, bit-banged. See below | L, N | established (NT) |
 | `0x014` | id | NT refuses to attach unless it reads `0x666` | N | inferred |
 | `0x018` | config | see below | L, N | inferred |
 | `0x01c` | bist | internal self-test. Neither driver reads it; the PROM's self-test writes 0 and polls bit 31 for completion, then reports a failure when bits 27:24 are set ([prom-init.md](prom-init.md#the-id-check-and-the-register-self-test)) | L (name only), PROM | inferred |
