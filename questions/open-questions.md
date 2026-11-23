@@ -131,7 +131,7 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   colour formats under blend. Nothing in the driver depends on them beyond the codes.
 - **Depth.** The 16-bit depth is described by SGI's white paper as floating point and the 24-bit as fixed point; the format
   field (`DEPTH_STENCIL_BUFFER_DESC`) has a type bit and a two-bit depth and the driver does not say which representation each is. The
-  `equal_range` field of the depth word is never set. Whether stencil shares the 32-bit word with 24-bit depth is not shown.
+  `equal_window` field of the depth word is never set. Whether stencil shares the 32-bit word with 24-bit depth is not shown.
 - **The occlusion count.** `GL_SGIX_depth_pass_instrument` drives bits 28:27 of the depth-test word; where the count is
   written and how `glReadInstrumentsSGIX` collects it were not followed (`0x6904366a`, `0x6904371a`, `0x69043798`).
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.

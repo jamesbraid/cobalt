@@ -1,7 +1,7 @@
 /* generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 2 */
-/* input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140 */
+/* input sha256 40f341e6f3e5ecb9130c295b7acf23a6bcfe5c990967fc3b5f7bc2ac1002cb50 */
 /* Rendering engine register window */
 #ifndef RENG_GEN_H
 #define RENG_GEN_H
@@ -21,15 +21,15 @@
 #define RENG_TLB_ENTRY_PAGE_FRAME_INPLACE            (RENG_TLB_ENTRY_PAGE_FRAME_MASK << RENG_TLB_ENTRY_PAGE_FRAME_SHIFT)
 
 /*
- * Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.
+ * Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with row_tiles tiles per row, whose pages start at the translation-table slot named by slot; a user buffer mapped linearly sets bit 19 (row_tiles 32) with the tile_pages_log4 bits kept, and the packet pool sets pool_flag and row_tiles 1.
  */
 /* buffer_desc: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers */
 #define RENG_BUFFER_DESC_OFFSET                      0xc000u /* inferred */
 #define RENG_BUFFER_DESC_COUNT                       64
 #define RENG_BUFFER_DESC_STRIDE                      8
-#define RENG_BUFFER_DESC_OFFSET_SHIFT                21 /* inferred */
-#define RENG_BUFFER_DESC_OFFSET_MASK                 0x7ffu
-#define RENG_BUFFER_DESC_OFFSET_INPLACE              (RENG_BUFFER_DESC_OFFSET_MASK << RENG_BUFFER_DESC_OFFSET_SHIFT)
+#define RENG_BUFFER_DESC_SLOT_SHIFT                  21 /* inferred */
+#define RENG_BUFFER_DESC_SLOT_MASK                   0x7ffu
+#define RENG_BUFFER_DESC_SLOT_INPLACE                (RENG_BUFFER_DESC_SLOT_MASK << RENG_BUFFER_DESC_SLOT_SHIFT)
 #define RENG_BUFFER_DESC_ROW_TILES_SHIFT             14 /* inferred */
 #define RENG_BUFFER_DESC_ROW_TILES_MASK              0x7fu
 #define RENG_BUFFER_DESC_ROW_TILES_INPLACE           (RENG_BUFFER_DESC_ROW_TILES_MASK << RENG_BUFFER_DESC_ROW_TILES_SHIFT)
@@ -281,7 +281,7 @@
 #define RENG_LIGHTING_FLAGS_LIT_ON_INPLACE           (RENG_LIGHTING_FLAGS_LIT_ON_MASK << RENG_LIGHTING_FLAGS_LIT_ON_SHIFT)
 
 /*
- * Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.
+ * Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit.
  */
 /* word NODE_LINK: 32 bits; SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers */
 #define RENG_NODE_LINK_WIDTH                         32 /* inferred */

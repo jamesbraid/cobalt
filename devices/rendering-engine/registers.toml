@@ -30,9 +30,9 @@ count = 64
 stride = 8
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers"
-doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1."
+doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with row_tiles tiles per row, whose pages start at the translation-table slot named by slot; a user buffer mapped linearly sets bit 19 (row_tiles 32) with the tile_pages_log4 bits kept, and the packet pool sets pool_flag and row_tiles 1."
 [registers.buffer_desc.fields]
-offset = { bits = [31, 21], grade = "inferred" }
+slot = { bits = [31, 21], grade = "inferred", doc = "first translation-table slot of the buffer" }
 row_tiles = { bits = [20, 14], grade = "inferred" }
 tile_size_sel = { bits = [13, 13], grade = "inferred", doc = "0 for a 128-byte tile, 1 for 512 bytes" }
 tile_pages_log4 = { bits = [12, 10], grade = "inferred", doc = "log base 4 of the pages in one tile: 1, 4, 16, 64 or 256 pages give 0 to 4" }
@@ -48,7 +48,7 @@ doc = "Starts the engine on a packet position and reports where it is. A write i
 [registers.exec_ctl.fields]
 pkt_pos = { bits = [31, 12], grade = "inferred" }
 start = { bits = [11, 11], grade = "inferred", doc = "set in every write that starts or restarts a node, clear at start-up" }
-idle_wait = { bits = [10, 0], grade = "inferred", doc = "the driver keeps this value in a per-adapter field" }
+idle_wait = { bits = [10, 0], grade = "inferred", doc = "the driver writes 2 here with every start and keeps the value in a per-adapter setting; what the engine does with the count is unknown" }
 
 [registers.doorbell]
 offset = 0x10008
@@ -143,8 +143,8 @@ grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, context switch"
 doc = "Written with the outgoing context's dump offset (a per-context field the driver keeps for the purpose) when another context is started, before the new context's start word."
 
-# Payload words. Names are ours; where one equals an OpenGL parameter name (min_filter, wrap_s, cull_face)
-# it is that public name. Bit positions were checked against the driver's type declarations; the grade is for the layout.
+# Payload words. Names are ours; where one equals an OpenGL parameter name (min_filter, mag_filter, wrap_s, wrap_t, cull_face,
+# front_face, line_width, lod_bias, max_level, min_level, two_sided) it is that public name. Bit positions were checked against the driver's type declarations; the grade is for the layout.
 # Packet header values are in the packet-set page.
 
 [words.PIXEL_PIPE_FLAGS]
@@ -339,7 +339,7 @@ type = { bits = [28, 25], grade = "inferred" }
 width = 32
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers"
-doc = "Link word of a packet node: bit 0 set means the engine owns the node and clears it when done."
+doc = "Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit."
 [words.NODE_LINK.fields]
 next = { bits = [31, 12], grade = "inferred" }
 size = { bits = [11, 3], grade = "inferred" }
@@ -361,7 +361,7 @@ WINDOW_PHYS = { value = 0xc8000000, grade = "inferred" }
 WINDOW_SIZE = { value = 0x19000, grade = "inferred" }
 
 # Codes the OpenGL driver writes into the words above; the GL meaning is the driver's, the hardware's reading is inferred.
-# Texture and colour-buffer type codes (tex_type, with buf_depth).
+# Texture and colour-buffer type codes (texture_kind, with size_class).
 TEXTYPE_INDEX8 = { value = 0, grade = "inferred", doc = "8-bit colour index, depth 0; display driver colour format word 0" }
 TEXTYPE_RGB5A1 = { value = 2, grade = "inferred", doc = "16 bits, 5-5-5-1, depth 1" }
 TEXTYPE_RGBA4 = { value = 3, grade = "inferred", doc = "16 bits, 4-4-4-4, depth 1" }
@@ -400,10 +400,10 @@ BLEND_OP_MIN = { value = 1, grade = "inferred" }
 BLEND_OP_MAX = { value = 2, grade = "inferred" }
 BLEND_OP_SUBTRACT = { value = 3, grade = "inferred" }
 BLEND_OP_REVERSE_SUBTRACT = { value = 4, grade = "inferred" }
-# Blend factors (src_func and dst_func share the codes; 2 and 3 name the other operand's colour).
+# Blend factors (src_factor and dst_factor share the codes; 2 and 3 name the other operand's colour).
 BLEND_ZERO = { value = 0, grade = "inferred" }
 BLEND_ONE = { value = 1, grade = "inferred" }
-BLEND_OTHER_COLOR = { value = 2, grade = "inferred", doc = "destination colour in src_func, source colour in dst_func" }
+BLEND_OTHER_COLOR = { value = 2, grade = "inferred", doc = "destination colour in src_factor, source colour in dst_factor" }
 BLEND_ONE_MINUS_OTHER_COLOR = { value = 3, grade = "inferred" }
 BLEND_SRC_ALPHA = { value = 4, grade = "inferred" }
 BLEND_ONE_MINUS_SRC_ALPHA = { value = 5, grade = "inferred" }
@@ -413,7 +413,7 @@ BLEND_CONSTANT_COLOR = { value = 8, grade = "inferred" }
 BLEND_ONE_MINUS_CONSTANT_COLOR = { value = 9, grade = "inferred" }
 BLEND_CONSTANT_ALPHA = { value = 10, grade = "inferred" }
 BLEND_ONE_MINUS_CONSTANT_ALPHA = { value = 11, grade = "inferred" }
-BLEND_SRC_ALPHA_SATURATE = { value = 12, grade = "inferred", doc = "src_func only" }
+BLEND_SRC_ALPHA_SATURATE = { value = 12, grade = "inferred", doc = "src_factor only" }
 # Comparison functions (alpha test func, depth test func, stencil func): the GL enum minus 0x200.
 CMP_NEVER = { value = 0, grade = "inferred" }
 CMP_LESS = { value = 1, grade = "inferred" }
@@ -423,7 +423,7 @@ CMP_GREATER = { value = 4, grade = "inferred" }
 CMP_NOTEQUAL = { value = 5, grade = "inferred" }
 CMP_GEQUAL = { value = 6, grade = "inferred" }
 CMP_ALWAYS = { value = 7, grade = "inferred" }
-# Stencil operations (sfail, dpfail, dppass).
+# Stencil operations (stencil_fail_op, depth_fail_op, pass_op).
 STENCIL_KEEP = { value = 0, grade = "inferred" }
 STENCIL_ZERO = { value = 1, grade = "inferred" }
 STENCIL_REPLACE = { value = 2, grade = "inferred" }

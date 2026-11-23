@@ -1,7 +1,7 @@
 {
  "license": "BSD-3-Clause",
  "generator": "defs-gen 2",
- "input_sha256": "a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140",
+ "input_sha256": "40f341e6f3e5ecb9130c295b7acf23a6bcfe5c990967fc3b5f7bc2ac1002cb50",
  "schema": "defs-flat/1",
  "source": "devices/rendering-engine/registers.toml",
  "profile": "public",
@@ -46,7 +46,7 @@
   {
    "unit": "rendering_engine",
    "kind": "field",
-   "name": "buffer_desc.offset",
+   "name": "buffer_desc.slot",
    "hi": 31,
    "lo": 21,
    "grade": "inferred",

@@ -1,7 +1,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140 -->
+<!-- input sha256 40f341e6f3e5ecb9130c295b7acf23a6bcfe5c990967fc3b5f7bc2ac1002cb50 -->
 
 # Rendering engine register window
 
@@ -41,13 +41,13 @@ Array of 2048 registers, stride 8.
 
 ### Register `buffer_desc`
 
-Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.
+Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with row_tiles tiles per row, whose pages start at the translation-table slot named by slot; a user buffer mapped linearly sets bit 19 (row_tiles 32) with the tile_pages_log4 bits kept, and the packet pool sets pool_flag and row_tiles 1.
 
 Array of 64 registers, stride 8.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 31:21 | `offset` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers |  |
+| 31:21 | `slot` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers | first translation-table slot of the buffer |
 | 20:14 | `row_tiles` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers |  |
 | 13 | `tile_size_sel` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers | 0 for a 128-byte tile, 1 for 512 bytes |
 | 12:10 | `tile_pages_log4` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers | log base 4 of the pages in one tile: 1, 4, 16, 64 or 256 pages give 0 to 4 |
@@ -61,7 +61,7 @@ Starts the engine on a packet position and reports where it is. A write is the p
 |---|---|---|---|---|---|
 | 31:12 | `pkt_pos` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines |  |
 | 11 | `start` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines | set in every write that starts or restarts a node, clear at start-up |
-| 10:0 | `idle_wait` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines | the driver keeps this value in a per-adapter field |
+| 10:0 | `idle_wait` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up, context switch and stop-event routines | the driver writes 2 here with every start and keeps the value in a per-adapter setting; what the engine does with the count is unknown |
 
 ### Register `doorbell`
 
@@ -235,7 +235,7 @@ Lighting mode word.
 
 ### Word `NODE_LINK`
 
-Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.
+Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
@@ -383,9 +383,9 @@ Transform mode word , the draw flags word.
 | `BLEND_OP_MIN` | 0x1 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |
 | `BLEND_OP_REVERSE_SUBTRACT` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |
 | `BLEND_OP_SUBTRACT` | 0x3 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |
-| `BLEND_OTHER_COLOR` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations | destination colour in src_func, source colour in dst_func |
+| `BLEND_OTHER_COLOR` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations | destination colour in src_factor, source colour in dst_factor |
 | `BLEND_SRC_ALPHA` | 0x4 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |
-| `BLEND_SRC_ALPHA_SATURATE` | 0xc | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations | src_func only |
+| `BLEND_SRC_ALPHA_SATURATE` | 0xc | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations | src_factor only |
 | `BLEND_ZERO` | 0x0 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |
 | `CMP_ALWAYS` | 0x7 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |
 | `CMP_EQUAL` | 0x2 | inferred | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations |  |

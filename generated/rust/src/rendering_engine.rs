@@ -1,7 +1,7 @@
 // generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 2
-// input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140
+// input sha256 40f341e6f3e5ecb9130c295b7acf23a6bcfe5c990967fc3b5f7bc2ac1002cb50
 // Rendering engine register window
 #![allow(dead_code)]
 
@@ -28,7 +28,7 @@ pub mod buffer_desc {
     pub const OFFSET: u64 = 0xc000;
     pub const COUNT: u32 = 64;
     pub const STRIDE: u64 = 8;
-    pub mod offset { // bits 31:21, inferred
+    pub mod slot { // bits 31:21, inferred
         pub const SHIFT: u32 = 21;
         pub const MASK: u32 = 0x7ff;
         pub const fn get(v: u32) -> u32 {
@@ -607,7 +607,7 @@ pub mod lighting_flags {
         }
     }
 }
-/// Link word of a packet node: bit 0 set means the engine owns the node and clears it when done. (inferred)
+/// Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit (inferred)
 pub mod node_link {
     pub const WIDTH: u32 = 32;
     pub mod next { // bits 31:12, inferred

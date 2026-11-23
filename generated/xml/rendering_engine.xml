@@ -2,7 +2,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 2 -->
-<!-- input sha256 a0cc7c2323a02cd7632d1b2b401f0bf9bf2e7ac561c31fed8a1d794f8c905140 -->
+<!-- input sha256 40f341e6f3e5ecb9130c295b7acf23a6bcfe5c990967fc3b5f7bc2ac1002cb50 -->
 <genxml unit="rendering_engine" prefix="RENG" block="RENG" title="Rendering engine register window" from="SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, kernel driver and display driver code, with the bit layouts of the register words checked against the driver's type declarations">
   <doc>The registers of the rendering engine window that the Windows NT 4.0 kernel driver reads or writes directly, and the 32-bit payload words of the packets the drivers send. The window is the range the driver maps; offsets below are from its base. Access records what the drivers do to the register at its own address, directly: a register that only a packet writes shows the direct accesses only (the scissor pair is "r" for that reason). Nothing here is a reset value, and no register is read before it is written.</doc>
   <struct name="TLB_ENTRY" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets" register="yes" offset="0x8000" access="w" count="2048" stride="8" reset="unknown">
@@ -10,8 +10,8 @@
     <field name="page_frame" start="0" size="24" type="uint" grade="inferred"/>
   </struct>
   <struct name="BUFFER_DESC" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; the OpenGL driver's buffer-descriptor writers" register="yes" offset="0xc000" access="w" count="64" stride="8" reset="unknown">
-    <doc>Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.</doc>
-    <field name="offset" start="21" size="11" type="uint" grade="inferred"/>
+    <doc>Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with row_tiles tiles per row, whose pages start at the translation-table slot named by slot; a user buffer mapped linearly sets bit 19 (row_tiles 32) with the tile_pages_log4 bits kept, and the packet pool sets pool_flag and row_tiles 1.</doc>
+    <field name="slot" start="21" size="11" type="uint" grade="inferred"/>
     <field name="row_tiles" start="14" size="7" type="uint" grade="inferred"/>
     <field name="tile_size_sel" start="13" size="1" type="uint" grade="inferred"/>
     <field name="tile_pages_log4" start="10" size="3" type="uint" grade="inferred"/>
@@ -114,7 +114,7 @@
     <field name="lit_on" start="23" size="1" type="uint" grade="inferred"/>
   </struct>
   <struct name="NODE_LINK" size="4" grade="inferred" from="SGI Cobalt Graphics Driver 5.2.4 packet link-word writers in both drivers">
-    <doc>Link word of a packet node: bit 0 set means the engine owns the node and clears it when done.</doc>
+    <doc>Link word of a packet node. It sits in node dword 0 and the drivers write it through the second CPU window (base 0xc0000000) plus the node offset. Bit 0 set means the engine owns the node and clears it when done. The size field counts 32-byte units of data after the 32-byte header unit.</doc>
     <field name="next" start="12" size="20" type="uint" grade="inferred"/>
     <field name="size" start="3" size="9" type="uint" grade="inferred"/>
     <field name="sync" start="2" size="1" type="uint" grade="inferred"/>
