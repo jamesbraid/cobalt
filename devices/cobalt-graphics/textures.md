@@ -51,11 +51,11 @@ independent writers are what the codes' meanings rest on, which is why those row
 | 2 | 1 | 16 bits, red 5, green 5, blue 5, alpha 1 | texture RGB5 and RGB5_A1; colour buffer with 5 bits per component (`0b001001`, `0x12000000`, white `0xfffe`); host transfer source `GL_UNSIGNED_SHORT_5_5_5_1` | established (writers), inferred (layout) |
 | 3 | 1 | 16 bits, 4 bits per component | texture RGB4, RGBA2, RGBA4, R3_G3_B2; colour buffer with 4 bits per component (`0b001101`); transfer source `GL_UNSIGNED_SHORT_4_4_4_4` | same |
 | 4 | 2 | 32 bits, 8 bits per component | texture RGB8 to RGB16 and RGBA8 to RGBA16 (all stored as 8 bits); colour buffer with 8 bits per component (`0b010010`, `0x24000000`, red in the top byte); transfer source BGRA bytes (type 4 or 5 by a transfer-state flag the routine reads from `gc+0x3dd4` and `gc+0x3dd9`) | same |
-| 5 | 2 | 32 bits, a second channel order | transfer source RGBA bytes, `GL_UNSIGNED_INT_8_8_8_8`, `GL_UNSIGNED_SHORT` RGB and RGBA (converted on the host), ABGR; BGRA bytes (see type 4) | established (writers), unknown (what differs from 4) |
+| 5 | 2 | 32 bits, the opposite byte order of type 4: red at the lowest address (memory R, G, B, A) where type 4 has red in the top byte (memory A, B, G, R) | transfer source RGBA bytes, `GL_UNSIGNED_SHORT` RGB and RGBA (converted on the host), BGRA bytes with the red-blue swap matrix; the packed 8888 words when the unpack byte-swap flag is set. The pairs with host formats and the matrices are in [opengl-pixel-transfers.md](../../software/windows/opengl-pixel-transfers.md#channel-order-of-types-4-and-5) | established (writers), inferred (channel order, from six host-format pairs) |
 | 6 | 0 | 8-bit luminance | texture LUMINANCE4 to 16; transfer source luminance bytes | established (writers), inferred (layout) |
 | 7 | 1 | 16 bits, luminance and alpha, 8 each | texture LUMINANCE_ALPHA and the `LUMINANCEn_ALPHAn` formats; transfer source luminance-alpha bytes | same |
 | 8 | 0 | 8-bit alpha or intensity | texture ALPHA4 to 16 and INTENSITY4 to 16 (the environment's type field tells them apart, [below](#environment-word)); a transfer source of RGB bytes with a swizzle converter | same |
-| 9, 10 | 1, 2 | depth transfer types: `FetchDepth@0x6902d0ae` writes 9 with depth 1 for a 16-bit depth buffer and 10 with depth 2 otherwise; 9 is also set at `0x690389a4` and `0x69021e10`. In `coInitTexImageStore` the 9 written for the SGIX YCrCb formats is overwritten, so it is dead there | established (writers), inferred (depth) |
+| 9, 10 | 1, 2 | raw 16-bit and raw 32-bit word types, used for depth: `FetchDepth@0x6902d0ae` writes 9 with depth 1 for a 16-bit depth buffer and 10 with depth 2 otherwise; 9 is also set at `0x690389a4` and `0x69021e10`, and 10 is the type of a YCrCb host source drawn through the YCbCr-to-RGB matrix. In `coInitTexImageStore` the 9 written for the SGIX YCrCb formats is overwritten, so it is dead there | established (writers), inferred (depth) |
 | 14, 15 | 1 | YUV 4:2:2 forms | the display driver's YUV blit (`0x72100000`, `0x7a100000`); the transfer routine when a YCrCb conversion is selected | established (writers), unknown (which is which) |
 | 0 (colour index, depth 0) | | also written at `0x69038b4d` | | |
 | 1, 11 to 13 | | no immediate writer found; the writers that store a computed value were not all resolved, so "never written" is not established | | unknown |
@@ -193,12 +193,16 @@ For a level not in the common tile, `coComputeTexLevelSize` computes (establishe
 The buffer descriptor word the routine writes has the vendor's `CoTlbDescReg` layout: bits 31:21 all ones (the first
 slot, filled in by the kernel driver when the level is bound), 20:14 tiles per row, bit 13 set for 512-byte tile
 rows, 12:10 the page-size code, bit 9 clear and 8:0 left as they were
-([packet-set.md](packet-set.md#texture-table-packets-class-11)). The texels of a level fill tiles row by row: that the
+([packet-set.md](packet-set.md#texture-table-packets-class-11)). That the
 engine addresses texel (x, y) at tile `(y / rowsPerTile) * tilesPerRow + (x * bytesPerTexel / tileRowLength)` and, inside
 the tile, row `y mod rowsPerTile` at byte `x * bytesPerTexel mod tileRowLength` is **inferred** from the descriptor
-fields and the context's tile bookkeeping (`tileRowLen`, `tileRowInc`, `tileSize`, `tileHeight`); the CPU store
-routines were not followed to the address arithmetic, so a model should treat the within-tile order as a choice to confirm
-against a guest that reads a texture back.
+fields and the aperture window's arrangement. No routine of the OpenGL driver forms an address inside a tile (every texel
+reaches texture memory through an engine transfer), so the driver neither shows nor depends on the order;
+[opengl-texture-levels.md](../../software/windows/opengl-texture-levels.md#question-5-texel-order-inside-a-tile-and-tile-order-in-a-level)
+sets out the reading and the choice for a model. The levels of 16 by 16 and below share one 128-byte by 32-row tile at fixed start
+rows ([the same page](../../software/windows/opengl-texture-levels.md#the-shared-tile-for-small-levels)), and the levels of one texture
+use consecutive descriptors from the id the texture word names
+([question 4](../../software/windows/opengl-texture-levels.md#question-4-how-the-engine-finds-level-k)).
 
 ## How texels get into texture memory
 
@@ -210,7 +214,7 @@ global variables the vendor names and one environment variable sets:
 | Route | When | Grade |
 |---|---|---|
 | **Engine transfer** (`___dmaXferTextures`, default 1) | the source format and type are one the type list above can describe and the pixel-transfer state `coInitTexImageStore` tests allows it (the gates are transfer state, not capability flags); the full condition list was not decoded (the checks seen include an 8-byte multiple for the row and offset, `(x << depthShift) & 7`). Levels of 16 by 16 or less (the common tile) and levels where `width << level` is under 4 skip the engine transfer (`0x69020a7d`, `0x69020a87`, `0x6902089a`). The host image is described as a *linear* buffer (format-word bit 31 set) and a pixel-transfer packet sequence draws it into the tiled level; a rectangle is cut so that it does not cross destination row 4064 (`0xfe0`, `coXferTexImage@0x6902118a`) | inferred (routing, from partly decoded gates), established (the cut) |
-| **CPU stores** | the transfer is not possible: the driver converts and copies texels through the CPU's mapping of the pages (UMA); `GLCOTEXLOADSPANMODE` selects span-at-a-time copying | established |
+| **Host copy, then the same transfer** | the transfer is not possible for the source as given: the driver converts into the level's own host copy or a temporary (`GLCOTEXLOADSPANMODE` selects span-at-a-time copying) and, as for the default route, an engine transfer is what writes the texture pages; no routine stores into the tile pages by CPU | established |
 | **Hook** (`___vhdlLoadTextures`, default 0) | emits packet `0x9ed380e0` (`coVhdlTexImage`); a simulation aid, never on by default | established |
 
 A correction to an earlier page: the transfer route is the default (the global is initialised to 1 in the texture manager
@@ -231,9 +235,11 @@ matrix. A model that implements texturing from tiled levels only still has to ho
 
 ## What the engine does with the words
 
-Everything above is what the driver writes. What the engine does with it is **unknown**, with these routes tried: the
-OpenGL driver in both builds, the display driver's YUV and pattern paths, the vendor's types, the white paper (features
-only). The texel addressing inside a tile, the order of channels in types 4 and 5, the filter arithmetic and its rounding,
-the level selection, the meaning of `lodFracSize` and the colour-matrix conversion during an upload are unknown.
+Everything above is what the driver writes. What the engine does with it is **unknown** except where the pages named below infer
+it, with these routes tried: the OpenGL driver in both builds, the display driver's YUV and pattern paths, the vendor's types, the
+white paper (features only). The level selection, the texel layout and the order of channels in types 4 and 5 are inferred in
+[opengl-texture-levels.md](../../software/windows/opengl-texture-levels.md) and
+[opengl-pixel-transfers.md](../../software/windows/opengl-pixel-transfers.md). The filter arithmetic and its rounding and the
+meaning of `lodFracSize` are unknown.
 [questions/open-questions.md](../../questions/open-questions.md#texture-and-pixel-pipeline-what-the-shipped-software-does-not-settle)
 lists each with the next route.

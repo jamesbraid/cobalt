@@ -122,22 +122,37 @@ table search, the display driver's YUV and fill paths, the white paper (features
 [textures.md](../devices/cobalt-graphics/textures.md), [draw-and-buffers.md](../devices/cobalt-graphics/draw-and-buffers.md)
 and [opengl-expectations.md](../software/windows/opengl-expectations.md). A model chooses a value for each and documents it.
 
-- **Texel order inside a tile.** The descriptor gives tile row length, rows per tile and tiles per row; the driver's CPU store
-  routines were not followed to the address arithmetic, so the order inside a tile and the order of tiles are a reading of
-  the descriptor, not a read of code. Next: `coStoreTexImage@0x690207ca` with the span store routines
-  (`__glCoStoreTexImage`, `0x6903b060`, `0x6903e7f8`) and the tile fields of the texture machine record.
-- **Channel order of the 32-bit types 4 and 5**, and the unused codes 1 and 11 to 13. The colour-buffer words say red is in
-  the top byte for type 4; type 5 is written for host sources and its difference is not shown. Next: the converters
-  `0x6903afa2`, `0x6903e7f8`, `0x6903e944`, `0x6903eac8` and the colour-matrix loader `coSetColorMatrixRegisters`.
+- **Texel order inside a tile, and the order of tiles.** Unknown: no shipped software depends on it. Every texel reaches texture
+  memory through an engine transfer, no routine of the OpenGL driver forms an address inside a tile (the texture store,
+  transfer, small-tile and read-back routines were all read), and the CPU aperture window is the only CPU-visible view
+  ([opengl-texture-levels.md](../software/windows/opengl-texture-levels.md#question-5-texel-order-inside-a-tile-and-tile-order-in-a-level)).
+  A model chooses row-major tiles and row-major rows inside a tile and documents it.
+- **How the engine finds mip level k.** Inferred, not read: descriptor `id + min(k, kc)` and the small-level rows of the shared
+  tile, from the driver's consecutive descriptors and its offset table
+  ([opengl-texture-levels.md](../software/windows/opengl-texture-levels.md#question-4-how-the-engine-finds-level-k)). Open: level
+  numbers beyond the lod word's range, bordered levels, and a texture with a missing level. A model chooses.
+- **The unused transfer type codes 1 and 11 to 13**, and what type 5's decoder does with the packed 16-bit types. The channel order
+  of types 4 and 5 is answered in [opengl-pixel-transfers.md](../software/windows/opengl-pixel-transfers.md#channel-order-of-types-4-and-5).
+- **Linear surfaces.** The driver addresses a pinned host buffer as a surface 2048 bytes wide through `(s, t)` and gives the
+  engine a page list; the descriptor's own geometry fields are not what it relies on. The engine's linear-flag address rule is
+  inferred only. A model chooses `t * 2048 + s * bytesPerTexel` through the page list.
+- **The colour matrix's clamp words** (`GLCOPIXPOSTCMCLAMPMIN`, `GLCOPIXPOSTCMCLAMPMAX`, default 0 and `0xffffffff`): their
+  meaning is from the names; no driver path sets them.
+- **Primitive-mode bits 8 and 10:9** (set only by an overlapping copy) and **bit 3 of the render node's flags** (set by the
+  screen-to-screen escape's argument `0x18`, never read in the window packet builder). Read as a scan direction and an
+  unknown; a model may ignore the first when source and destination do not overlap.
 - **Sampling arithmetic.** Filter precision, the rounding of level selection, the effect of `lodFracSize`, how a border is
   filtered, and perspective correction. No shipped routine depends on them.
 - **Rasterisation rules.** Coverage, fill convention, rounding of the 1/64 pixel position, attribute interpolation precision,
   line and point rules. The 0.492 and 0.508 viewport constants hint at a tie-break but do not state it.
 - **Blend, dither and write-mask arithmetic.** Rounding of the blend products, the dither pattern, behaviour of the 4-bit
   colour formats under blend. Nothing in the driver depends on them beyond the codes.
-- **Depth.** The 16-bit depth is described by SGI's white paper as floating point and the 24-bit as fixed point; the format
-  field (`CoSzFormatReg`) has a type bit and a two-bit depth and the driver does not say which representation each is. The
-  `equal_range` field of the depth word is never set. Whether stencil shares the 32-bit word with 24-bit depth is not shown.
+- **Depth.** Answered for the driver's side in [opengl-depth-stencil-fog.md](../software/windows/opengl-depth-stencil-fog.md): the
+  16-bit word is a three-bit-exponent code the driver decodes with a table, the 24-bit depth is fixed point in the low three bytes
+  with stencil in the top byte, and the clears write raw values. Open: the engine's encode rounding, the 16-bit depth with stencil,
+  and the `equal_range` field of the depth word, never set. A model encodes on the depth path only and stores raw words as sent.
+- **Fog arithmetic.** The driver sends `trunc(255 * f)` per vertex with OpenGL's `f` (1 is no fog); the engine's interpolation,
+  rounding and treatment of alpha are unknown. A model blends `(F * C + (255 - F) * C_fog) / 255` per colour channel.
 - **The occlusion count.** `GL_SGIX_depth_pass_instrument` drives bits 28:27 of the depth-test word; where the count is
   written and how `glReadInstrumentsSGIX` collects it were not followed (`0x6904366a`, `0x6904371a`, `0x69043798`).
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.

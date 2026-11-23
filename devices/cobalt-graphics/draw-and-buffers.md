@@ -220,8 +220,10 @@ six bits of the first dword of the buffer record (the record the context keeps f
 by whether the draw buffer is the left or right one). `__glCoInitDepth` sets bits 31:29 to `001` for a 16-bit depth
 buffer and to `110` for 24 bits, and `__glCoClearBuffers` reads `(descriptor >> 29) & 3` as 1 or 2 accordingly. The
 white paper says 16-bit floating point and 24-bit fixed point depth, with 8-bit stencil; the driver's sizes (16 and 24)
-match it, but what the engine reads from the field is unknown. Whether stencil is in the same 32-bit word
-as 24-bit depth is not shown by the descriptor.
+match it, but what the engine reads from the field is unknown. Stencil is in the same 32-bit word as 24-bit depth (depth in the
+low three bytes, stencil in the top byte), and the 16-bit depth word is a floating-point code that the driver decodes with a
+table: both are established from the clear, transfer and read-back routines in
+[opengl-depth-stencil-fog.md](../../software/windows/opengl-depth-stencil-fog.md).
 
 Depth test (`0x936ae020`: function in 31:29), stencil (`0x938af040`), alpha test, blend, logic operation, colour mask
 and fog colour are per-state registers; their layouts are in [packet-set.md](packet-set.md).
@@ -378,12 +380,16 @@ full memory bandwidth" are agreement, not the meaning.
   primitive-mode word, vertex packets for the destination rectangle, the transfer parameters (`0x93cc0080`,
   `0x91ea2040`), the colour matrix (`0x944c42c0`) and the 4 by 4 scale-and-bias the white paper calls "4x4 color
   matrix for color space conversion, scale/bias, and component swizzling". The four context fields packed into the two
-  parameter packets are not decoded. The routines are `__glCoLinearToTileXfer`,
+  parameter packets are the source type, depth, linear flag and descriptor id; the packet sequence of each routine, the
+  colour-matrix words and the host formats' types are in
+  [opengl-pixel-transfers.md](../../software/windows/opengl-pixel-transfers.md). The routines are `__glCoLinearToTileXfer`,
   `__glCoTileToLinearXfer`, `__glCoTileToTileXfer`, `coProcess*` and `coLoadLinearTlb`.
 - **Texture images** reach texture memory by one of three routes, set out in [textures.md](textures.md#how-texels-get-into-texture-memory):
   by default through the engine (the vendor's `dmaXferTextures` is 1: a pixel-transfer packet sequence draws a linear host
-  image into the tiled level, and the context's colour matrix converts channel order and depth), otherwise through ordinary
-  CPU stores into the pages (UMA) after `coAllocTextureTiles` asked the miniport for them, and, only when a global that
+  image into the tiled level, and the context's colour matrix converts channel order and depth), otherwise by converting into
+  a host copy of the level first and then the same transfer (no routine of the driver stores into the tile pages by CPU,
+  [opengl-texture-levels.md](../../software/windows/opengl-texture-levels.md#question-5-texel-order-inside-a-tile-and-tile-order-in-a-level)),
+  and, only when a global that
   defaults to 0 is set (`vhdlLoadTextures`), through the packet `0x9ed380e0` (`coVhdlTexImage`), whose name says VHDL: a
   simulation hook with three caller words, a pixel count, the width and the corner pair. Read in full. An earlier version of
   this page said the images are stored by the CPU and the engine packet is a hook only; the first half was wrong (the
