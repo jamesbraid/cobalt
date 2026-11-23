@@ -91,9 +91,10 @@ Inferred at best: nothing here was tried. What the binaries say.
   was not checked); `HalDispatchTable` (the SGI HAL query); `IoAssignResources`
   and `IoConnectInterrupt` with `HalGetInterruptVector` (legacy resource and interrupt claiming, which an ACPI HAL may not
   serve for fixed Cobalt addresses); `MmMapIoSpace` of the fixed ranges above; `ExInitializeZone` and `ExExtendZone`
-  (the old zone allocator); `ZwOpenSection` of `\Device\PhysicalMemory`; `HalSetEnvironmentVariable`. Whether each is still exported
-  by the Windows XP kernel and HAL, and whether the physical-memory section may be opened by a kernel caller on the XP service
-  packs in question, was not checked.
+  (the old zone allocator); `ZwOpenSection` of `\Device\PhysicalMemory`; `HalSetEnvironmentVariable`. Every `ntoskrnl.exe` and `HAL.dll` name of both builds is exported by the Windows XP SP3 kernel and HAL (checked by name
+  against their export tables; [the XP page](../../software/windows/w2k-xp-compatibility.md)). Whether the physical-memory
+  section may be opened by a kernel caller on the XP service packs in question, and XP's video port and `win32k`, were not
+  checked.
 - **Driver model.** XP still runs XPDM video miniports and GDI display drivers, which is what these are. The 3D side is
   separate: the OpenGL ICD (`sgcoicd.dll`) passes escape codes through GDI `ExtEscape` and links nothing from the kernel.
   The two builds of the escape numbering differ (the April 1999 and the 5.2.4 tables are not interchangeable,

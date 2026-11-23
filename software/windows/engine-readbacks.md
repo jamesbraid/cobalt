@@ -107,6 +107,8 @@ scan-line interrupts). Their meanings are in [display-engine.md](../../devices/c
 ## 3. Pixels and surfaces read back
 
 **Host transfers, `glReadPixels` and `glCopyPixels`. Established for the routines, inferred for the engine.**
+The packet sequences of the three transfer routines are in [opengl-pixel-transfers.md](opengl-pixel-transfers.md);
+this section only says what the CPU reads and when.
 `__glCoPickReadPixels@0x69038f2c` chooses one of three ways from the pixel format, type and state:
 
 - *engine transfer to a host buffer* (`__glCoTileToLinearXfer@0x6903c561`): the ICD sends `PIXELDMA` (`0x4f`) to map the
@@ -161,7 +163,7 @@ reads engine state for it.
 - **Established.** The Windows 2000 miniport has the same engine register reads at the same offsets (table above), in the same
   routines by shape.
 - **Established.** The Windows 2000 OpenGL driver is instruction-identical to the NT 4.0 one in 2592 of the 2637 functions
-  that align by size (see the Windows 2000 comparison page); the wait loops, the occlusion routine and the
+  that align by size (see [the comparison](w2k-opengl-driver-comparison.md)); the wait loops, the occlusion routine and the
   transfer routine are in the identical set, apart from one dropped debug-print argument push in
   `__glCoTileToLinearXfer`.
 - **Inferred.** The Windows 2000 display driver's read sites are the same family; its routines carry no names and were

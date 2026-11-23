@@ -161,13 +161,19 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
 - **The display driver's pixel-format list** (escape `0x5d`, output `0x30` bytes) and the colour and depth sizes it offers an
   OpenGL context. Next: the display driver's pixel-format describe routine.
-- **Windows 2000 OpenGL driver.** Only its extension string, version string and format table were compared; its routines
-  carry no vendor names and were not matched one by one with the NT 4.0 ones.
+- **Windows 2000 builds, routine by routine.** The OpenGL driver is compared ([comparison](../software/windows/w2k-opengl-driver-comparison.md)):
+  2,592 of 2,637 size-aligned routines are instruction-identical and the packet headers, escape sites and extension strings
+  are the same. Not done: the display driver and miniport routine by routine, the roughly 270 unaligned ICD runs, and the
+  engine path of the added alpha-blend hook. Next route: an own reader for the Windows 2000 program database (PDB 2.00,
+  debug-info stream 19960307, which Ghidra 12.1.3 refuses) to name every routine, then the same alignment.
 - **What `SET_READY_TEXTLBPKT` (escape `0x59`) arms.** The display driver copies a stored link field in its own record of the
   texture packet; the miniport is not called and no packet word is written. Unknown: no shipped path shows what reads the
   field afterwards. An emulator author keeps the bookkeeping or drops the escape.
 - **Escapes `0xcace`, `0xcaca` and the `0x11` group of the display driver.** Reachable only by a caller that is not the OpenGL
   driver; the OpenGL driver sends none, so no OpenGL path depends on them. The control-panel applet was not read for them.
+- **Whether Windows XP's graphics stack accepts the Windows 2000 pack.** Settled only as far as the imports and headers
+  go ([the XP page](../software/windows/w2k-xp-compatibility.md)); `win32k` and the video port of XP are not held. An emulator
+  author assumes it loads and observes.
 - **Why the NT 4.0 display driver at 8 bits per pixel can draw only black, teal and grey for colour icons.** A model run of the
   installed April 1999 driver at 640 by 480 shows every opaque icon pixel, the Display Properties monitor picture and the Internet
   Explorer start page background written through CPU aperture window 2 with the values 0, 6 and 7 only, while a Start button
