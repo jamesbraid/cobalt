@@ -32,7 +32,10 @@ Status: **unknown** for everything below. What is established and what software 
 - **Engine register window.** The `0x08000` entries (the first 4 KB page frame number of a tile, the tile size coming from the buffer's descriptor) and `0x0c000` entries (buffer descriptors),
   the `0x10000` start word (idle count, bit 11, node position), `0x10008`, the two interrupt causes, `0x185d0` and
   `0x18800` are decoded as the drivers use them ([graphics-engine.md](../devices/cobalt-graphics/graphics-engine.md)).
-  Open: what the engine writes at the dump offset it is given through `0x18800`; what separates the two causes in
+  The driver's expectation of `0x18800` is read (a save of the outgoing context into the saved-state node, then a wait on bit 31
+  of `0x10018`). Open: which registers the engine writes at the dump offset and how much of the 208-dword image it covers; whether
+  the engine follows the link word, the chain packet's position or both; whether the two address windows that reach the packet pages
+  (`+0x80000000`, `+0xc0000000`) differ in anything but caching; what separates the two causes in
   hardware; the idle count's effect; contents of `0x00000` to `0x07fff` and `0x0c200` to `0x17fff`.
 - **Second interrupt register.** The 32-bit register at `0xca000000` that the retrace handler reads and complements (the
   miniport names the pointer `CAI_InterruptReg`), and the register at `0xc0000020`. Route: the Linux Cobalt interrupt code (`visws_quirks.c` and the Lithium and PIIX4

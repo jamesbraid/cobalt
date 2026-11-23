@@ -123,9 +123,9 @@ through the packet buffers and the kernel driver's escapes ([graphics-engine.md]
 All of the ICD's kernel traffic is `ExtEscape` (33 call sites, codes `0x40` to `0x64`) sent through `_openglcmd`, which is
 `0x1100`, or `0x3f` under an environment variable; it never sends `OPENGL_GETINFO` (`0x1101`). Escapes such as `0x42`, the
 pixel-format describe (`0x5d`) and the first-context escape (`0x41`) return values the ICD stores. The driver's wait loops
-(`0x6901aa0b`, `0x690614c2`) poll a word at `[node+0xc]`; what updates it is unknown. No escape returns a register value; a
+(`0x6901aa0b`, `0x6901b50c`, `0x690614c2`) leave when bit 0 of the node's first dword clears; they also read the node's fourth dword, the serial the driver wrote at close, and pass it to the wait escape. Nothing updates that dword but the drivers ([graphics-engine.md](../../devices/cobalt-graphics/graphics-engine.md), node layout). No escape returns a register value; a
 replacement driver has to answer the escapes in [graphics-engine.md](../../devices/cobalt-graphics/graphics-engine.md) and
-the wait-word update. Established (the call sites read), the wait word unknown.
+the owner-bit clear. Established (the call sites read); the engine must clear the owner bit in the node's first dword.
 
 **What breaks if the engine is replaced.** The driver depends on the engine for correctness in: the colour and depth
 formats it sets up (type 3/2/4 for colour, depth 16 or 24), the blend equations and factors, the logic operation, the

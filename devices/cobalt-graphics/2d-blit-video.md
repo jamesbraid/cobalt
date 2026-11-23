@@ -81,7 +81,7 @@ that mapping is in the miniport's map-memory IOCTL (not re-read for this page).
   packet `0x97000040` whose two words are the next node's and this node's positions in 32-byte units shifted left 12,
   OR-ed with serial bits), waiting until bit 0 of the node's first byte clears (calling the miniport's wait when the
   GDI queue flag says to). The callers zero-pad to 32 bytes (`vDispatchPacket@0x2786c` does not). It stores the link word
-  `(next position << 9 | units - 1) << 3 | flags` at dword 2 and again at the flush offset (flags `1` ready; `3` ready and
+  `(next position << 9 | units) << 3 | flags` (units are the 32-byte units after the header unit, one fewer than the node's total) at dword 2 and again through the flush view at dword 0 (flags `1` ready; `3` ready and
   interrupt; `7` ready, interrupt and sync) and the running serial at dword 3. Read in full; the engine's side of the flags is inferred
   ([graphics-engine.md](graphics-engine.md#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)). The
   flags come from the last-packet argument `a` (0, 1 or 2) and the GDI queue flags at `+0xc0`. Without per-packet interrupts (bit 0

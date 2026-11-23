@@ -28,7 +28,7 @@ at the display back end's ID. Accesses seen are 32-bit. Offsets are from the bas
 | `0x18138`, `0x18140` | read | read into the packet being built after a header word `0x84e44040`, which is the scissor box packet the OpenGL driver writes ([packet-set.md](packet-set.md)): the two registers are the scissor minimum and maximum corner. `CoBuildWinparamsPacket` does this only when its restart argument is set, that is when the incoming node is the one already in the hardware (`local_8 == 0` in `pCoContextSwitch`) and the window's `drawIncarn` differs from the node's (the call at `0x166c9` is behind the compare at `0x1669b`); on a real switch the packet is built without the read and the engine's own dump (through `0x18800`) is the only save. An earlier version said the pair was saved and restored across a context switch, and an earlier one read the two as instrument counters; both are withdrawn | inferred (header `A` = `0x427` maps to this offset; the miniport and the ICD agree on the packet) |
 | `0x185c0`, `0x185c8` | read | on a stop interrupt (whatever the cause): `((R185c0 & 0xfff) << 12 \| (R185c8 & 0xfff))` is a 24-bit sequence number and `R185c8 >> 12` the node position; if bit 23 of the sequence is set the driver keeps its low 20 bits in the rendering node's `serialOnRemove`, otherwise it reads dword 3 of the node at that position (the sequence number the ICD stored there) and keeps its low 20 bits (both the OpenGL driver's `DispatchCurrentPkt` and the display driver's `pulGetPacket` put `0x800000` in the sequence word of every chain packet they write, so that second path is not taken for their chains); a zero node position only counts a stop (`idle_wait` is bumped, otherwise it is cleared) (`CoProcessCobaltEvent@0x17f88`..`0x18027`). These are the two registers the chain packet `0x97000040` writes (next node, this node); `pCoContextSwitch@0x169bc` writes 0 to `0x185c8` when the incoming node is already the one in hardware (a restart with no switch) | inferred |
 | `0x185d0` | read, write | the current-texture id: the third word of the long chain packet `0x97000060` carries the rendering node's `currentTexId` (`pCoContextSwitch@0x167c3`), a stop of an OpenGL node (`gfxType` 1) reads it back into that field (`@0x17fd2`), `CoScheduleBindBuffers` writes it, and the OpenGL driver writes 0 with packet `0x97400020` before it frees the pages of the texture that is bound. An earlier name for it was the current-context packet pointer | inferred |
-| `0x18800` | write | the outgoing context's dump offset (the rendering node's `cxswDumpOffset`, `+0x500`, a position in the context-switch packet page), written when another context is started while one was running (`pCoContextSwitch@0x16666`), before the poll of bit 31 of `0x10018`. What the engine stores there is unknown | inferred (access), unknown (meaning) |
+| `0x18800` | write | the outgoing context's dump offset (the rendering node's `cxswDumpOffset`, `+0x500`, a position in the context-switch packet page), written when another context is started while one was running (`pCoContextSwitch@0x16666`), before the poll of bit 31 of `0x10018`. The driver treats it as a request to save the outgoing context into the memory at that position and then waits for bit 31 of `0x10018` (the saved-state paragraph above). What the engine stores there is unknown | inferred (access and expectation), unknown (contents) |
 | `0x19000` end | | | |
 
 Reset values are unknown for all of them. The retrace and engine handlers are the only paths that read status, and both
@@ -153,8 +153,8 @@ engine never needs the host's cache.
   `pktBaseFlushAddress` pointer of its first `pktBufferAllocations` entry, record offset `0x120`) that carries, in units of 32 bytes, the packet's size and the next buffer's position, and sets bit
   0. To wait for the engine to finish with a buffer the driver spins until bit 0 of a header or link dword in memory reads
   clear (`grmDispatchPacket`, the tail of the routine). So bit 0 means "owned by the engine" and the engine clears it.
-  The field split of the link word is now read from both builders ([below](#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524)): length in bits 11:3, next position in bits 31:12, flags in bits 2:1.
-- **Per-context shadow.** Every new context starts from a 208-dword packet (`CoInitShadowRam` copies the table
+  The field split of the link word is read from every writer (node layout paragraph below): length in bits 11:3, next position in bits 31:12, flags in bits 2:1. The table is a second view of the packet pages, so the word lands in the node's own first dword.
+- **Per-context shadow.** Every new context starts from a 208-dword image whose first 202 dwords come from a table (`CoInitShadowRam` copies the table
   `initialCxShadow`, 19 pairs of header word and dword index, into the RN's packet area) that holds default state. The
   headers, in order of position, are: `0x80003020` (index 0), `0x046400c0` (2), `0x05260480` (9), `0x09a900c0` to
   `0x09a900c3` (`0x2e`, `0x35`, `0x3c`, `0x43`: four packets seven dwords apart), `0x0ca96120` to `0x0ca96123` (`0x4a`, `0x54`,
@@ -198,6 +198,37 @@ The routine takes the adapter and the incoming rendering node.
    drop it had deferred. Which position it writes depends on whether a state restore was built: the
    node's saved position (`+0x108`), the context-switch dump offset less one, or an offset in the node's own
    context-switch page.
+
+
+**The context-switch page and the saved state. Established as driver behaviour (`sgcomp.sys@0x14d96`, `@0x16610`, `@0x16a7a`, `@0x17f88`); the engine's side is inferred.**
+Each render node owns one 4 KB page of the packet pool, with a node view and a flush view of it (`+0x4e4`, `+0x4e8`; page position `+0x4f0`). Three nodes live in it:
+
+| Page bytes | Node | What it holds | Link word |
+|---|---|---|---|
+| `0x000` | restore node | the window-parameter packet (and pixel-transfer or GDI variant) built at each switch | next is the node at `0x3e0`, length as built |
+| `0x080` header, `0x0a0` to `0x3e0` data | saved-state node | 26 units, 208 dwords: the context's register state as replayable packets (the page is zeroed when the node is created and a 202-dword default table is copied in, `@0x171ec`), ending with a texture-window-offset packet at dwords 199 to 201 and the long chain packet at dwords 202 to 205 | next is the resume position, length 26 (`0xd1` plus the position shifted left 12) |
+| `0x3e0` header, `0x400` on | table node | the translation-table and descriptor packets for the node's buffers, ending in a short chain packet `0x97000020` | next is the saved-state node |
+
+The dump offset the miniport keeps (`+0x500`) is the position of the first data unit of the saved-state node (page position plus 5). A switch-in starts the engine at the page start, so
+it runs the restore node, the table node and the saved-state node and then continues at the resume position; a restart of the node already in the hardware skips all of this and starts at the saved position.
+
+**What the long chain packet does. Established for what is written; the engine's side inferred.** The `0x97000060` packet carries three payload dwords: the resume position shifted left 12, zero, and the render node's current texture id. The packet header class is the
+register-write class of the other chain packets, whose payload dwords land in the chain registers `0x185c0`, `0x185c8` and `0x185d0` ([packet-set.md](packet-set.md)), so the long packet leaves the next-position register
+holding the resume position, the node-and-serial register zero, and the texture register holding the node's texture id. The miniport rewrites it at every real switch-in (the incoming node differs from the one in the hardware), so whatever an
+engine dump left at dwords 202 to 205 does not matter. The resume position comes from the stop handler (`@0x17f88`): on every stop it reads the position in `0x10000` bits 31:12, falling back to the chain register when that is zero; a position inside one of the
+node's own context-switch pages makes the handler restart the engine at once at the same position, and any other position is saved as the node's resume position. A node never yet stopped resumes at the first buffer its context allocated.
+Inferred reason for the zero second dword: the stop handler takes the node position from the second register and, finding zero, only counts a stop and records no serial, so an engine that stops right after a switch-in is not mistaken for finishing a node;
+the restart path writes 0 to `0x185c8` for the same reason. The ordinary chain packet written by the OpenGL driver puts the next node position (and serial bits `19:12` with `0x800` set) in the first dword and the node's own position and serial bits `11:0` in the second;
+the stop handler rebuilds a 24-bit serial from those two registers.
+In every chain I read, the position in the chain packet is the same node as the `next` field of the link word of the node that holds it (OpenGL driver nodes, the miniport's table node and saved-state node), so a model that follows the link word and treats the chain packet only as three register writes
+reaches the same node as one that jumps on the chain value. Whether the engine does either, or both, is unknown.
+
+**What a write to `0x18800` does. The driver expects a save; the engine's behaviour is inferred.** On a real switch the miniport writes the outgoing node's dump offset (a memory position, not a flag) to `0x18800` before anything else, polls bit 31 of `0x10018` until it reads set, and writes `0x7fffffff` there,
+and only then builds the start of the incoming node. From the driver's side the write is a request for the engine to save the outgoing context into the memory at that position, for these reasons.
+The offset points at the saved-state node, whose contents are replayable register packets; the miniport reads no engine register to save state on a switch (the scissor pair `0x18138`, `0x18140` is read only on a restart that skips the dump);
+the saved-state node is exactly what runs when the node is switched in next; and the driver edits that image afterwards, storing the texture window offsets into dwords 200 and 201 at the next switch-in when the window changed, which only makes sense if the engine has filled it.
+After the write the driver reads back one thing, bit 31 of `0x10018`, which it treats as "the save is finished and the engine has stopped" (the stop interrupt handler never looks at bit 31, which is not one of the two interrupt causes it masks). The `0x7fffffff` write is consistent with an acknowledge that clears bit 31 and leaves the two cause bits for the interrupt handler: the handler clears with a zero write and waits for the causes to drop. Inferred.
+Not known: which registers the engine writes, in what packet form, and how many of the 208 dwords it covers. The driver rewrites only the long chain packet and dwords 200 and 201 itself, so everything else in the image has to come from the engine's dump to be correct after the first switch-out.
 
 ## How the OpenGL driver builds and submits packets (`sgcoicd.dll` 5.2.4)
 
@@ -308,19 +339,45 @@ number, and a dword with this node's position in bits 31:12 and the low twelve b
 the same header and the two positions without the sequence number.) The node is then padded with zero dwords to a 32-byte boundary, and the link word
 below is stored. A fixed packet (`0x09280080` plus four dwords the context keeps together) is appended to the new node after a dispatch.
 
-**Link words. Established as software writes; the engine's use is expected.** The ICD's node link word is `((units_used & 0x1ff) | (next_node_position << 9)) << 3 | (flags & 6) | 1`:
-bit 0 set means the engine owns the node, bits 2:1 carry flags from the caller (not decoded; the caller's bit 1 together with its bit 0 selects a finish), bits 11:3 the number of
-32-byte units used and bits 31:12 the next node's position. The miniport's own per-packet link table (`grmDispatchPacket`, `0x1725c`) writes the same layout except that the
-unit count is stored minus one and the flags come from its caller; it then spins until the first dword of the next slot loses bit 0 (the engine clearing it). The display driver's `vDispatchPacket@0x2786c` is a third writer: it leaves dword 0 of the node zero, puts the fill `0xdeadbeef` in dword 1, the link word
-in dword 2 and the running serial in dword 3, stores the same link word again at the flush offset, and keeps the length minus one like the miniport. Its flag
-bits are 1 (ready), 3 (ready and interrupt) or 7 (ready, interrupt and sync), chosen from its last-packet argument and its flush count, which agrees with the
-vendor's `NODE_LINK` (`interrupt` bit 1, `sync` bit 2). The two
-builders disagree by one in the length field, so which one the engine follows, or whether the engine reads a different word altogether, is not settled.
+**Node layout and link words. Established as software writes; the engine's use is inferred.**
+A node is one 32-byte header unit followed by packet data in whole 32-byte units. The OpenGL driver, the miniport and the display driver all
+start the data at node byte `0x20` (the display driver puts a three-dword chain packet first, so its own packets start at `0x2c`). The link word is
+`(next node position << 12) | (units << 3) | flags | 1`: bit 0 set means the engine owns the node, bits 2:1 are the interrupt and sync flags the caller chooses
+(the display driver uses 1, 3 or 7: ready, ready and interrupt, ready and interrupt and sync), bits 11:3 count the units of
+data and bits 31:12 give the next node's position. `units` counts the data after the header unit, padded to a whole unit, and includes the chain packet that ends the node.
 
-**Waiting. Established (`CoWaitForPacket` `0x6901b50c`, tail of `DispatchCurrentPkt`).** To reuse a node, or to wait for the engine, the ICD spins on bit 0 of the
-node's first dword. It steps through an 18-entry backoff table (`delayTable`) of busy-wait counts; at the last step, unless `glCoStateFlags1` bit 1 is set (the variable `GLCOBUSYWAITFORPACKET` sets it; the page used to call it the no-block flag),
-it asks the driver (`0x62`) whether the hardware is still busy and, if so, sleeps on a kernel event (handle kept in the context) that the miniport signals
-from the engine's completion interrupt. `Finish` is escape `0x4c` followed by a wait on a second event. `__glCoIcdKickScheduler` is escape `0x4d` with the
+*Every writer counts the same way.* The OpenGL driver's closers (the ordinary dispatch at `0x6901a83a`, the display-list close at `0x6901d5e5` and the
+display-list compiler's close near `0x69062687`) count bytes from the start of the data. The miniport's per-packet writer (`sgcomp.sys@0x1725c`), the three
+link stores that build a context-switch page (`@0x168d5`, `@0x16904`, `@0x16934`) and the user-texture table writer (`@0x17a2f`) take the end of the
+padded data minus the node's own position minus one, which is the same number once the header unit is left out. The display driver's packet dispatcher
+(`sgcodd.dll@0x2786c`) takes the distance from the node start in units and subtracts one: the same again. The earlier reading that the miniport
+stores the count "minus one" and so disagrees with the OpenGL driver counted from the wrong end; no pair of writers differs.
+Two layouts the miniport builds show that the header is not counted. The saved-state node of a context-switch page has its header at page byte `0x80`, data
+from `0xa0` and a stored length of 26 units, which ends exactly at `0x3e0` where the next node's header starts; a count that included the header would leave the last
+unit uncovered, and that unit holds the long chain packet (below). The OpenGL driver's display-list jump node holds one three-dword packet after its header and stores length 1.
+Established for what the drivers write. That the engine reads exactly `units` units after the header is inferred from this agreement (any other rule would cut off the chain packet that
+ends each node in the OpenGL driver and the miniport).
+
+*Where the word is stored.* The packet-buffer allocator turns one pool page number into three values (`sgcomp.sys@0x15b14`): the byte offset in the pool and two CPU addresses for it, the id 0 aperture window at `0x80000000` ([above](#cpu-aperture-windows-at-0x80000000)) and a second window at `0xc0000000` plus the same offset, which no other page lists (the aperture list has only windows at `0x80000000 + (id << 24)`). The OpenGL driver's buffers are mapped through the first; a second mapping through the second, the "flush view", is returned to it as a dword distance from the buffer start (the reply of the first-context escape, built by the packet-buffer allocation at `sgcomp.sys@0x1514c`; the display driver gets the same from its own allocation call). The miniport keeps the same two views for its own pool and for every context-switch page. Every writer stores the link word, with its owner bit, through the flush view at the
+node's first dword. The OpenGL driver and the display driver also store a copy in the node's own dword 2 and the running serial in dword 3; the miniport writes neither in any
+builder I read. The display driver first zeroes dword 0 and fills dword 1, then stores the link word through the flush view. Every wait in all three
+drivers tests bit 0 of dword 0, and the only store that can set that bit is the flush-view one, so the two windows must reach the same memory: the link word and
+owner bit sit in node dword 0. Inferred (the drivers are the witness; what the extra window does differently, such as bypassing a cache, is unknown). So "link word in
+dword 2" describes only the OpenGL and display drivers' extra copy; the word the miniport's chains depend on, and the word every driver waits on, is dword 0. I found no code that reads dword 2 back in the routines
+examined; the rest were not searched.
+
+**Waiting. Established (OpenGL driver `0x6901aa0b`, `0x6901b50c` and `0x690614c2`).** All three loops exit when bit 0 of node dword 0 reads clear, and on nothing else: not dword 2, not dword 3.
+They step through an 18-entry table of busy-wait counts. At the last step, unless the variable that disables blocking is set, the loop asks the kernel (escape `0x62`, wait for hardware) whether the engine is still
+busy with a serial and, if so, sleeps on an event the miniport signals from its stop interrupt; then it restarts the table. The serial it sends is dword 3 of the node, read just before the call
+(sixth input dword of the escape). The two loops inside the dispatch and display-list code reset their remembered value to all ones on every pass of the table, so the compare against it skips the call only
+when the serial is `0xffffffff`; the loop at `0x6901b50c` keeps the value across passes and asks once per distinct serial. No loop waits for dword 3 to change.
+
+*Who writes dword 3.* Only drivers: the OpenGL driver at each node close (a running count that starts at 0 for the ring and is the same number it folds into the chain packet), the display driver at
+each dispatch from a global counter, and both at ring set-up. The engine is not expected to write it. The miniport reads it in one case: a stop whose chain-register serial lacks the
+`0x800000` marker (the chain packets of the display-list builders lack it), where it takes dword 3 of the node whose position the stop reports. The kernel's wait compares the low 20 bits of the serial the OpenGL
+driver sends with the last serial its stop handler recorded for the render node, so dword 3, the chain packet and the escape must carry one series. A replacement engine therefore has to clear bit 0 of node dword 0
+when it finishes a node, write the chain registers when it executes a chain packet, and raise the stop interrupt. Inferred for the engine, established for the drivers' side.
+`Finish` is escape `0x4c` followed by a wait on a second event. `__glCoIcdKickScheduler` is escape `0x4d` with the
 closed node's position as its one argument.
 
 ## What is not known
