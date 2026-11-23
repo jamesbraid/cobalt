@@ -346,7 +346,7 @@ start the data at node byte `0x20` (the display driver puts a three-dword chain 
 (the display driver uses 1, 3 or 7: ready, ready and interrupt, ready and interrupt and sync), bits 11:3 count the units of
 data and bits 31:12 give the next node's position. `units` counts the data after the header unit, padded to a whole unit, and includes the chain packet that ends the node.
 
-*Every writer counts the same way* (the display driver has one undecoded mode: when its flag at `+0x77c` is non-zero the count becomes `0xffffffff`, `sgcodd.dll@0x2789d`..`0x278c5`; the one store I found writes it from a register that held zero, so it is probably unused). The OpenGL driver's closers (the ordinary dispatch at `0x6901a83a`, the display-list close at `0x6901d5e5` and the
+*Every writer counts the same way* (the display driver has one undecoded mode: when its flag at `+0x77c` is non-zero the count becomes `0xffffffff`, `sgcodd.dll@0x2789d`..`0x278c5`; what sets that flag was not traced). The OpenGL driver's closers (the ordinary dispatch at `0x6901a83a`, the display-list close at `0x6901d5e5` and the
 display-list compiler's close near `0x69062687`) count bytes from the start of the data. The miniport's per-packet writer (`sgcomp.sys@0x1725c`), the three
 link stores that build a context-switch page (`@0x168d5`, `@0x16904`, `@0x16934`) and the user-texture table writer (`@0x17a2f`) take the end of the
 padded data minus the node's own position minus one, which is the same number once the header unit is left out. The display driver's packet dispatcher
