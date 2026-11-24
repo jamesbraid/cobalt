@@ -1,7 +1,7 @@
 """generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source
 SPDX-License-Identifier: BSD-3-Clause
 defs-gen 4
-input sha256 b9b418e921d382c9e05469ae1e7fceea13fce3301107ab67b40c20ebb695e1b2
+input sha256 f3ae7c47c9768a753c780a6a3703afde4df2f665479618c7fbc42db1ac4a83dc
 Rendering engine register window"""
 
 UNIT = 'rendering_engine'

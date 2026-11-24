@@ -180,6 +180,39 @@ the device. The only indices a non-solid fill can produce are those sixteen. Est
   fence), calls `DrvSynchronize`, and then, only for the first and last partial 32-byte lines of the host buffer, **copies those
   bytes with CPU reads through the same window (pitch `0x2000`)**. Its main body is the engine writing screen pixels to system memory.
 
+### Flat host buffers: row pitch and the staging area
+
+A flat buffer is a run of pinned host pages that the engine reads or writes as a surface. The display driver's `CoGrmMapLinearBuffer@0x19c62`
+sends video request `0x232050` (flags `0x10`, cache flags 3, address, length); `CobaltStartIO@0x12634` locks the pages, makes a buffer
+record with one translation-table entry per 4 KB page (page size code 0, row length 1, flags `0x14`) and `pCoMakeTlbDesc@0x170a2` turns it into
+a descriptor. Established (the routines read in full).
+
+**Descriptor `0x0b280000`, field by field.** Bits 31:21 are `0x59`: the buffer's first translation-table slot (89), which the miniport
+adds when it writes the descriptor packet (`CoBuildTlbPacket`, `slot << 21`). Bit 19 is set. Every other bit is zero: page-size code 0
+(bits 12:10, one 4 KB page), tile-width bit 13 clear, page-type bit 9 clear, and bits 20:14 hold only the bit-19 contribution. For a
+buffer of this kind `pCoMakeTlbDesc` returns `pageSizeBits | 0x80000` and stops before it looks at the tile width or the row length.
+Bit 19 is also bit 5 of the row-length field (read as a length, 32 tiles of 128 bytes, a 4096-byte pitch), but the driver sets no geometry for these buffers: the bit is the flat-buffer marker.
+
+**Row pitch: 2048 bytes. Established for how every driver addresses it, inferred for the engine.** All users cut a byte offset into the
+buffer as `y = offset >> 11` and `x = offset & 0x7ff` (in pixels: the display driver's `vXferDMA_SB@0x148d0`, `vXferDMA_BS@0x13722` and
+`vXferDMA_SB_Buf@0x14442` shift the masked offset right by the pixel-size shift; the OpenGL driver's `coLinearToTileSpans@0x6903a7e6` and
+`coTileToLinearSpans@0x6903c176` use `x = offset & (0x7ff >> shift)` and `y = offset >> (11 - shift)`, the same split). The pixel `(x, y)`
+then sits at byte `y * 2048 + x * bytesPerPixel`, which is the offset itself: with 2048-byte rows a flat buffer is the host bytes in order,
+so one host row of any width can be walked by stepping the offset. A pitch of 4096 would put `(x, y)` at `y * 4096 + ...`, and no driver
+read the data back that way. The descriptor holds no row length for a flat buffer, so the pitch does not depend on it; a 4 KB page holds
+two rows. Emulator choice, only because the engine's own rule is unknown: flat address `y * 2048 + x * bytesPerPixel` over the page list in
+table order, with x and y as sent.
+
+**Host pages against the staging area. Established for the choice, which lives in software, not in a field.** Nothing in the descriptor,
+the colour-format word or the packets differs between the two: both are the same flat descriptor bound to descriptor id `ulLnDescId`.
+`vXferDMA_SB` takes the buffer GDI gave it directly only when the start address, the row byte count and the absolute row delta are all
+multiples of 8; otherwise it calls `vXferDMA_SB_Buf@0x14442`, which maps a static array inside the display driver's own image
+(`_jReadBufGlobal`, offset `0x2c0`, at most `0x20000` bytes per round, rows padded to 32 bytes) with the same request. After the fence
+(`DrvSynchronize`) it copies each row from that array to the destination bitmap with the CPU. GDI's screen-to-bitmap readback bitmap is a
+DIB whose row delta is padded to 4 bytes, which is why GDI's readbacks mostly take the staging route (a delta divisible by 8 takes the direct one). The direct route copies nothing afterwards except, when the driver's cache-operation workaround is on
+(`bCacheOpWar`), the first and last partial 32-byte lines, read through the CPU window. So the engine writes into pages the miniport
+holds locked, the driver copies out after the fence, and a model sees no difference in what it is asked to do.
+
 **Colour translation of a different-format source (4, 8 or 24 bpp).** The driver never builds its own `XLATEOBJ`. It receives GDI's
 and either calls it (`XLATEOBJ_iXlate`, only in the 16 and 32 bpp XRGB test) or hands it through to `EngBitBlt` / `EngCopyBits`. The
 translation to the 8 bpp indexed palette is computed by GDI from the palette created above and, for a palette-managed device,

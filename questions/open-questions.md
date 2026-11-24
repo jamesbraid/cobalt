@@ -139,8 +139,9 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
 - **The unused transfer type codes 1 and 11 to 13**, and what type 5's decoder does with the packed 16-bit types. The channel order
   of types 4 and 5 is answered in [opengl-pixel-transfers.md](../software/windows/opengl-pixel-transfers.md#channel-order-of-types-4-and-5).
 - **Linear surfaces.** The driver addresses a pinned host buffer as a surface 2048 bytes wide through `(s, t)` and gives the
-  engine a page list; the descriptor's own geometry fields are not what it relies on. The engine's linear-flag address rule is
-  inferred only. A model chooses `t * 2048 + s * bytesPerTexel` through the page list.
+  engine a page list; the descriptor holds only the slot and bit 19, which is a flat marker, not a row length
+  ([decode](../software/windows/nt-display-driver-video.md#flat-host-buffers-row-pitch-and-the-staging-area)). The engine's own
+  address rule is inferred only. A model chooses `t * 2048 + s * bytesPerTexel` through the page list.
 - **The colour matrix's clamp words** (`GLCOPIXPOSTCMCLAMPMIN`, `GLCOPIXPOSTCMCLAMPMAX`, default 0 and `0xffffffff`): their
   meaning is from the names; no driver path sets them.
 - **Primitive-mode bits 8 and 10:9** (set only by an overlapping copy) and **bit 3 of the render node's flags** (set by the

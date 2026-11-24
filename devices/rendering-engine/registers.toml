@@ -30,10 +30,10 @@ count = 64
 stride = 8
 grade = "inferred"
 from = "SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database"
-doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1."
+doc = "Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a pinned host buffer (flat) sets only bit 19 with the page-size bits kept and no tile width, row length or page type; bit 19 reads as the flat marker (the same bit as tiles_per_row 32, but no geometry is set), and the buffer is addressed with 2048-byte rows. The packet pool sets page_type and tiles_per_row 1."
 [registers.tlb_desc.fields]
 offset = { bits = [31, 21], grade = "inferred" }
-tiles_per_row = { bits = [20, 14], grade = "inferred" }
+tiles_per_row = { bits = [20, 14], grade = "inferred", doc = "row length in tiles for a tiled buffer; for a flat host buffer the driver sets only bit 19, which is the flat marker and not a length of 32" }
 tile_width = { bits = [13, 13], grade = "inferred", doc = "0 for a 128-byte tile, 1 for 512 bytes" }
 page_size = { bits = [12, 10], grade = "inferred", doc = "log base 4 of the pages in one tile: 1, 4, 16, 64 or 256 pages give 0 to 4" }
 page_type = { bits = [9, 9], grade = "inferred", doc = "set for the packet pool; the driver sets it when the tile width is neither 128 nor 512" }

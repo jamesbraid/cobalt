@@ -1,7 +1,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 4 -->
-<!-- input sha256 b9b418e921d382c9e05469ae1e7fceea13fce3301107ab67b40c20ebb695e1b2 -->
+<!-- input sha256 f3ae7c47c9768a753c780a6a3703afde4df2f665479618c7fbc42db1ac4a83dc -->
 
 # Rendering engine register window
 
@@ -41,14 +41,14 @@ Array of 2048 registers, stride 8.
 
 ### Register `tlb_desc`
 
-Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size bits kept and the packet pool sets page_type and tiles_per_row 1.
+Buffer descriptor table: entry k describes the buffer whose descriptor id is k, the six-bit id the colour-format, depth-format and texture-format words carry. Entry 0 is the packet pool. The low dword only is written. A tiled buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row tiles per row, whose pages start at the translation-table slot in offset; a pinned host buffer (flat) sets only bit 19 with the page-size bits kept and no tile width, row length or page type; bit 19 reads as the flat marker (the same bit as tiles_per_row 32, but no geometry is set), and the buffer is addressed with 2048-byte rows. The packet pool sets page_type and tiles_per_row 1.
 
 Array of 64 registers, stride 8.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
 | 31:21 | `offset` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database |  |
-| 20:14 | `tiles_per_row` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database |  |
+| 20:14 | `tiles_per_row` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database | row length in tiles for a tiled buffer; for a flat host buffer the driver sets only bit 19, which is the flat marker and not a length of 32 |
 | 13 | `tile_width` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database | 0 for a 128-byte tile, 1 for 512 bytes |
 | 12:10 | `page_size` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database | log base 4 of the pages in one tile: 1, 4, 16, 64 or 256 pages give 0 to 4 |
 | 9 | `page_type` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 kernel driver, hardware start-up and the translation-table packets; type CoTlbDescReg in the OpenGL driver's program database | set for the packet pool; the driver sets it when the tile width is neither 128 nor 512 |

@@ -2,7 +2,7 @@
  * edit, change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 4 */
-/* input sha256 b9b418e921d382c9e05469ae1e7fceea13fce3301107ab67b40c20ebb695e1b2 */
+/* input sha256 f3ae7c47c9768a753c780a6a3703afde4df2f665479618c7fbc42db1ac4a83dc */
 /* Rendering engine register window */
 #ifndef RENG_GEN_H
 #define RENG_GEN_H
@@ -35,8 +35,11 @@
  * carry. Entry 0 is the packet pool. The low dword only is written. A tiled
  * buffer is a run of tiles of 128 or 512 bytes in a row, with tiles_per_row
  * tiles per row, whose pages start at the translation-table slot in offset; a
- * user buffer mapped linearly sets bit 19 (tiles_per_row 32) with the page-size
- * bits kept and the packet pool sets page_type and tiles_per_row 1.
+ * pinned host buffer (flat) sets only bit 19 with the page-size bits kept and
+ * no tile width, row length or page type; bit 19 reads as the flat marker (the
+ * same bit as tiles_per_row 32, but no geometry is set), and the buffer is
+ * addressed with 2048-byte rows. The packet pool sets page_type and
+ * tiles_per_row 1.
  */
 /* tlb_desc: w32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 kernel driver,
  * hardware start-up and the translation-table packets; type CoTlbDescReg in the
