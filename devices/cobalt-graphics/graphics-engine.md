@@ -117,8 +117,8 @@ or more). The writes into `0x82000000` and above are the frame-buffer clears and
   sets one bit of the node status); cause `0x40000000` also wakes kind 8. The routine ends by asking the scheduler for the
   next ready node and starting it with `pCoContextSwitch` until one starts. The cause bits gate only status bit 5, the chunk
   decrement and the kind-8 wake; what tells them apart in hardware terms is unknown. The link word's `intr` and `sync` bits
-  (bits 1 and 2 of a node's link word, the vendor's `CoPktDescType`) are what would ask for an interrupt: inferred from the
-  names. Inferred (driver behaviour).
+  (bits 1 and 2 of a node's link word, the vendor's `CoPktDescType`) are what ask for a stop and an interrupt; what each does
+  is under [link word flags](#link-word-flags-what-the-software-expects-of-the-engine). Inferred (driver behaviour).
 - **Pin 24 (the "AS" pin): vertical retrace.** `CoVRetraceHandler` reads the 32-bit register at `0xca000000` and writes
   back its complement. If bit 1 of the value read was set it adds one to `FrameCounter` when stereo is off; in the stereo
   case it adds one only when `StereoField` bit 0 is set, then does a dword load of the display back end's `vt_f2rf_lock`
@@ -380,6 +380,60 @@ driver sends with the last serial its stop handler recorded for the render node,
 when it finishes a node, write the chain registers when it executes a chain packet, and raise the stop interrupt. Inferred for the engine, established for the drivers' side.
 `Finish` is escape `0x4c` followed by a wait on a second event. `__glCoIcdKickScheduler` is escape `0x4d` with the
 closed node's position as its one argument.
+
+## Link word flags: what the software expects of the engine
+
+The low three bits of a link word are the owner bit (value 1), the interrupt flag (2) and the sync flag (4), so the values the
+drivers write are 1 (owner only), 3 (interrupt), 5 (sync only) and 7 (both). Which driver writes which, established from the
+call sites (NT 4.0 5.2.4; the Windows 2000 OpenGL driver has the same request values at the same sites):
+
+- **OpenGL driver.** `DispatchCurrentPkt@0x6901a83a` takes a request word in `edx` and stores `(request & 6) | 1` as the link flags, so
+  request bit 1 is the interrupt flag and bit 2 the sync flag; request bit 0 means "wait for the node to retire", bit 3 prepends a
+  flush marker (`0x98804000`). Of 257 call sites 235 parse as request 0 (link 1; the request is read from the instructions before the call,
+  so a few may be misread). A context word at `+0x2e2c8` can add flags and forces the flush marker, but nothing in the driver writes it. Request 2 (link 3, no wait) is the swap
+  (`__glCoIcdSwapBuffers`), buffer clears, texture bind and unbind, the pixel-DMA table load and the tile-to-tile set-up. Requests 3
+  and `0xb` (link 3, then the driver sleeps on the finish event instead of spinning) are `Finish`, texture level creation, texture
+  store and free, and the host transfer routines. Request 4 (link 5, sync alone) is used by exactly three routines, the stop, read and
+  poll entry points of `GL_SGIX_instruments`; no other code path in the driver sets the sync flag without the interrupt flag.
+- **Display driver.** `vDispatchPacket@0x2786c` writes 1, 3 or 7. Outside its queue mode a node is 7 only for the host-transfer
+  nodes (request 2: the screen-to-host and host-to-screen DMA routines, each followed by `DrvSynchronize`); otherwise 1. In queue mode
+  (`gdiQueueFlags` bit 0) the node that ends each group of `ulPktChunkCount` packets is 3, or 7 when the caller asked for a fence, and
+  the driver then asks the miniport for a chunk record (`AllocateChunk`, `SetChunk`).
+- **Miniport.** `CoSetGrmPktHeader@0x179e6` ends the node it builds for its own drops (clears, swaps) with link 3. Every other node the
+  miniport builds (the context-switch pages and the user-texture table node) is link 1 only.
+
+**After an interrupt flag the engine has stopped, and the miniport or the OpenGL driver restarts it. Inferred (software expectation,
+four independent witnesses).**
+
+1. `CoProcessCobaltEvent@0x17f2c` reads the position register `0x10000` as "where the engine stopped", stores it as the node's
+   `savedPktOffset`, and on the next switch-in (`pCoContextSwitch@0x16610`) writes it back through the start word with bit 11 set.
+   For that to resume the right place and not repeat the node, the register must hold the node after the flagged one (the link's next
+   position) and the engine must not be advancing it.
+2. A node is restarted by the same routine with `0x185c8` cleared (`pCoContextSwitch`, no switch). That write would race a running
+   engine.
+3. `DispatchCurrentPkt` remembers the request flags of the node it just closed (record `+0x18`); at the next close, if that earlier
+   node carried the interrupt flag (bit 1), it calls `__glCoIcdKickScheduler` (escape `0x4d`). That is the driver restarting a ring that
+   it expects to have stopped at the flagged node. A node closed after a sync-only node is not followed by a kick.
+4. Chunk accounting: the display driver's queue mode counts one chunk per interrupt-flagged node (`CoSetChunk@0x1905d` adds one) and the
+   miniport subtracts one per stop with cause `0x40000000` (`CoProcessCobaltEvent`, queue 1); the finish waits need the count at zero.
+   So every node flagged 3 or 7 must produce exactly one stop interrupt with that cause. An engine that raised it while continuing
+   would have the miniport write the start word under a running engine.
+
+So "stop after an interrupt-flagged node, raise the stop interrupt, leave `0x10000` at the next node" is what the software
+expects, and the current model does it. Which of the two cause bits an interrupt flag raises is not read from anything but the
+chunk accounting above: inferred `0x40000000` for the interrupt flag (the cause that decrements the chunk count); `0x20000000` is
+then the other stop (the engine ran out of owned nodes). The handler wakes the same waiters for either cause apart from the chunk
+decrement and the kind-8 wake, so a model that raises `0x40000000` for every stop is also accepted.
+
+**The sync flag. Inferred.** Its only sync-alone user is the occlusion closer: `glStopInstrumentsSGIX`, `glReadInstrumentsSGIX` and
+`glPollInstrumentsSGIX` dispatch the open node with link 5 and read bit 31 of that node's first dword when it retires
+([the read-back page](../../software/windows/engine-readbacks.md#1-the-packet-nodes-first-dword)). That reads as "finish every earlier
+pixel write of this node, then post the result word" (a barrier, not a stop): the driver does not wait for the node, does not sleep on
+an event for it and does not kick the ring after it, so an engine that stopped there would leave later nodes unrun until something
+else restarted it. Sync together with the interrupt flag (the display driver's 7) is always followed by a wait for the stop, so
+either reading of "sync" satisfies it. Emulator choice, because nothing shipped distinguishes the two readings for 7: treat the sync
+flag as a drain of earlier writes plus the bit-31 verdict, never as a stop, and stop only on the interrupt flag. What the hardware
+does is unknown.
 
 ## What is not known
 

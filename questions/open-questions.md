@@ -13,7 +13,12 @@ Status: **unknown** for everything below. What is established and what software 
   arithmetic of set-up, interpolation, texturing, blending, depth and stencil formats and the tile layout), what
   `0x98804000` (the flush marker) does, what the `0x06c6d081` instance flag on the diffuse blocks does, whether
   `0x91ca1020` is the colour of the cleared pixels (inferred from the opaque-stipple bit) and which of the two cause bits
-  the link word's interrupt and sync flags raise. Routes tried: the OpenGL driver in all three builds (every constant
+  the link word's interrupt and sync flags raise. The software's side of those flags is read
+  ([link word flags](../devices/cobalt-graphics/graphics-engine.md#link-word-flags-what-the-software-expects-of-the-engine)): an
+  interrupt flag stops the engine at the next node and the driver restarts it; the sync flag alone is only the occlusion closer.
+  What the hardware does on the sync flag, and which cause bit each flag raises, is unknown: no shipped software depends on more.
+  Emulator choice: stop on the interrupt flag only, raise cause `0x40000000` for it and `0x20000000` when the ring runs dry, and
+  treat the sync flag as a drain of earlier writes that posts the occlusion bit without stopping. Routes tried: the OpenGL driver in all three builds (every constant
   header and its routine), the display driver and miniport, the program databases of the OpenGL driver and the miniport, SGI's graphics
   white paper (features only), a registry export (identity only). Next: nothing in the shipped software decides these; a
   model chooses and documents a value.
