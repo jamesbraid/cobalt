@@ -165,8 +165,7 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   early rejection, count of at most one) is not stated anywhere. Routes tried: the ICD and miniport (the miniport never writes
   the word), the type declarations (`CoPktRespType`). An emulator author chooses: a constant 0 satisfies every caller.
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
-- **The display driver's pixel-format list** (escape `0x5d`, output `0x30` bytes) and the colour and depth sizes it offers an
-  OpenGL context. Next: the display driver's pixel-format describe routine.
+- **The display driver's pixel-format list** (escape `0x5d`): sizes read ([page](../software/windows/opengl-swap-points-formats-faces.md#the-display-drivers-pixel-format-list-escape-0x5d-and-the-accumulation-buffer)); open: the `dwFlags` bits per entry, and the per-mode list's exact count.
 - **Windows 2000 builds, routine by routine.** The OpenGL driver is compared ([comparison](../software/windows/w2k-opengl-driver-comparison.md)):
   2,592 of 2,637 size-aligned routines are instruction-identical and the packet headers, escape sites and extension strings
   are the same. Not done: the display driver and miniport routine by routine, the roughly 270 unaligned ICD runs, and the
