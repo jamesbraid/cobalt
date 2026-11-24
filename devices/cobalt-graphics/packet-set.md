@@ -276,7 +276,7 @@ reading it is because the declaration and the code agree against it. The fields 
 | `0x80003020` | `CoDrawModeReg` | all 19 enable bits match the setter table below, and bits 28, 19 and 15 get their names; bits 12:0 are declared reserved |
 | `0x18002020` | `CoPrimModeReg` | the primitive type in 31:29, the line width in 26:15, the cull field in 14:13 match [the primitive mode word](draw-and-buffers.md#primitive-mode-word); bit 28 is the anti-aliased line flag, 27 closed line, 12 front face, 11 back-face line, 10:9 primitive direction, 8 direction select |
 | `0x05260020` | `CoLightModeReg` | bit 31 two-sided, 30:27 the four light enables, 26 normalise, 25 specular, 24 specular-only, 23 lighting; the page's bit 26 (the normalise enable) is that field |
-| `0x91aa0020` | `CoColorFormatReg` | linear 31, colour type 30:27, depth 26:25, descriptor id 24:19, span mode 18: the layout the clear routine already decodes |
+| `0x91aa0020` | `CoColorFormatReg` | linear 31, colour type 30:27, depth 26:25, descriptor id 24:19, span mode 18: the layout the clear routine already decodes; span mode is set on the draw buffer of the host-buffer row transfers only ([2d-blit-video.md](2d-blit-video.md#host-buffer-transfers-span-mode-and-the-and-and-xor-passes)) |
 | `0x930ab020` | `CoSzFormatReg` | type 31, depth 30:29, id 28:23 |
 | `0x924a5040` | `CoColorTestReg` | the alpha test: enable-compare 31:28 and function 27:25, then the reference colour |
 | `0x928a7040` | `CoBlendReg` | destination 31:28, source 27:24, equation 23:20, then the constant colour: the layout read at `sgcoicd.dll@0x6902c8f3` |

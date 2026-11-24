@@ -1,7 +1,7 @@
 <!-- generated from devices/rendering-engine/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 4 -->
-<!-- input sha256 f3ae7c47c9768a753c780a6a3703afde4df2f665479618c7fbc42db1ac4a83dc -->
+<!-- input sha256 57c73fb1978e411ba258c32ec3b211f0028f60a68d0c90ec503126f00f295acd -->
 
 # Rendering engine register window
 
@@ -176,7 +176,7 @@ Draw-buffer descriptor.
 | 30:27 | `color_type` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers |  |
 | 26:25 | `buf_depth` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers |  |
 | 24:19 | `desc_id` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers |  |
-| 18 | `span_mode` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers |  |
+| 18 | `span_mode` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 type CoColorFormatReg, draw-buffer descriptor writers | set by the display driver exactly on its three host-buffer transfer routines (the draw buffer of a host-to-screen or screen-to-host row transfer) and by the OpenGL driver's linear-to-tile and tile-to-linear transfers; clear for fills, copies, patterns and glyphs. The engine's use is inferred: a transfer line is a pixel span, end-exclusive |
 
 ### Word `COLOR_TEST_MODE`
 

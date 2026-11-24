@@ -56,7 +56,7 @@ GDI draw target by default (`ulFbDescId`, `ulGdiDescId`, format `base | 0x100000
 (`0x280000`, 8 bit) and 6 its back buffer (`0x300000`), 7 and 8 right-eye front and back (stereo only), 10 the clip-ID
 plane (`ulCidDescId`, `0x500000`), 11 the linear host-memory buffer used by pixel transfers (`ulLnDescId`, format
 `ulLnFormat | 0x80580000`: bit 31 "linear" set), 12 the texture used for pattern fills (`ulTexDescId`, `base | 0x600000`).
-Id 6 (and the stereo-pair ids written beside it) is set only when the record word at `+0x614` is non-zero (`0x25270`; that word is set from bit `0x40` of a flag argument at `0x24cad`), so the id 6 window the miniport maps is not always used by the display driver. Id 0 is the packet pool. Ids 1, 4 and 9 are not set by the mode set-up. Established (`bInitializeModeFields`).
+Id 6 (and the stereo-pair ids written beside it) is set only when the record word at `+0x614` is non-zero (`0x25270`; that word is set from bit `0x40` of a flag argument at `0x24cad`), so the id 6 window the miniport maps is not always used by the display driver. Id 0 is the packet pool. Ids 1, 4 and 9 are not set by the mode set-up. Established (`bInitializeModeFields`). The April 1999 build (the one on the NT 4.0 media, `bInitializeModeFields` at image `0x24c70`) differs: the linear host-memory id is **9** (`ulLnFormat | 0x80480000`, and `ulLnFormat8CI` `0x80480000`), an id 8 format (`0x400000`) is stored unconditionally and no texture-area format (id 12, `0x600000`) is stored at all (the pattern route of that build was not read), and the other ids (front 2, back 3, overlay 5, stereo 6 and 7, clip-ID plane 10) are as above. Established (the stores read).
 
 Texture type codes seen in 2D: 0 (8-bit index), 2 (16-bit), 4 (32-bit), 8 (8-bit glyph mask,
 `DrvTextOut@0x2dfbe`, word `0x40100000`), 14 and 15 (YUY2 and UYVY, [nt-display-driver-video.md](../../software/windows/nt-display-driver-video.md)).
@@ -181,6 +181,49 @@ position in texels, unnormalised, floats made by the integer table. Established.
   same primitive already wrote is what the direction bits above guard. Inferred.
 - **Pixel centres.** Copy and pixel transfers use bias `0.5 0.5` (texel centre at integer vertex), stretch uses `0 0`. Established as sent; the engine's sampling is inferred.
 
+### Host-buffer transfers: span mode and the AND and XOR passes
+
+**Span mode (bit 18 of a colour-format word).** In the display driver exactly three routines put bit 18 in a draw-buffer
+word: `vXferDMA_BS@0x13722` (host bitmap to screen: `ulGdiColorFormat | 0x40000`) and `vXferDMA_SB@0x148d0` and
+`vXferDMA_SB_Buf@0x14442` (screen to host bitmap: `ulLnFormat | 0x40000`, the flat host buffer is the draw buffer). Every other
+draw-buffer word the driver stores (fills, clears, copies, pattern and stipple fills, glyphs, YUV) is the plain format word.
+The same three routines are the ones that send one-row lines (`0x20008000`, two port-A vertices each, end vertex one pixel past the
+last, [the line-end page](../../software/windows/engine-clip-degenerate-and-line-ends.md#4-is-a-textured-line-in-pixel-transfer-mode-end-exclusive)) with a flat buffer on one side. The vendor's type `CoColorFormatReg` names the bit "span mode". The OpenGL
+driver sets it in `__glCoLinearToTileXfer@0x6903b471` (`uVar | 0x40000`) and `__glCoTileToLinearXfer@0x6903c561` (the word is
+rebuilt as `... | 0x80040000`, the linear flag and the span bit, at two sites); `__glCoTileToTileXfer@0x6903ce87` rebuilds the word
+with `& 0x7e03ffff | 0x100000` in its first branch, which clears bit 18, and with `& 0xfe07ffff` in the others, which keeps whatever
+the last transfer left. The April 1999 build of the display driver has the same stores in its `vXferDMA_BS` (image `0x14670`).
+Established for the writers; that the bit marks "this transfer has a flat buffer and is drawn as lines", read from where it is set
+and clear, is inferred. **What the engine does differently with it is unknown**: no shipped path sends a textured pixel-transfer
+line with the bit clear or the bit set on a quad, so nothing shipped depends on a difference. Emulator choice: ignore the bit and
+draw every textured pixel-transfer line as a span, `x0` to `x1 - 1`, texel step one per pixel.
+
+**The two passes that draw a masked bitmap.** A bitmap drawn with a mask (the NT 4.0 check boxes and radio buttons) reaches the
+display driver as two source-and-destination blits with a host source of the screen's pixel format, one with ROP3 `0x88` (`SRCAND`)
+and one with `0x66` (`SRCINVERT`). `vXferDMA_BS` takes the ROP3's low nibble plus one as the index into `_lHWLogicOp` (§5): `0x88`
+gives 9 and word `0x10000000`, `0x66` gives 7 and word `0x60000000`, that is the GL codes 1 (AND) and 6 (XOR) in bits 31:28.
+Each pass sends: the draw buffer `ulGdiColorFormat | 0x40000` (`0x24140000` at 32 bpp: type 4, depth 2, descriptor 2, span bit),
+the logic-operation word, mode `0x10c0000` (bits 24, 19 and 18: logic operation, pixel transfer, texture), the texture packet with
+word 1 `ulLnFormat` and three zero words (nearest, no wrap), the environment `0x62000000` 0 (as a screen copy, so the constant colour is
+not read), the bias `0.5 0.5`, window parameters with mask 0, and one two-vertex line per source row with `s` the texel column and `t` the
+row of the flat buffer (offset divided by 2048 bytes). `ulLnFormat` is `0xa4480000` in the April 1999 build, which the NT 4.0 media
+carry (linear, type 4, depth 2, descriptor 9: its `bInitializeModeFields` stores `0x80480000` and id 9), and `0xa4580000`, id 11, in
+5.2.4 (§2). Per pixel of the destination rectangle:
+
+| Pass | Source `S` (texel of the flat buffer) | Destination `D` | Written |
+|---|---|---|---|
+| 1, `0x10000000` | the mask bitmap, in the device pixel format: all ones where the background shows, zero over the shape | the screen pixel | `D & S` |
+| 2, `0x60000000` | the image bitmap: zero outside the shape, the shape's own colours inside | the result of pass 1 | `D ^ S` |
+
+No pattern and no constant colour is read. Outside the shape pass 1 keeps `D` and pass 2 adds zero; inside, pass 1 leaves zero and
+pass 2 leaves `S`. So **every shape pixel, the white interior included, is the image bitmap's texel**; the engine contributes nothing
+the two bitmaps do not hold, and a disc that comes out black means the image bitmap's interior was zero in host memory when the
+engine read it. Each pass maps the pages of its own bitmap (`CoGrmMapLinearBuffer`, start rounded down to the page, the in-page offset
+carried in `s` and `t`), so mask and image are separate flat buffers. Established for the packets and the table; the reading of mask
+and image from the ROP pair is inferred. In model runs the same packets give a correct radio button (grey ring, white interior, dark
+dot when selected) after a cold boot at 1024 by 768 and 32 bits per pixel, and black discs after a boot at 640 by 480 and 8 bits per
+pixel followed by a mode change; the next step is in [the open questions](../../questions/open-questions.md).
+
 ### Mono colour expansion
 
 `vXfer1bpp@0x15322`: for each source scanline, one horizontal line of two port-A vertices (prim `0x20008000`, line width 1, from
@@ -229,6 +272,18 @@ under mode word `0`. The glyph cache is filled by `bPutGlyphInCache`: draw buffe
 `0x20008000`, colour port 0, constant colour `0xff`, one two-vertex line per glyph row with the stipple pair above. The fixed-pitch
 fast paths `vTextOutFW_P2C..P5C` write the bitmaps straight as stippled rows. Inferred (partial reading of
 `DrvTextOut`, the cache routines read in the typed decompile).
+
+**Text at 8 bits per pixel changes the draw buffer's type.** In the cached-glyph route (`DrvTextOut`, `cjHwPel == 1`) the driver does not
+use the screen's format word `0` for the draw buffer: it sends `0x91aa0020` with **`0x30100000`** (colour type 6, the 8-bit luminance
+type of [textures.md](textures.md#type-codes), depth 0, descriptor 2: the same screen buffer) and the text colour as
+**`iSolidColor << 8`**, the palette index in bits 15:8 of the constant colour (`0x18e84020`). Every other 8 bpp draw sends the index
+unshifted in bits 7:0 (the brush-cache points of `vPatRealize` send the pattern byte as is; the solid fills use the clear value or the
+index as is). At 16 bpp the screen's own format and the 5551-spread colour are used, at 32 bpp the colour as is. The April 1999 build
+stores the same pair (`movl $0x30100000` at image `0x35f8e` followed by `shl $8`). So a text pixel at 8 bpp is index
+`(colour >> 8) & 0xff`, white text (index 255) is `0x0000ff00` and black text is 0. Established for both builds (the cached-glyph
+route read in full in 5.2.4, the store pair in the April build's disassembly); that the engine writes bits 15:8 for a type 6 draw is
+inferred, from the shift alone. An engine that takes bits 7:0 for every 8-bit draw writes 0 for every non-zero index: white
+text black, black text unchanged. The fixed-pitch routines `vTextOutFW_P2C..P5C` were not read for a format change.
 
 ## 5. The ROP2 table and the ROP3 reduction
 

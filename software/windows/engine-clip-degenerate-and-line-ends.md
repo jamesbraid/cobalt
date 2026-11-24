@@ -1,8 +1,8 @@
 # What the drivers expect of clipping, degenerate primitives and line ends
 
-Four questions about engine behaviour that the drivers' packet streams bear on: whether the window-parameter clip cuts writes
-to a flat host bitmap, whether the drivers send collinear fans or empty rectangles, and whether a one-row textured line is
-end-exclusive. Source: SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 (the Windows 2000 OpenGL driver is the same
+Five questions about engine behaviour that the drivers' packet streams bear on: whether the window-parameter clip cuts writes
+to a flat host bitmap, whether the drivers send collinear fans or empty rectangles, whether a one-row textured line is
+end-exclusive, and what a fill or clear that runs past the descriptor's tile columns is expected to do. Source: SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0 (the Windows 2000 OpenGL driver is the same
 program, [comparison](w2k-opengl-driver-comparison.md)), read in Ghidra with the vendor's symbols; grades as in
 [AGENTS.md](../../AGENTS.md). Flat buffers and their pitch are in
 [nt-display-driver-video.md](nt-display-driver-video.md#flat-host-buffers-row-pitch-and-the-staging-area): bit 19 of the
@@ -81,3 +81,37 @@ transfer line is horizontal: its y is the same at both ends.
 **Emulator choice:** for a line with a texture coordinate, in pixel-transfer mode or any other, a horizontal line of integer endpoints
 covers `x0 .. x1 - 1`, and the texture coordinate steps from `s0` over `x1 - x0` pixels. Keep the choice for non-horizontal lines
 unspecified; no driver sends a textured diagonal line in this mode.
+
+## 5. Do fills and clears ever run past the descriptor's tile columns?
+
+**How wide a buffer is. Established** (`DescribeValidMode@0x1aba0`, `AllocGlobalBuffers@0x1a5ff`, `pCoAllocateTiledBuffer@0x1566c` in
+`sgcomp.sys` 5.2.4, read in full; `bEnableOffscreenHeap@0x29c60`). The miniport rounds the visible width in bytes up to a multiple of 512
+(`VideoMemoryBitmapWidth`) and gives the screen buffer that many 512-byte tile columns (`cgb_widthintiles`, byte count shifted right 9),
+and as many 128-row tile rows as the memory budget allows, at most 2048 rows. 640 by 480 at 8 bits per pixel is 2 columns (1024
+pixels), 800 by 600 at 16 bits 4 columns (1024 pixels), 1024 by 768 at 32 bits 8 columns exactly. The display driver's off-screen heap is
+this whole `cxMemory` by `cyMemory` rectangle, and the brush and glyph caches live inside it, so no cache draw leaves the buffer.
+
+**What the driver sends. Established** (`vClearSolid@0x1199a`, `vFillSolid@0x11cc6`, `vScrubEcc@0x20d6a`, `bAssertModeHardware@0x20cb4`,
+`bSetModeAndWarmupHardware@0x20b84`, read in full). Every rectangle a draw routine sends comes from GDI's destination or clip
+rectangles for a surface of the mode's size, and no routine relies on the engine to clamp, wrap or clip it to the tile columns (a
+clear's end column is taken from the last byte of its last pixel). Two routines clear whole buffers on purpose, both at a mode change:
+
+- **Leaving a mode** (`bAssertModeHardware`, argument 0) calls `vScrubEcc` for the global buffers with ids 2 to 10 (front, back, depth,
+  overlay, overlay back, the three right-eye buffers, the clip-ID plane) that exist and carry flag `0x400`. Each is one clear of the
+  buffer's own geometry: `widthInTiles * tileWidth` bytes by `byteCount / that` rows, in byte units, with the descriptor id as both the
+  descriptor and the value. The name is the vendor's; the clear writes the whole buffer so that memory check bits start valid, and the
+  value is irrelevant.
+- **Entering a mode** (`bSetModeAndWarmupHardware`, after the miniport's set-mode request `0x23040c`) clears the front, back (if any) and overlay
+  (if any) buffers to 0, `cxScreen` by `cyScreen` each, with the descriptor ids of the new mode.
+
+Neither goes past the buffer it names. Both name the buffer by descriptor id, so they reach the engine's descriptor for that id: if
+the descriptor still describes the previous mode's buffer (narrower or shorter), the engine is asked for columns it does not have.
+Which descriptor writes the miniport makes between the set-mode request and the first clear was not traced. The scrub of a buffer
+whose id has no descriptor bound is the same case with zero columns.
+
+**Engine side. Unknown.** Clamp, wrap into the next tile row (a tile index computed as row times columns plus column would alias that
+way) and ignore are all consistent with the drivers, because nothing shipped reads memory the scrub or the warm-up clear touched
+outside the buffer: the scrub's value is irrelevant, and the warm-up clear paints black that the desktop repaint covers. **Emulator
+choice:** write the columns the descriptor has, drop the rest of the packet, and log it. That is safe for both clears, never
+paints a wrong pixel and never writes into a neighbouring row; the model's present behaviour (drop and log) fits. A screen that shows
+the previous mode's pixels for a moment after a mode change is the worst outcome.

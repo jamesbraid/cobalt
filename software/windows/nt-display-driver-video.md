@@ -234,5 +234,12 @@ The driver's palette entries (statics at 0 to 9 and 246 to 255) match its dither
    above without any device read, or a DIB fill by the same two paths. It fits the same family only if the cause lies in
    GDI's translation or in the pixel DMA; it does not fit a palette-hardware cause, because no palette value reaches those bytes.
 
+**Two later readings.** Text at 8 bits per pixel is the one engine path with a format of its own: the cached-glyph route draws into the
+screen buffer under colour type 6 with the palette index shifted left eight bits, so white text needs the engine to write bits 15:8
+([2d-blit-video.md](../../devices/cobalt-graphics/2d-blit-video.md#text)). The masked-bitmap passes (check boxes, radio buttons) are two
+`vXferDMA_BS` transfers, AND then XOR, whose image comes entirely from host memory
+([2d-blit-video.md](../../devices/cobalt-graphics/2d-blit-video.md#host-buffer-transfers-span-mode-and-the-and-and-xor-passes)); both are
+engine paths that the CPU-aperture paths above do not reach. Established for the driver side.
+
 What would settle it is the open question on the 8 bpp icons in [questions/open-questions.md](../../questions/open-questions.md);
 the driver alone does not decide it (**unknown**).

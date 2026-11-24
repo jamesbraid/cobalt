@@ -177,8 +177,31 @@ the hardware accepts more than one order.
   (the firmware and `sgibvid.dll` both lay the frame buffer out that way, `1.1005@0x113154e`, `sgibvid.dll@0x80010b54`).
   Layout established, hardware reading inferred. Per-mode register values and the visible-rectangle rule:
   [display-engine.md](display-engine.md#frame-width-line-pitch-and-the-visible-rectangle).
-- Pixel byte order: red in the top byte of a 32-bit pixel word (`sglfb.sys` colour masks; `ArsenicPixelFormats`). Inferred,
-  and the `config` little-endian bit (`0x20`) is not settled.
+- Pixel formats per depth. Three programmers pick the same hardware type for each depth: the window-table word is `3` (buffer
+  mode 3, type 0, an 8-bit index) at 8 bits per pixel, `0x1b` (type 6, RGBA5) at 16 and `0x17` (type 5, RGB8) at 32. NT's display driver writes those three
+  values (`bSetModeAndWarmupHardware@0x20b84`), `sglfb.sys` writes `3` and `0x17`, and Linux's `sgivwfb_set_par` stores `DBE_CMODE_I8`,
+  `DBE_CMODE_RGBA5` and `DBE_CMODE_RGB8` with `DBE_BMODE_BOTH` in all 32 words (codes 0, 6 and 5 in the type field, `sgivw.h`). The
+  miniport's own table `ArsenicPixelFormats` (`sgcomp.sys` data at `0x1de90`, four dwords each) pairs the same codes with the masks it
+  reports to GDI: type 0 with `0xff`, type 6 with red `0xf800`, green `0x07c0`, blue `0x003e`, type 5 with red `0xff000000`, green
+  `0x00ff0000`, blue `0x0000ff00`. Established (tables and stores read). Linux's frame buffer declares 16 bits per pixel
+  as red 15:11, green 10:6, blue 5:1 (the same masks) and 32 bits as red 7:0, green 15:8, blue 23:16, alpha 31:24 (`sgivwfb_check_var`).
+  For 16 bits NT, Windows 2000 (`sglfb.sys`) and Linux therefore agree, and a 2005 posting on the public mailing lists reports X11
+  working on a real machine at depth 15 with that mode and not at 24 or 32 (the report names a 2/3-width picture, not a colour fault).
+  **For 32 bits the two sources are byte reversals of each other**: NT and Windows 2000 describe a little-endian pixel word with red in
+  the top byte (memory order blue-first, red last), Linux with red in the low byte (memory order red first). The `config` little-endian
+  bit (`0x20`) is set by every programmer including the value Linux defines, so it does not separate them. Linux's 32-bit mode was
+  reported broken in the same posting, and the NT and Windows 2000 drivers were shipped and used at 32 bits on the real machine, so the
+  contract this repository gives is the NT one (red in the top byte of the word); the Linux declaration contradicts it and is graded
+  unknown for the engine's and the scan-out's byte order. Inferred.
+- 15-bit to 8-bit expansion at scan-out: no shipped software, document or public driver states it (routes tried: the palette and gamma
+  set-up of both NT drivers and the Windows 2000 pair, the Linux driver, the window-table type codes). Linux loads an identity
+  gamma map and an identity colour map at every depth, NT loads colour-map bank 0 (a 256-entry palette) only at 8 bits per pixel and a
+  3-3-2 ramp into entries `0x1101` to `0x11ff` at every depth, and neither touches the gamma map except from the registry or the
+  private escape. Two things the drivers do expect point at bit replication: the ramp written for entries `0x1101` to `0x11ff` widens each 3-bit
+  component to 8 bits by replication, and the display driver widens a 16-bit colour key by replicating the top bits
+  (`k5 << 3 | k5 >> 2`, [colour key](2d-blit-video.md#colour-key)). Neither is the scan-out expansion. **Unknown: no shipped software or published
+  source depends on it.** Emulator choice: replicate the top bits (white `0xfffe` shows `0xffffff`; the same rule at 3 and 4 bits). A
+  guest cannot tell the difference except by reading the screen back pixel by pixel from outside.
 - DDC and flat-panel I2C: only if a monitor or panel is to be emulated. Bit 0 is SDA and bit 1 SCL, a 1 pulls the line low and
   a read returns 1 while the line is low. With no device both lines read 0; the NT driver then falls back to its mode table
   and the firmware to 1024 by 768 at 75 Hz. Established.

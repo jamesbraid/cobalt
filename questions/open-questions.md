@@ -60,9 +60,15 @@ Status: **unknown** for everything below. What is established and what software 
   Route: the Windows 2000 drivers' own cursor use, and the video capture software on the OEM discs.
 - **PLL and clock.** The `sysclk` register (`+0x0c`), the purpose of the one-second PLL restart in NT's mode set, and
   `ctrlstat` bit 25.
-- **Pixel order.** Whether 32-bit pixels are red-first in memory (Linux) or red in the top byte of the word (NT's
-  `ArsenicPixelFormats`), and what the config bit `LENDIAN` does. Route: a Linux boot of the real hardware, or the
-  pixel-format table's users in `sgcodd.dll`.
+- **Pixel order and the scan-out expansion.** Whether 32-bit pixels are red-first in memory (Linux's declaration: red 7:0) or red in
+  the top byte of the word (NT's `ArsenicPixelFormats`, Windows 2000's `sglfb.sys`), and what the config bit `LENDIAN` does; and how
+  a 15-bit pixel is widened to eight bits per component on the way out. Routes tried: every shipped writer's window-table word and
+  colour-map, gamma and config set-up at each depth, the miniport's pixel-format table, the Linux driver and header, and the public
+  report of X11 on the real machine (it works at depth 15, 32 bits was broken for another reason); the 16-bit layout agrees everywhere,
+  the 32-bit one does not, and the config bit is the same in every writer. Written up in
+  [framebuffer-driver-floor.md](../devices/cobalt-graphics/framebuffer-driver-floor.md#5-status-what-must-be-bit-exact-and-what-may-be-approximated).
+  Emulator choice: red in the top byte of the word at 32 bits, replication of the top bits for the expansion. Settles it: a chip
+  description, or a shipped routine that reads the screen back and uses the bytes.
 - **Frame-buffer floor: what the hardware does that the five boot-time writers cannot show.** The writers (the NT 4.0 miniport and
   HAL, the Windows 2000 boot video driver and frame buffer miniport, the firmware) accept different orders and waits, so the
   contract is written ([framebuffer-driver-floor.md](../devices/cobalt-graphics/framebuffer-driver-floor.md#5-status-what-must-be-bit-exact-and-what-may-be-approximated)).
@@ -96,6 +102,22 @@ driver. Written up in [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-vide
   the window origin is non-zero; with primitive type 6 (`vFillRectSpans`); with the direction bits of a copy; with the
   third-of-pixel field of the styled-line repeat word; with mode-word bits 26, 5 and 4 of the pixel-transfer window packet. Settles it: a model
   that chooses and documents a value, or a published description of the engine.
+- **What the engine does with span mode, a luminance draw buffer, and draws past a descriptor's tile columns.** Span mode (bit 18 of
+  a colour-format word) is set only on the host-buffer row transfers; no shipped path shows a difference. Emulator choice: draw every
+  textured pixel-transfer line as an end-exclusive span either way. A draw buffer of colour type 6 (text at 8 bpp) takes its index from bits
+  15:8 of the colour in the driver's use; whether the engine converts a full colour to luminance for any other use is unknown. Emulator choice: take
+  bits 15:8 for a type 6 draw buffer. A fill or clear past the descriptor's tile columns (the driver sends one only
+  when a descriptor still describes the previous mode, in its whole-buffer clears at a mode change) may clamp, wrap into the next tile
+  row or be ignored. Emulator choice: write the columns the descriptor has and drop the rest. Written up in
+  [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-video.md#host-buffer-transfers-span-mode-and-the-and-and-xor-passes) and
+  [the clip page](../software/windows/engine-clip-degenerate-and-line-ends.md#5-do-fills-and-clears-ever-run-past-the-descriptors-tile-columns).
+  Settles it: a published description of the engine.
+- **Why NT 4.0 radio buttons draw as black discs after a mode change from an 8 bpp boot.** Each button is two host-buffer passes,
+  AND with a mask bitmap and XOR with an image bitmap ([2d-blit-video.md](../devices/cobalt-graphics/2d-blit-video.md#host-buffer-transfers-span-mode-and-the-and-and-xor-passes)),
+  so a black disc means the image bitmap held zero in its interior. In model runs a cold boot at 1024 by 768 and 32 bits draws correct buttons with the
+  same packets, and a boot at 640 by 480 and 8 bits followed by a mode change draws black ones at every depth. Inferred: the bitmaps were
+  built while the screen was 8 bpp (the 4 bpp to 8 bpp translation of the open question above) and the window system keeps them across the
+  mode change. Next: boot at 8 bpp and at 16 bpp cold and compare the button, and look at the image bitmap's interior at the second pass.
 - **Which way a model should treat mask bit 27 clipping.** The copy, stretch and transfer routines send a valid mask of 0 and
   draw exact rectangles, so clipping by the valid mask is exercised only by the solid and stipple fills, and then
   redundantly. Settles it: nothing in the shipped drivers depends on it.
@@ -193,6 +215,16 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   Next: check whether the engine pixel DMA of `vXferDMA_SB` returns screen contents and honours the logic operation word that
   `vXferDMA_BS` sends, and where GDI's 4 bpp to 8 bpp translation vector first becomes zero (the `XLATEOBJ` handed to `DrvCopyBits` and
   `bPuntBlt`).
+  A second 8 bpp symptom is explained by the engine's side: white text drawn black (selected list and combo items, the white
+  labels of the display applet's test bitmap) is the cached-glyph route's type 6 draw buffer with the index in bits 15:8 of the colour
+  ([2d-blit-video.md](../devices/cobalt-graphics/2d-blit-video.md#text)); an engine that takes bits 7:0 writes 0. What is left is the
+  test bitmap's gradient bars, which draw black while its flat colour bars are right. A flat colour GDI cannot
+  map to a static entry is a dithered brush (`DrvDitherColor`, sixteen static indices), drawn by the pattern route: `vPatRealize`
+  (64 point draws of the pattern byte into the brush cache), `vTexRealize` (a screen-as-texture copy into the pattern texture) and
+  `vFillPat` (a textured fill with the 8 by 8 map). At 16 and 32 bits the same bars are solid fills, so this route is exercised
+  only at 8 bpp. Next: check each of the three stages at 8 bpp (the cache points land with the index, the texture copy keeps it, the fill
+  reads it), and read the colour map after the test bitmap's palette is realised: `DrvSetPalette` ignores the start index GDI passes and
+  writes the run at entry 0.
 
 ## Rendering engine arithmetic and vertex semantics
 

@@ -212,7 +212,7 @@ linear = { bits = [31, 31], grade = "inferred" }
 color_type = { bits = [30, 27], grade = "inferred" }
 buf_depth = { bits = [26, 25], grade = "inferred" }
 desc_id = { bits = [24, 19], grade = "inferred" }
-span_mode = { bits = [18, 18], grade = "inferred" }
+span_mode = { bits = [18, 18], grade = "inferred", doc = "set by the display driver exactly on its three host-buffer transfer routines (the draw buffer of a host-to-screen or screen-to-host row transfer) and by the OpenGL driver's linear-to-tile and tile-to-linear transfers; clear for fills, copies, patterns and glyphs. The engine's use is inferred: a transfer line is a pixel span, end-exclusive" }
 
 [words.SZ_FORMAT]
 width = 32
