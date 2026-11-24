@@ -165,6 +165,12 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   early rejection, count of at most one) is not stated anywhere. Routes tried: the ICD and miniport (the miniport never writes
   the word), the type declarations (`CoPktRespType`). An emulator author chooses: a constant 0 satisfies every caller.
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
+- **Clip coordinates and mask 0 against flat buffers; degenerate fans; line ends.** The software's side is read
+  ([page](../software/windows/engine-clip-degenerate-and-line-ends.md)). Unknown, no shipped software depends on more: which
+  coordinates (before or after the origin) the window clip rectangles use; whether the engine draws a zero-area fan; whether the
+  end vertex of a line that is not horizontal is exclusive. Routes tried: every transfer, fill and triangle routine of the OpenGL
+  and display drivers and the miniport's window packet builders. Emulator choices: no window clip on flat destinations and mask 0
+  unclipped; draw nothing for a degenerate fan and log it; a horizontal line with integer ends covers `x0` to `x1 - 1`.
 - **The display driver's pixel-format list** (escape `0x5d`): sizes read ([page](../software/windows/opengl-swap-points-formats-faces.md#the-display-drivers-pixel-format-list-escape-0x5d-and-the-accumulation-buffer)); open: the `dwFlags` bits per entry, and the per-mode list's exact count.
 - **Windows 2000 builds, routine by routine.** The OpenGL driver is compared ([comparison](../software/windows/w2k-opengl-driver-comparison.md)):
   2,592 of 2,637 size-aligned routines are instruction-identical and the packet headers, escape sites and extension strings
