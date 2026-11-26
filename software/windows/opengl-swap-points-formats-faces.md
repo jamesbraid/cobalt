@@ -16,8 +16,8 @@ interval. The miniport queues it as drop type 4. `CoSetChunk@0x1905d` rewrites a
 `HKLM\Software\Silicon Graphics\Control Panel\Graphics`, read in `CobaltStartIO@0x12634`: default 1, 1 when the value is absent, and
 forced to 1 when stereo is on.
 
-- **Type 4 (the default). A copy.** `CoScheduleSwap@0x1934a` makes engine copies of the drawable's rectangles with `CoCopyRect`
-  (the copy region, then the clip region when flag 4 is set), run after the vertical retrace: `CoProcessRetraceEvent@0x17dae` releases the
+- **Type 4 (the default). A copy of the partly covered tiles and a flip of the whole ones.** `CoScheduleSwap@0x1934a` makes engine copies of the drawable's rectangles with `CoCopyRect`
+  (the copy region, then the clip region when flag 4 is set), run after the vertical retrace; the whole tiles are flipped when the held chunk is released ([the tile flip](nt-swap-tile-flip.md)): `CoProcessRetraceEvent@0x17dae` releases the
   held chunks on the retrace event only while the beam is between the pre-blank scan line and `height - cmcfrtsqOverhead`.
 - **Type 9 (`SwapVertRetrace` 0). A flip.** `CoScheduleUnsyncedSwap@0x194be` does no engine work. With the flip flag, `asFlipTiles@0x1c08c`
   exchanges the translation-table entries of the window's tiles between the front and back global buffers (ids 2 and 3, and the two
@@ -26,10 +26,10 @@ forced to 1 when stereo is on.
   the display register at `+0x3000c` ([display-engine.md](../../devices/cobalt-graphics/display-engine.md)). When GDI is on the overlay
   and one OpenGL node exists, `asFlipFrontBack@0x1c220` exchanges the whole front and back lists instead.
 
-So a swap reaches the screen by an engine copy unless the registry value turns the flip on. The pixel-format list advertises both: each
+So a swap reaches the screen by an engine copy of the partly covered tiles and a flip of the whole ones, and by the flip alone when the registry value turns the unsynced form on. The pixel-format list advertises both: each
 double-buffered format appears twice, plain and with `PFD_SWAP_COPY` (`0x400`), and the driver sends the same escape for both.
-**Emulator choice:** implement the copy (the engine's own packets); the flip is reachable only when a guest sets the value to 0, and needs
-the display tile-list register to latch on vertical blank.
+**Emulator choice:** implement both. The default swap needs the copy and the tile exchange together, with the display tile-list register latching on vertical blank;
+the flip alone is the registry-selected form.
 
 ## Points
 
