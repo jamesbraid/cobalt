@@ -61,14 +61,14 @@ format (`+0x50`), swap buffers (`+0x54`). When bit 0 of the flags is set the thr
 SGI installer then register the driver, and they differ:
 
 - **The 5.2.1, 5.2.3 and 5.2.4 graphics patches** (`SGICoGraphics521Win2KJPN.exe`, `SGICoGraphics523Win2KJPN.exe`, `SGICoGraphics524w2k.exe`;
-  their release notes say they update a system that already has the SSK v5.1) register the key `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers` with
+  the 5.2.1 and 5.2.3 notes say they update a system that has the SSK v5.1 applied, and the 5.2.4 notes say the driver supersedes that kit and fixes its graphics driver) register the key `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers` with
   **one value**, name `SGI`, data `sgcoicd.dll`, and no `DLL`, `Version`, `DriverVersion` or `Flags` name anywhere in the header (all three read: the string tables hold the
   name once, in the key's record). A guest given a patch alone ends up in the value layout and `Flags` is 0. Established for the header's
   records (the record layout was checked against the same table's service keys); inferred that the installer writes them as the records say (never run here).
 - **The SSK installer** (`sgi_ssk.exe`, English, and `sgi_ssk-sgi-jp.exe`; the release notes are `ssk_relnotes.rtf` in the same pack: it is the SGI
   upgrade kit for a 320 or 540 moving to Windows 2000, installed after Windows 2000 itself. The files carry no version number; the patch notes call the base kit v5.1, and this
   build's driver is dated December 1999, so this is inferred to be that kit) carries the OpenGL driver as the component `Sgcoicd`
-  (build date 9 December 1999, 1,119,808 bytes) with registry entries under **`...\OpenGLDrivers\SGI`**: `DLL` = `sgcoicd.dll`, `Flags` = 1, `DriverVersion` = 2,
+  (PE time stamp 10 December 1999 06:55 UTC, 1,119,808 bytes) with registry entries under **`...\OpenGLDrivers\SGI`**: `DLL` = `sgcoicd.dll`, `Flags` = 1, `DriverVersion` = 2,
   `Version` = 2. In that table's record format the string type code is 2 and the number type code is 3, the codes the same table gives
   `Group` = `Base` (string) and `Start`, `Type`, `ErrorControl`, `Interrupt` (numbers, decimal text) of its service keys, so `DLL` is a string and the other three are numbers
   (inferred from the codes; the type constant itself is not documented). Both kits' tables carry the same four entries.
@@ -101,15 +101,15 @@ Calls, in order, with what returns FALSE (the routine's results are 1 or 0):
 | Look up and lock the device context from the handle (`0xa001478c`). Fails | FALSE | 6 (invalid handle) |
 | The context's surface pointer (`+0x1dc`) is 0, a context with no device surface behind it | FALSE | 6 |
 | The context's type (`+0x14`) is 1, taken to be a memory context (inferred from the value; it matches what `wglSwapBuffers` does for one) | TRUE, no driver call | |
-| Lock the context for window access (`0xa007dc61`, which wraps `0xa0014917`). That lock **fails** when the context has the synchronise flag (bit 8 of the flags word at `+0x18`) and, after waiting for its semaphore, either bit 11 (`0x800`) is set or bit 4 is set and the region update `0xa0017006` returns 0. Then the routine `0xa0027568` decides: it returns TRUE if bit 11 is set, FALSE if not (the context has a surface here, so that is the only test left) | TRUE if bit 11, else FALSE | none set |
-| Find the window object. For a display context of the direct type the lock routine searches a global list (head at `[0xa0186dbc]+0x24`) for an entry keyed by the first dword of the context object and takes the object it points to; a miss, an empty entry, or an object that cannot be referenced leaves the object pointer 0. The swap then fails | FALSE | 6 |
+| Lock the context for window access (`0xa007dc61`, which wraps `0xa0014917`). That lock **fails** in two cases: the context has the synchronise flag (bit 8 of the flags word at `+0x18`) and, after waiting for its semaphore, bit 11 (`0x800`) is set; or bit 4 is set (whether or not bit 8 is) and the region update `0xa0017006` returns 0. Bit 14 only changes which resource is taken before the wait. Then the routine `0xa0027568` decides: it returns TRUE if bit 11 is set, FALSE if not (the context has a surface here, so that is the only test left) | TRUE if bit 11, else FALSE | none set |
+| Find the window object. For a display context of the direct type the lock routine searches a global list (head at `[0xa0186dbc]+0x24`) for an entry keyed by the first dword of the context object and takes the object it points to; a miss, an empty entry, or an object that cannot be referenced leaves the object pointer 0; for any other context the object is the one at `+0x50` of the surface. A null object fails the swap | FALSE | 6 |
 | The window object's bounds (the `CLIPOBJ` rectangle at `+4`): left equals right, or top equals bottom (an empty client area) | TRUE, no driver call | |
-| Call the driver's `DrvSwapBuffers` through the PDEV's table slot `+0xc6c` (the slot `NtGdiSetPixelFormat` tests before it calls `DrvSetPixelFormat` at `+0xc64`) with the driver's surface and the window object. Slot empty, or the driver returned FALSE | FALSE | none set |
+| Call the driver's `DrvSwapBuffers` through the PDEV's table slot `+0xc6c` (the slot `NtGdiSetPixelFormat` tests before it calls `DrvSetPixelFormat` at `+0xc64`) with the driver's surface (the context's surface plus `0x10`) and the window object. When the PDEV's flag byte `+0x22` has bit 1 set, the helper `0xa013caf4` (read in part, so inferred) may substitute another PDEV's table and surface; that changes the callee, not the results below. Slot empty, or the driver returned FALSE | FALSE | none set |
 | Driver returned TRUE | TRUE | |
 
 So with the display driver returning TRUE, the call can still return FALSE on four paths that run before it: an invalid context (6), a context with no surface (6),
 a failed window lock whose context lacks flag `0x800` (no error), and a window object that is missing (6). The routine's last error tells two groups apart:
-**6 is the lookup group, 0 is the lock or table-slot group.** Which one a real run took is decided by one breakpoint on the return of `0xa0134500` plus `GetLastError`
+**6 is the lookup group; the lock and table-slot group leaves the thread's last error as it was (0 if the caller cleared it).** Which one a real run took is decided by one breakpoint on the return of `0xa0134500` plus `GetLastError`
 after the failed call; no run has examined it (unknown, and an emulator trace that reaches the display driver's `DrvSwapBuffers` has already passed the lookup, because
 the window object is the second argument that call receives).
 
