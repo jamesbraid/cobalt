@@ -86,6 +86,41 @@ driver-owned format it finds the same driver table and calls slot `+0x38`, the d
 slot is empty it falls back to `SwapBuffers` for the main plane. So the layer call reaches the OpenGL driver for every format of the pack, and the
 plain call does not.
 
+## What the kernel's `NtGdiSwapBuffers` does
+
+`GdiSwapBuffers` in `gdi32` (RTM `0x77f69b2e`) pushes its argument and calls a system-call stub (`mov eax, 0x111e`, table 1, index `0x11e`) and returns the kernel's
+result unchanged. Windows 2000 RTM `win32k.sys` (1,726,256 bytes, preferred base `0xa0000000`) registers its service table at `0xa01859f0` (the `push` at
+`0xa01945b4`); entry `0x11e` is `NtGdiSwapBuffers` at **`0xa0134500`** (the neighbour at `0xa013432d`, entry `0x111`, is `NtGdiSetPixelFormat`, called by
+`GdiSetPixelFormat`). The file has no symbols, so every name below is a description. SP4's `win32k.sys` was not available to read. Established (read in full).
+
+Calls, in order, with what returns FALSE (the routine's results are 1 or 0):
+
+| Step | FALSE or TRUE | Last error |
+|---|---|---|
+| Look up and lock the device context from the handle (`0xa001478c`). Fails | FALSE | 6 (invalid handle) |
+| The context's surface pointer (`+0x1dc`) is 0, a context with no device surface behind it | FALSE | 6 |
+| The context's type (`+0x14`) is 1, taken to be a memory context (inferred from the value; it matches what `wglSwapBuffers` does for one) | TRUE, no driver call | |
+| Lock the context for window access (`0xa007dc61`, which wraps `0xa0014917`). That lock **fails** when the context has the synchronise flag (bit 8 of the flags word at `+0x18`) and, after waiting for its semaphore, either bit 11 (`0x800`) is set or bit 4 is set and the region update `0xa0017006` returns 0. Then the routine `0xa0027568` decides: it returns TRUE if bit 11 is set, FALSE if not (the context has a surface here, so that is the only test left) | TRUE if bit 11, else FALSE | none set |
+| Find the window object. For a display context of the direct type the lock routine searches a global list (head at `[0xa0186dbc]+0x24`) for an entry keyed by the first dword of the context object and takes the object it points to; a miss, an empty entry, or an object that cannot be referenced leaves the object pointer 0. The swap then fails | FALSE | 6 |
+| The window object's bounds (the `CLIPOBJ` rectangle at `+4`): left equals right, or top equals bottom (an empty client area) | TRUE, no driver call | |
+| Call the driver's `DrvSwapBuffers` through the PDEV's table slot `+0xc6c` (the slot `NtGdiSetPixelFormat` tests before it calls `DrvSetPixelFormat` at `+0xc64`) with the driver's surface and the window object. Slot empty, or the driver returned FALSE | FALSE | none set |
+| Driver returned TRUE | TRUE | |
+
+So with the display driver returning TRUE, the call can still return FALSE on four paths that run before it: an invalid context (6), a context with no surface (6),
+a failed window lock whose context lacks flag `0x800` (no error), and a window object that is missing (6). The routine's last error tells two groups apart:
+**6 is the lookup group, 0 is the lock or table-slot group.** Which one a real run took is decided by one breakpoint on the return of `0xa0134500` plus `GetLastError`
+after the failed call; no run has examined it (unknown, and an emulator trace that reaches the display driver's `DrvSwapBuffers` has already passed the lookup, because
+the window object is the second argument that call receives).
+
+The kernel never sees the application's draw buffer: nothing in this routine reads a context's `glDrawBuffer` state, so a failure that appears only with the front buffer
+selected is not a kernel decision about the buffer.
+
+**Quake II 3.20.** The renderer DLL of the Quake II build used here (`ref_gl.dll`, 234,496 bytes) calls `wglSwapBuffers` in `GLimp_EndFrame` only when the cvar `gl_drawbuffer` is
+the string `GL_BACK` (the string compare against `GL_BACK`, its address pushed at `0x1000e70b`, the error string `GLimp_EndFrame() - SwapBuffers() failed!` at `0x1002f62c`), and calls `Sys_Error` when
+it returns 0. So a "SwapBuffers() failed" with `gl_drawbuffer` at `GL_FRONT` means the failing call ran in a frame where the cvar still read `GL_BACK` (the first frames, before the
+setting was applied), not in the front-buffer frames. Established (the function read in full); that this is what happened in a given run is inferred, since the frame number of the
+failure was not looked at.
+
 ## The OpenGL driver's two swap exports
 
 **The window record. Established** (the PDB declares `__WGLdrawablePrivateRec`, 0x7bc bytes, and `__WGLcontextRec`, 0x70 bytes). In the record:
