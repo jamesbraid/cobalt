@@ -14,7 +14,7 @@ Addresses are image addresses. Grades as in [AGENTS.md](../../AGENTS.md).
 | Question | Answer | Grade |
 |---|---|---|
 | What are the class-11 writes beside an NT 4.0 swap? | Translation-table entries (not descriptors) of the front and back global buffers, reloaded because a tile flip exchanged some of them. | established for the driver side, inferred for the trace reading |
-| Tile flip, source and destination descriptors, or damaged tiles? | A tile flip of every tile wholly inside the window, plus an engine copy from the back buffer (descriptor 3) to the front buffer (descriptor 2) of the rest of the window's area. The copy rectangles are not "damaged tiles"; they are the window's copy region. | established for the flip and the copy, inferred for the choice of tiles |
+| Tile flip, source and destination descriptors, or damaged tiles? | A tile flip of every tile wholly inside the window, plus an engine copy from the back buffer (descriptor 3) to the front buffer (descriptor 2) of the rest of the window's area. The copy rectangles are not "damaged tiles"; they are the window's copy region. | established for the flip, the copy and the choice of tiles |
 | Does the driver ever grow the entries? | No tile is added to a global buffer after the mode is set. The descriptor and table loads are re-sent whenever the set of bound buffers changes or a flip marks a buffer. | inferred |
 
 ## What a swap does
@@ -46,13 +46,14 @@ a flip the engine's front table and the display's tile list agree on the new fro
 So the default swap is the flip and the copy together, not a copy alone. The note in [the escapes](opengl-escapes.md#the-table) that a swap through
 escape `0x48` "is a copy, not a flip" is wrong for the default drop type: the miniport flips the whole tiles when it releases the held chunk.
 
-**Which tiles. Established for the code that picks them, inferred for what it means** (`pCoGrmUpdateDrawable@0x1ccde`, partly read). The display driver
+**Which tiles. Established** (`vUpdateCopyList@0x1cf96`, read in full; `pCoGrmUpdateDrawable@0x1ccde` calls it when bit 0 of the drawable's byte at `+0x5c` is set). The display driver
 fills the drawable's `rgnCopy` (`+0x70`, the copy region) and `tileList` (`+0x88`, 256 byte-sized tile indices) when the window's clip changes. For
 each tile of the screen buffer it calls `coRectIn@0x1c6c8` against the window's clip region. That routine returns 1 for no overlap, 2 for a
-partial overlap and 0 when the tile's rectangle lies wholly inside the clip (read in full). With `bFlipTiles` set (default 1), a tile with result 0 goes on
-`tileList`; a tile with result 2 contributes its intersection with the clip to `rgnCopy`; a tile with result 1 contributes nothing. `bFlipAllTiles` (default 0) puts partial tiles on
-the list too, and `bFlipScrTiles` (default 0) is a third variant for the screen. The 2D escape `0x11` code 3 sets `bFlipTiles`
-([escapes](opengl-escapes.md#private-escapes-and-the-other-entry-points)); the OpenGL driver never sends it, so the default stays.
+partial overlap and 0 when the tile's rectangle lies wholly inside the clip (read in full). Flipping is on when `bFlipTiles` is set (default 1) and bit 2 of the drawable's byte
+at `+0x5d` is clear, or when `bFlipAllTiles` or `bFlipScrTiles` is set. With it on, a tile with result 0 goes on
+`tileList`; a tile with result 2 contributes its intersection with the clip to `rgnCopy`; a tile with result 1 contributes nothing. With it off, a tile with result 0 goes into `rgnCopy` whole.
+`bFlipAllTiles` (default 0) puts partial tiles on the list too, and `bFlipScrTiles` (default 0) replaces the list with every tile of the screen. The 2D escape `0x11` code 3 sets `bFlipTiles`
+([escapes](opengl-escapes.md#private-escapes-and-the-other-entry-points)); the OpenGL driver never sends it, so the default stays. What the tiles mean for the picture is inferred.
 
 **The copy. Established.** `CoScheduleSwap@0x1934a` runs `CoCopyRect@0x176ae` over `rgnCopy`: draw buffer = the front (descriptor 2), texture = the back (descriptor 3),
 mode `0xc0000`, bias 0.5, window parameters 0, one primitive of type 4 per rectangle with the texture coordinates equal to the pixel position. When
@@ -78,7 +79,9 @@ exchanged between the two buffers and alternate between two values on successive
 
 **There is no per-window back or depth buffer. Established.** The back buffer is the global buffer with id 3 and the depth buffer the one with id 4, both
 allocated for the whole screen when the mode is set
-(`pCoGrmInitializeGdi@0x1c9fe` calls `CoGrmAllocateTiledBuffer`; the ICD's `CREATE_BUFFER` is used for textures and pixel buffers only). A window's pixels are the same
+(the miniport's `AllocGlobalBuffers@0x1a5ff` allocates them, through `CoSetGlobalBuffersForMode@0x1a3ba`, which `CoSetMode@0x1a293` calls; the front, back and depth
+records are the device's pointers at `+0x10c`, `+0x110` and `+0x114`; `pCoGrmInitializeGdi@0x1c9fe` only binds the records to descriptor ids 2, 3, 5, 6, 10 and, in stereo, 7 and 8
+on the display driver's node; the ICD's `CREATE_BUFFER` is used for textures and pixel buffers only). A window's pixels are the same
 coordinates in those buffers. The descriptor ids are 2 front, 3 back, 4 depth, 5 and 6 overlay and its back, 7 to 9 the right-eye buffers and 10 the clip-ID plane
 ([clip page](engine-clip-degenerate-and-line-ends.md)); a context's `SETCONTEXT` names them by id.
 
