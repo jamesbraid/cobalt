@@ -236,12 +236,14 @@ the hardware accepts more than one order.
   `CoVRetraceHandler@0x191ab` queues the whole latch word, not only the frame-end bit it counts: it takes a record from the free list
   (`CoAllocIdleEvent@0x17ce1`), stores the word in it, links it behind the pending records and queues the deferred routine
   (`CoDPC@0x18314`, which calls `CoProcessRetraceEvent@0x17dae` for a retrace record). If a record is already pending when
-  another interrupt arrives, only a counter grows and the new word is dropped. The deferred routine tests bit 0 and bit 1 of the word:
+  another interrupt arrives, only a counter grows and the new word is dropped. The handler itself counts a frame when bit 1 is set: always in a mono mode, and in a stereo mode only on the fields where the low bit of `StereoField` is 1. The deferred routine tests bit 0, and bit 1 only when bit 0 is clear (a word with both set gets the bit 0 work alone, apart from the wake-up described under bit 1):
   - Bit 0: nothing happens while the byte `SwapbufCopyPending` (`+0x100` of the device extension) is nonzero. Otherwise read the live line (`asGetScanline@0x1c3f8`, bits 23:12 of
     `+0x10000`) and release the held chunks (`CoMoveChunksFromRetraceToSerializedQueue@0x17d12`) only when the line is at or above
     interrupt 0's line (`asPreblankScanline`) and below the height less `cmcfrtsqOverhead` (the constant 3, `0x1de84`), which is 477 at
     640 by 480; with stereo on the line is not tested. Established.
-  - Bit 1: the frame-end work (flip the display tile list and finish the swap that bit 0 started; the Windows swap pages cover it).
+  - Bit 1: the frame-end work: in a mono mode only while `SwapbufCopyPending` is nonzero, and in a stereo mode on every such word, flip the display tile list and clear
+    `SwapbufCopyPending` (the Windows swap pages cover the rest of the swap; stereo clears it on one field parity only). When the word has bit 1 set and `pEventWaitVBlank` (`+0xc18`) is nonzero, the routine then
+    signals that event and zeroes the pointer; the one path that skips this is bit 0 with `SwapbufCopyPending` set. Established for the tests, inferred for what each flip step does.
   So a model that raises only a once-per-frame interrupt with bit 1 never releases a held swap copy, and one that raises bit 0 while the
   line is outside the window, or before the previous release has run, releases nothing. That the two bits are the latches of scan-line
   interrupts 0 and 1 is inferred from the order and positions of the two lines: no shipped code names the source of a bit. The firmware's later hand-over routine parks both

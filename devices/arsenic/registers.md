@@ -1,7 +1,7 @@
 <!-- generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source -->
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 <!-- defs-gen 4 -->
-<!-- input sha256 7af1e2c234fa5437a7357c991d8a1158ad7c0f3aa54c6d8f579a3017611e8ff6 -->
+<!-- input sha256 3411604497bffbc7c3d72c4372b429ff18bf72d9de9013f9bf6bc1fc3a0cb6e8 -->
 
 # Arsenic display back end register block
 
@@ -561,11 +561,11 @@ Video capture control word 8. Neither driver touches the capture block; the Linu
 
 ### Register `retrace_status`
 
-Retrace latch in its own 32-bit window, wired to line 24 of the system interrupt controller (latched). The retrace handler reads it, writes back the bitwise complement of what it read and does not read it again. That only clears the bits if a written 0 clears a bit and a written 1 leaves it, so the register is write-0-to-clear (inferred). The handler counts a frame when bit 1 was set (mono modes) and queues the whole word, not only the bits it counted: it takes a record from the free list, stores the word in it and links it behind the pending ones, and queues the deferred routine; if a record is already pending, the word is dropped and only a counter grows (established). The deferred routine tests bit 0 and bit 1 and no other bit; what the other bits are is unknown. The firmware's hand-over routine writes the complement of the word the same way. The name is ours: the register has no public name.
+Retrace latch in its own 32-bit window, wired to line 24 of the system interrupt controller (latched). The retrace handler reads it, writes back the bitwise complement of what it read and does not read it again. That only clears the bits if a written 0 clears a bit and a written 1 leaves it, so the register is write-0-to-clear (inferred). The handler counts a frame when bit 1 was set (in a stereo mode only on the fields where the low bit of its field counter is 1) and queues the whole word, not only the bits it counted: it takes a record from the free list, stores the word in it and links it behind the pending ones, and queues the deferred routine; if a record is already pending, the word is dropped and only a counter grows (established). The deferred routine tests bit 0 and, only when bit 0 is clear, bit 1, and no other bit; what the other bits are is unknown. The firmware's hand-over routine writes the complement of the word the same way. The name is ours: the register has no public name.
 
 | Bits | Field | Grade | Values | Source | Description |
 |---|---|---|---|---|---|
-| 1 | `frame_end` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, retrace interrupt routine; SGI Visual Workstation PROM 1.1005, display start-up code | a frame has ended; the deferred routine flips the display tile list and finishes the swap that bit 0 started |
+| 1 | `frame_end` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, retrace interrupt routine; SGI Visual Workstation PROM 1.1005, display start-up code | a frame has ended; the deferred routine flips the display tile list (in a mono mode only while a swap copy is pending) and signals the vertical-blank wait event; tested only when bit 0 is clear |
 | 0 | `release_copies` | inferred |  | SGI Cobalt Graphics Driver 5.2.4 for Windows NT 4.0, display miniport, retrace interrupt routine; SGI Visual Workstation PROM 1.1005, display start-up code | the deferred routine releases the held swap copies, only while the live line is in [line 0, height - 3) or the mode is stereo (established for the software); that the bit is the scan-line interrupt 0 latch is inferred |
 
 ## Words
