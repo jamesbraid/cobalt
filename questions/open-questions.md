@@ -174,7 +174,8 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
 - **Rasterisation rules.** Coverage, fill convention, rounding of the 1/64 pixel position, attribute interpolation precision,
   line and point rules. The 0.492 and 0.508 viewport constants hint at a tie-break but do not state it.
 - **Blend, dither and write-mask arithmetic.** Rounding of the blend products, the dither pattern, behaviour of the 4-bit
-  colour formats under blend. Nothing in the driver depends on them beyond the codes.
+  colour formats under blend. Nothing in the driver depends on them beyond the codes. Whether the dither bit changes a 32-bit colour buffer is unknown: the driver sets it from `GL_DITHER` alone
+  at every depth ([packet-set.md](../devices/cobalt-graphics/packet-set.md#pixel-pipe-mode-word-0x80003020)), so an emulator may leave 32-bit buffers undithered and apply a pattern only to the narrower formats.
 - **Depth.** Answered for the driver's side in [opengl-depth-stencil-fog.md](../software/windows/opengl-depth-stencil-fog.md): the
   16-bit word is a three-bit-exponent code the driver decodes with a table, the 24-bit depth is fixed point in the low three bytes
   with stencil in the top byte, and the clears write raw values. Open: the engine's encode rounding, the 16-bit depth with stencil,
@@ -185,7 +186,7 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   one bit, bit 31 of the retired node's first dword, set when a fragment passed the depth test with bits 28:27 of the depth-test
   word on. Unknown: no shipped software depends on more, and the engine's rule for setting it (any pixel, any sample after
   early rejection, count of at most one) is not stated anywhere. Routes tried: the ICD and miniport (the miniport never writes
-  the word), the type declarations (`CoPktRespType`). An emulator author chooses: a constant 0 satisfies every caller.
+  the word), the type declarations (`CoPktRespType`). An emulator author chooses: a constant 0 satisfies every caller. No fragment count exists in the software's view: nothing in any driver reads a counter, a status word or a register for one ([read-backs](../software/windows/engine-readbacks.md#summary)), so an emulator may expose only this bit, and any count it adds is its own.
 - **Which mode-word bit the opaque stipple and styled-line fields read in 3D.** Unchanged from the 2D list.
 - **Clip coordinates and mask 0 against flat buffers; degenerate fans; line ends.** The software's side is read
   ([page](../software/windows/engine-clip-degenerate-and-line-ends.md)). Unknown, no shipped software depends on more: which
