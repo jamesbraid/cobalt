@@ -37,12 +37,12 @@ see the ICD comparison.
 |---|---|
 | `DllMain`, `DrvCopyContext`, `DrvCreateContext`, `DrvCreateLayerContext`, `DrvDeleteContext`, `DrvDescribeLayerPlane`, `DrvGetLayerPaletteEntries`, `DrvGetProcAddress`, `DrvRealizeLayerPalette`, `DrvReleaseContext`, `DrvSetContext`, `DrvSetLayerPaletteEntries`, `DrvShareLists`, `DrvSwapLayerBuffers`, `DrvValidateVersion` | the same fifteen plus **`DrvDescribePixelFormat`, `DrvSetPixelFormat`, `DrvSwapBuffers`** |
 
-The three additions are small forwarders. Each loads `gdi32` on first use, looks up `GdiDescribePixelFormat`,
-`GdiSetPixelFormat` or `GdiSwapBuffers` and calls it (function bodies at `0x69016ceb`, `0x69016d28`, `0x69016d71`, wrapped by the
-exports at `0x690175b3`, `0x690175cb`, `0x690175db`). So the pixel-format and swap calls that the NT 4.0 build leaves to the
-display driver's own hooks (`DrvDescribePixelFormat`, `DrvSetPixelFormat`, `DrvSwapBuffers` in the display driver's DDI table,
-which both builds keep) are routed through GDI from the ICD in the Windows 2000 build, as the Windows 2000 OpenGL
-installable-client interface asks.
+Two of the three additions are small forwarders. `DrvDescribePixelFormat` and `DrvSetPixelFormat` load `gdi32` on first use, look up
+`GdiDescribePixelFormat` or `GdiSetPixelFormat` and call it (bodies at `0x69016d28` and `0x69016d71`, wrapped by the exports at `0x690175b3` and
+`0x690175cb`). `DrvSwapBuffers` (`0x690175db`) is not a forwarder: it finds the window's record, calls the record's swap procedure, and only when
+that returns 1 calls `GdiSwapBuffers` (`0x69016ceb`), which does load `gdi32` and forward
+([the swap path](w2k-swap-path.md) reads it in full). The display driver's own hooks (`DrvDescribePixelFormat`, `DrvSetPixelFormat`,
+`DrvSwapBuffers` in its DDI table, which both builds keep) are reached through GDI in the Windows 2000 build.
 
 ### Swap is wired differently. Established.
 
@@ -51,8 +51,10 @@ The NT 4.0 ICD has no `DrvSwapBuffers` export. Instead its `glFinish` entry look
 `0x100` bytes of that function, runs the swap itself (`__wglSwapBuffers` to `__wglSwapLayerBuffers`). That is how the NT 4.0
 build catches `SwapBuffers`, which `opengl32` implements as a `glFinish` followed by a call into the display driver. The
 Windows 2000 ICD has no such string or lookup (`wglSwapBuffers` and the `GetModuleHandle`, `GetClassInfo`, `GetClassName`
-and `GetWindowsDirectory` imports are the NT 4.0 file's alone) and gets the swap through its `DrvSwapBuffers` export. The
-escape sent for a swap is the same (`0x48`, [the escapes](opengl-escapes.md)).
+and `GetWindowsDirectory` imports are the NT 4.0 file's alone) and swaps from its `DrvSwapBuffers` and `DrvSwapLayerBuffers` exports.
+The escape sent for a swap is the same (`0x48`, [the escapes](opengl-escapes.md)). Whether `SwapBuffers` reaches the `DrvSwapBuffers`
+export at all is `opengl32`'s decision, from a registry flag that the pack's installer does not set: as installed, only
+`wglSwapLayerBuffers` does ([the swap path](w2k-swap-path.md)).
 
 ### Imports. Established.
 
