@@ -79,7 +79,7 @@ lists by routine size, in address order:
   confined to the window-system glue: `DrvSetContext` (`0x1ba` to `0x198` bytes), `DrvCreateLayerContext` (`0x227` to `0x1ef`),
   `DrvSwapLayerBuffers` (`0x22` to `0x7a`), `wglMakeCurrentReadSGI` (`0x433` to `0x40d`), `wglChoosePixelFormatEXT` (`0x3d1`
   to `0x3c2`), the window procedure (`0x113` to `0x66`), the format-modes helper (`0x117` to `0x114`), the pointer-capture and
-  buffer-region helpers (`fbCaptureUsingReads`, `FbCapWriteBuffer`), and the added forwarders.
+  buffer-region helpers (`fbCaptureUsingReads`, `FbCapWriteBuffer`), and the three added exports.
 - The engine-facing routines that were read for [the triangle path](opengl-triangle-path.md) and the texture packets
   (`coSetTexParam` `0xd07` to `0xce5` bytes, `__glCoInitTextureManager` `0x276` to `0x26a`, `__glCoTileToLinearXfer`
   `0x870` to `0x86b`, `__glCoResetAvailTlbSlots`) differ in register allocation and one switch layout only; their constants

@@ -18,7 +18,7 @@ A reading marked established covers every instruction of the named routine.
 
 | Question | Answer | Grade |
 |---|---|---|
-| Which routine is the OpenGL driver's per-window swap procedure (window record `+0x64`)? | `__glCoIcdSwapBuffers@8` (`0x69019b62`), stored with the same pointer in `+0x68`, by `__wglCoInitDrawable@8` at `0x69019266`. None of the four candidate stores `0x69016f7b`, `0x69017902`, `0x6901fe3c`, `0x6901fe86` is it. | established |
+| Which routine is the OpenGL driver's per-window swap procedure (window record `+0x64`)? | `__glCoIcdSwapBuffers@8` (`0x69019b62`), stored in `+0x64` (at `0x69019266`) and `+0x68` (at `0x69019263`) by `__wglCoInitDrawable@8`, which clears `+0x6c` at `0x6901925f`. None of the four candidate stores `0x69016f7b`, `0x69017902`, `0x6901fe3c`, `0x6901fe86` is it. | established |
 | Key of the record lookup (`0x6901638e`) | the window handle from `WindowFromDC(hdc)`; records of memory and pixel-buffer drawables key on the DC and cannot be found by a swap | established |
 | Does `opengl32` call the OpenGL driver's `DrvSwapBuffers`? | Only when bit 0 of the driver's registry "Flags" is set. The installed pack leaves it clear, so `SwapBuffers` goes to `GdiSwapBuffers` alone and the driver sends nothing | established for the code, inferred for the registry |
 | Does `wglSwapLayerBuffers` reach the driver? | Always, through `DrvSwapLayerBuffers`, for every driver-owned pixel format | established |
@@ -85,8 +85,8 @@ plain call does not.
 
 **Creation and lookup. Established** (`__wglGetDrawablePrivate@12` `0x690164d7`, `__wglFindDrawablePrivate@8` `0x6901638e`, `__wglCreateDrawablePrivate@12`
 `0x69016112`). The records live in one list under a global mutex. A record is created only when a context is made current
-(`DrvSetContext`, `wglMakeCurrentReadSGI`, the layer palette routines and pixel-buffer creation call the getter; `DrvSwapBuffers` and `DrvSwapLayerBuffers`
-call only the finder). The finder takes a DC key and a window handle. A record whose window handle is nonzero matches on the handle alone;
+(`DrvSetContext`, `wglMakeCurrentReadSGI` and `__wglSetLayerPaletteEntries` call the getter, which calls the finder and then the creator;
+`wglCreatePBufferSGIX` calls the creator directly; `DrvSwapBuffers`, `DrvSwapLayerBuffers` and the other layer palette routines call only the finder). The finder takes a DC key and a window handle. A record whose window handle is nonzero matches on the handle alone;
 a record with handle 0 (a memory or pixel-buffer drawable) matches on the DC. Both swap exports pass `-1` as the DC and `WindowFromDC(hdc)` as the
 handle, so they find only windowed records. `DrvSetContext` takes the handle from `WindowFromDC` for a display context, so the same window
 finds its own record. The record is destroyed when its reference count reaches zero: `DrvReleaseContext` (`0x69017003`) or `DrvDeleteContext` of the last
@@ -130,8 +130,9 @@ context, `0x48` swap (a drop of type 4 on the context's rendering node).
 **Where contexts leave the list. Established.** `___glDrvReleaseDrawable@8` (`0x308ec`) removes the entry and is called from:
 `___glCoDrvReleaseContext@4` (`0x1d8ec`) at `0x1d913` for the draw window and `0x1d924` for the read window (escape `0x44`, and `___glCoDrvDeleteContext`
 runs it first when the context is still current); and `___glDrvReleaseContext@4` (`0x3093c`) at `0x3094a` for the window recorded in the context, which the
-window object's deletion callback (`___glDrvWndObj@8`, flag `0x20`) calls once for every context still on the list before it frees the object. Nothing
-else removes an entry. A context stays on the list from its make-current until its release, delete or the window's destruction.
+window object's deletion callback (`___glDrvWndObj@8`, flag `0x20`) calls once for every context still on the list before it frees the object. The only other
+caller of `___glDrvReleaseContext` is `___glCoDrvDeletePBuffer` (at `0x1e3cd`), which does the same for a pixel buffer's own drawable object. Nothing else
+removes an entry from a window object's list. A context stays on the list from its make-current until its release, delete or the window's destruction.
 
 **`DrvSwapBuffers@8` (`0x312ae`, DDI index 56). Established.** It returns TRUE and does nothing when the window object is missing, the consumer record is missing, **or
 the object's `+0x10` list is non-empty, that is whenever any OpenGL context is current on the window.** Otherwise it copies: for a trivial clip it runs
@@ -153,10 +154,12 @@ It is **never used for a window that has a current context**, and so for no Open
   had. The engine's copy and flip are reached only by escape `0x48`, which the OpenGL driver sends from its swap procedure. A black or unchanged window after
   `SwapBuffers` on Windows 2000 is what the shipped software asks for, not an engine fault. Inferred (the install's registry decides).
 - `wglSwapLayerBuffers(hdc, 1)` is the path that sends the escape. It must work as the NT 4.0 swap does.
-- To exercise the OpenGL driver's `DrvSwapBuffers`, give the guest the subkey layout: under `OpenGLDrivers`, a key `sgi` with `DLL` = `sgcoicd.dll`,
-  `Version` = 2, `DriverVersion` = 2 and `Flags` = 1 (and no `SGI` value of the same name). That is the configuration the exports exist for. Inferred; not
-  tried.
-- The display driver's escape for `OPENGL_GETINFO` must keep answering 2 and 2; the registry check compares them.
+- To exercise the OpenGL driver's `DrvSwapBuffers`, give the guest the subkey layout: under `OpenGLDrivers`, a key `sgi` with `DLL` = `sgcoicd.dll` (a string),
+  and `Version`, `DriverVersion` and `Flags` as 32-bit values 2, 2 and 1. `opengl32` tries the subkey first, so an `SGI` value beside it is ignored, and a
+  subkey with any of the four missing or mistyped makes the lookup fail instead of reading the flags as 0. That is the configuration the exports exist for.
+  Inferred; not tried.
+- The display driver's escape for `OPENGL_GETINFO` must keep answering 2 and 2. `opengl32` rejects a driver whose `Version` is not 2, passes `DriverVersion`
+  to the OpenGL driver's `DrvValidateVersion` (`0x69017598`, true only for 2), and in the subkey layout also compares both with the registry values.
 
 ## Corrections to earlier pages
 
