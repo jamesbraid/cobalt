@@ -86,6 +86,42 @@ lists by routine size, in address order:
   are the same set (`coSetTexParam` has `0x2900`, `GL_CLAMP`, as a switch compare where the NT 4.0 file compares differently;
   `__glCoTileToLinearXfer` loses one debug-print argument push).
 
+### Which differences touch geometry. Established for the counts; inferred where marked.
+
+A second alignment, by instruction-identical routines in order (all operands compared, addresses inside the image masked, branches
+compared by position), finds the same picture from the other side. Of the NT 4.0 file's 3,633 routines, 2,747 are identical one for one,
+717 more are identical inside runs of neighbouring routines that the analysis of the Windows 2000 file did not split (small
+routines), and 169 differ. The 169 are 110 software pixel-span generators (`__glGenColors*`, `__glGenPixels*`, `__glCombinePixels*`), 18 span, depth-test and blend
+tables, 14 window-system routines, 6 texture and buffer-management routines, 3 thread-block dispatch routines and 18 others.
+
+- **Draw flags, vertex mode and the primitive mode word are not among them. Established.** All 19 routines that carry the draw-flags
+  header `0x00210020` and all 20 that touch the context's draw-flags word (`gc+0x2dbb0`) are identical, except `__glCoTileToLinearXfer`,
+  which loses one pushed debug-print argument. All 59 routines that carry the primitive mode header `0x18002020` (the `__glCoBegin*` and
+  `RestartDispatch*` routines, `__glCoRenderPoint`) are identical. Of the 94 header constants of [the packet set](../../devices/cobalt-graphics/packet-set.md)
+  only three differing routines carry any: `coSetTexParam` (texture parameter headers; the Windows 2000 file compares `0x2900` where the NT 4.0
+  file compares differently, a switch layout), `__glCoDrawBufferRegion` (one alignment `nop`) and `__glCoTileToLinearXfer`.
+- **The geometry-looking names are layout, not logic. Inferred.** `__glcoim_CullFace`, `__glcoim_Lighti`, `__glle_Begin_LineLoop` and `__glcole_BoundingBox`
+  differ only in the first few instructions of the Windows 2000 region, where that file keeps function-pointer tables in the code stream; the
+  remaining instructions match. `__glCoResetAvailTlbSlots` differs in register allocation, `__glSetError` in a tail call, and `Finish` by the NT 4.0
+  file's `wglSwapBuffers` lookup ([above](#swap-is-wired-differently-established)).
+- **The thread-block dispatch routines differ by operating system.** `SetTEBDispatchVertex2fv`, `3fv` and `4fv` store their pointer at thread-block
+  offsets `0x880`, `0x8a0` and `0x8c0` in the NT 4.0 file and `0x930`, `0x950` and `0x970` in the Windows 2000 file: the two `opengl32` dispatch tables place `glVertex*fv` at different slots.
+
+So the driver code that builds vertices, draw flags and primitive modes is the same program in both builds; a difference in what the screen saver draws on the
+two systems does not come from it. What the 3D Pipes screen saver (`sspipes.scr`, 163,600 bytes, 1996-10-14 on the NT 4.0 disk) draws differs because of what each system sends:
+
+- It imports `glNewList`, `glCallList`, `glMap2f` and `glEvalMesh2`, so its pipes are compiled display lists of evaluated surfaces. Established (imports).
+- An emulator run of the NT 4.0 pack (screen saver, then the five test programs) records 410,375 draw-flags words of `0xc0000000` (object coordinates,
+  engine transform) among 5.2 million port B vertices. The decoded first 3D nodes of the five test programs carry only `0x80000000` (host transform, clip coordinates) and `0`.
+  A display list is replayed through the engine transform only after the bounding-box test of [draw-and-buffers.md](../../devices/cobalt-graphics/draw-and-buffers.md).
+  Inferred (model behaviour, not hardware; which of the two sources sent the `0xc0000000` words was not separated, since the trace has no time stamps).
+- The same run of the Windows 2000 pack records no `0xc0000000` at all (196 words of `0x80000000`, 73 of `0`) and 3,440 port B vertices in total, so the picture
+  the saver draws correctly there was not drawn by the Cobalt engine. Inferred (model behaviour).
+
+The comparison therefore does not test the engine-transform path at all: the NT 4.0 shards are what that path produces under the model, and nothing here shows
+a driver difference behind them. A test of that path needs a known-good reference: `GLCOSIMFORCECHIPXFORM` (read once in `GetBoardInfo`,
+bit 0 of `noNeedToClip`) forces the engine transform for ordinary primitives, so the test programs can be drawn in both modes and compared.
+
 ### Packet headers and constants. Established.
 
 - The set of 32-bit constants of header shape (`0x8` and `0x9` in the top nibbles and the others of
