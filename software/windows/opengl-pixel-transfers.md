@@ -113,7 +113,7 @@ channels (`REPLACE`, class 1), the colour mask selects the one that is kept, and
 The rows are output channels and the columns input channels, in the channel order of the source type (red first for the
 user matrix). Established that the groups are rows then bias (the loop writes four matrix floats then one bias float, four
 times). That it is `M * in` and not `in * M` is inferred from the two video matrices below, which are correct only in this
-form. The clamp words come from two environment variables read once (`GLCOPIXPOSTCMCLAMPMIN` and `GLCOPIXPOSTCMCLAMPMAX`,
+form. This is the same row-by-row order as the draw matrices ([packet table](../../devices/cobalt-graphics/packet-set.md): word `4*i + k` is row `i`, column `k`), with a bias word after each row. The application's matrix, stored in OpenGL memory order, is read with a 16-byte stride (`@0x69037ce7`..`@0x69037d41`), so it too lands row by row; the product with the scale and bias and the copy into the packet were read, not run: inferred. The clamp words come from two environment variables read once (`GLCOPIXPOSTCMCLAMPMIN` and `GLCOPIXPOSTCMCLAMPMAX`,
 hexadecimal, the strings sit in the code at `@0x6903bc7e` and `@0x6903bc96`); no routine sets them otherwise. Their meaning
 (a bound on the packed result after the matrix) is inferred from the names only.
 

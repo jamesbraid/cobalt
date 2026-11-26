@@ -123,7 +123,7 @@ offset and origin matters only where the engine rounds or clamps between them; t
 
 1. `x_win = x_clip / w * x_scale + x_offset` (and y; z with its own scale and offset): inferred, from the packet and the
    driver's use of clip coordinates plus w under `10`. Under `11` the engine first applies the model-view-projection
-   matrix to the object coordinates (inferred, from what `11` sends).
+   matrix to the object coordinates (inferred, from what `11` sends): clip = M * (x, y, z, 1) with the sixteen words as rows, word `4*i + k` being row `i`, column `k` (the translation in words 3, 7 and 11; [packet table](../../devices/cobalt-graphics/packet-set.md)). Reading them as columns gives a wrong result for any matrix that is not symmetric.
 2. The origin is added afterwards: inferred (cancellation of the +/-1024 pair). The 1/64-pixel resolution the driver's
    `subpixelBits` of 6 implies is reached after this sum: unknown.
 3. The bias pair is not part of the position chain. Its only OpenGL uses are zero and a pixel-transfer constant, and the
@@ -161,7 +161,7 @@ coordinate (`+0x50`). The normal is the application's own normal in object space
 `__glCoSetVertexAttribsMask` copies it from there, and the driver sends the 3 by 3 inverse-transpose of the model-view
 matrix (`inverseTranspose` of the transform record, `+0x50`, nine floats in header `0x02421120`) whenever the
 model-view matrix changes (`@0x69023ad6`..`@0x69023b12`, `@0x69023b50`..`@0x69023bce`; the routine's only gate is the
-soft-lighting flag, not the draw flags). So the engine turns object normals into eye normals itself, in all three
+soft-lighting flag, not the draw flags). The nine words are sent row by row (word `3*i + k` is row `i`, column `k` of the matrix that maps an object normal to an eye normal), the same order as the model-view-projection words; established from the routine, run on a test matrix. So the engine turns object normals into eye normals itself, in all three
 modes; GL_NORMALIZE becomes lighting-word bit 26. Established (what is sent); the engine's use is inferred.
 
 **Light vector words (`0x09a900c0 | i`, six floats).** For light `i`:
