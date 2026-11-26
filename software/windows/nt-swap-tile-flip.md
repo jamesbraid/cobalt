@@ -15,6 +15,7 @@ Addresses are image addresses. Grades as in [AGENTS.md](../../AGENTS.md).
 |---|---|---|
 | What are the class-11 writes beside an NT 4.0 swap? | Translation-table entries (not descriptors) of the front and back global buffers, reloaded because a tile flip exchanged some of them. | established for the driver side, inferred for the trace reading |
 | Tile flip, source and destination descriptors, or damaged tiles? | A tile flip of every tile wholly inside the window, plus an engine copy from the back buffer (descriptor 3) to the front buffer (descriptor 2) of the rest of the window's area. The copy rectangles are not "damaged tiles"; they are the window's copy region. | established for the flip, the copy and the choice of tiles |
+| For a window context that never swaps, what loads its front-buffer tiles' entries? | Nothing per context. The global front's entries load once after mode set, again only after a flip or a bind of that buffer; a window's `SETCONTEXT` binds no buffer | established (NT 4.0 miniport read in full); the emulator's miss is unexplained |
 | Does the driver ever grow the entries? | No tile is added to a global buffer after the mode is set. The descriptor and table loads are re-sent whenever the set of bound buffers changes or a flip marks a buffer. | inferred |
 
 ## What a swap does
@@ -93,6 +94,41 @@ covers the off-screen heap of the 2D driver), back 96 to 115. Depth would follow
 after `BIND_BUFFERS` or `UNBIND_BUFFERS` or `SETCONTEXT` (descriptors from the node's bound set, with each descriptor's first slot the running sum of the earlier
 buffers' counts: `pCoMakeTlbDesc@0x170a2`), after a flip marks a buffer, or when a texture is created (a prebuilt table packet from `CREATE_TEXTLBPKT`, the `0x6bf` group at the top
 of the table).  In the Quake II trace of the same emulator run, the texture binds load descriptor group `0x6c0` and slots 2016 to 2047 (`0x6bf`).
+
+## A window context that never swaps: which entries map its front tiles, and when they load
+
+Read on the NT 4.0 5.2.4 miniport and display driver (`sgcomp.sys` `pCoContextSwitch@0x16610` and `CoBuildTlbPacket@0x16a7a`, read in full; `CoScheduleBindBuffers@0x19662`;
+the display driver's `__glCoDrvSetContext@0x1dc12`; the ICD's `__glCoSetDrawBuffer@0x6901891c`). The Windows 2000 miniport was not compared.
+
+**The front tiles of a window are the global front buffer's own entries. Established.** A window has no front buffer of its own (see above): drawing to the front is
+drawing through descriptor id 2, the device's global front record (`+0x10c`), whose entries sit in slots 16 to 95. The ICD names the buffer by putting the
+low six bits of the chosen buffer record's first dword into the draw-buffer word (`__glCoSetDrawBuffer` sends `0x98804000`, then `0x91aa0020` and the word), so a context drawing
+`GL_FRONT` draws through whatever id its front record carries; that this is id 2, the display driver's own front, is inferred (the record was not traced to its source).
+
+**What a window's `SETCONTEXT` loads. Established.** For a window drawable (the two pixel-buffer words of its input are 0) `__glCoDrvSetContext` binds no buffer at all. It binds the
+context's node to the window's clip (`CoGrmBindRnToClip`) and returns the node's table-entry count, which is the sum over its bound node-owned buffers (textures and pixel buffers), 0 for a plain window.
+Only `BIND_BUFFERS` (`CoScheduleBindBuffers`) marks a buffer for reload and sets the node's reload bit (`+0x104` bit 2), and only for the buffers it binds.
+
+**When entries are sent. Established.** `pCoContextSwitch` walks `CoBuildTlbPacket` for the incoming node whenever the device's changed byte (`+0x248`) is set, the incoming node is not the
+current one, or the node's reload bit is set. `CoBuildTlbPacket` works in two passes over the buffer ids, 1 upward (the ids below 11 come from the device's global records, the rest from the node):
+
+1. **Descriptors.** For each id it computes the descriptor word (the buffer's word with the first slot in bits 31:21, the first slot being a running sum of entry counts that starts at a base the node's first record holds, 16 in the trace above) and sends it (header `0xc0000001 | (0x1800 + id) << 16`); for the ids below 11 **only if it differs from the miniport's shadow copy** (`+0x148 + 4 * id` in the device), for the others always.
+2. **Entries.** For each buffer, in the same order, it sends the buffer's entries (header `0xc0000000 | (0x1000 + first slot) << 16 | count`, at most 64 entries per packet, so the front's 80 are
+   64 at slot 16 and 16 at slot 80) **only if the buffer record's reload byte (`+0x18`) is non-zero**, and clears the byte after queuing them. A buffer with the byte clear is skipped and only advances the slot count.
+
+The reload byte is set by exactly these stores (found by scanning the miniport for byte stores of 1 at `+0x18`): `CobaltStartIO`, `pCoAllocateTiledBuffer` (at creation), `CoSchedulePixelDma`,
+`CoScheduleBindBuffers` (each bound buffer), `asFlipTiles` and `asFlipFrontBack` (the front and back, and the right-eye pair), and `CoBuildTlbPacket` itself (every node-owned buffer on each pass, and
+the last buffer when its entry count shrank). Nothing in the list belongs to a window context's `SETCONTEXT`.
+
+**Answer. Established for the driver, unknown for the emulator.** For a context that never swaps, nothing in the driver sends the front's entries again after the first load that
+followed mode set: the entries were queued when the display driver's node was first loaded and stay in the engine's table, which is inferred to be device state and not part of any context (the saved context image is a packet stream of at most 200 dwords, see [the context-switch reading](opengl-swap-points-formats-faces.md)). They are sent
+again only after a tile flip exchanged some of them, from a swap of any window in the same session. So a draw through descriptor 2 that falls outside the mapped tiles is
+**not** a reload the driver skipped on bind or flip, because the driver does not reload on bind for a window and reloads on flip whenever it flips. Two readings remain, both inferred and neither
+checked: the engine's table or its shadow differs from the driver's belief (something cleared, shortened or mispositioned the table after the first load, for example a table-load packet
+whose position or count was applied differently, or a descriptor 2 whose first slot disagrees with where the entries went), or the descriptor sent for the front is not the one the drawing assumes. What
+settles it: at the first out-of-range draw, dump the engine's slots 16 to 95 and descriptor 2 and set them beside every class-11 table and descriptor load in the trace (positions `0x1010`, `0x1050` and the
+descriptor position `0x1802`), and look for a load of a different length or position, or a flip, before it. A trace in which the loads match the table and the draws still miss is a descriptor or
+conversion fault in the model.
 
 ## What happens to a draw into a tile with no table entry
 
