@@ -20,18 +20,21 @@ offset below (the name column is that header's, see the last section).
 ## Answer
 
 **Established: our earlier notes did not hold the XP layout.** SGI's loader allocates 0x32c bytes and sets the flags dword at
-`+0x218`; XP's loader allocates 0x388 and its kernel and Setup read the flags at `+0x22c`. Everything from the second
-embedded device node onward is shifted by 4, 8, 0xc or 0x14 bytes. So an XP kernel given the Windows 2000 block sees no text-mode flag
-(and stops with `SYSTEM_LICENSE_VIOLATION`, code `0x9a`, when it goes looking for Setup's registry hive), and, with the flag
-forced, XP's Setup driver reads Windows 2000's input-devices list pointer where it expects the boot font's length.
+`+0x218`; XP's loader allocates 0x388 and its kernel and Setup read the flags at `+0x22c`. Everything after the first embedded device node
+is shifted by 4, 8, 0xc or 0x14 bytes. So an XP kernel given the Windows 2000 block sees no text-mode flag, and, with the flag
+forced, XP's Setup driver reads Windows 2000's input-devices list pointer where it expects the boot font's length. Both
+consequences were observed in guest runs under an emulator (model behaviour, not hardware): the kernel then stops with bug
+check `0x9a` (`SYSTEM_LICENSE_VIOLATION`, parameters 2 and `0xc0000034`) after failing to open Setup's registry key, and Setup
+requests an allocation of about 2 GB, the loader address that sits at `+0x8c`. The code reads above explain why the flag and
+the length are read where they are; which kernel routine raises the `0x9a` was not traced.
 
 ## Who reads the block
 
 - **The XP kernel** (`ExpInitializeExecutive`, RVA `0x1e7aa0`): if `LoaderBlock + 0x54` is non-null it tests the byte at
   `+0x22c`: bit 1 (value 2) sets the kernel's text-mode-Setup flag, bit 0 (value 1) the remote-boot-client flag (code at
   `0x1f4b22`). The Windows 2000 kernel does the same at `+0x218` (RVA `0x141e3c`, `0x141e4f`). Nothing else sets either flag. A
-  second reader, the routine that records remote-boot values in the registry (`IopAddRemoteBootValuesToRegistry`, XP RVA
-  `0x203cfb`; Windows 2000 RVA `0x1471e2`), runs the same text-mode test and then reads the string pointer at `+0x230`
+  second reader, the routine that records remote-boot values in the registry (`IopAddRemoteBootValuesToRegistry`, XP function at RVA
+  `0x2039af` with the flag test at `0x203cfb`; Windows 2000 flag test at RVA `0x1471e2`), runs the same text-mode test and then reads the string pointer at `+0x230`
   (Windows 2000 `+0x21c`), appended to the redirector device name to make the value `RemoteBootMachineDirectory`; it is reached
   only for a remote boot. Established.
 - **XP's Setup driver, start-up** (`SpInitialize0`, RVA `0x35a80`): reads the loader parameter block
@@ -77,7 +80,7 @@ the start-up routine does with the value.
 | `0x0a4` | `0x090` | hardware-id database (pointer to a list of id, driver, class-GUID strings) | Converted into Setup's own database |
 | `0x0a8` to `0x12f` | `0x094` to `0x11b` | computer name (64 wide characters) and the first network scalars | Not read at start-up. Unknown |
 | `0x130` | `0x11c` | server IP address | Copied, remote boot only |
-| `0x134` to `0x223` | `0x120` to `0x20f` | netboot card ids and names | Not read at start-up |
+| `0x134` to `0x223` | `0x120` to `0x20f` | default router and DNS server addresses, then the netboot card ids, names and registry pointer | Not read at start-up |
 | `0x224` | `0x210` | netboot card information (pointer; 5 dwords copied) | Remote system-preparation setup only |
 | `0x228` | `0x214` | its length | Not read |
 | **`0x22c`** | **`0x218`** | **flags** | See below |
@@ -101,13 +104,15 @@ itself.
 |---|---|---|---|
 | 0 | 1 | remote boot | kernel (`IoRemoteBootClient`), Setup (selects the whole network branch above). Both versions. |
 | 1 | 2 | text-mode Setup | kernel (`ExpInitializeExecutive` and the remote-boot routine). Both versions. The loader sets it in the allocation routine. |
-| 7 | `0x80` | force console | Setup (`ForceConsole`). Both versions. |
-| 10 | `0x400` | remote system-preparation setup | Setup, in the remote branch (at `+0x22d` bit 2, Windows 2000 `+0x219` bit 2). Both versions. |
-| 12 | `0x1000` | Windows 9x rollback | Setup (at `+0x22d` bit 4). XP only. |
-| 9 | `0x200` | set by XP's loader (a single `or`, `+0x22d` bit 1) | No reader found in the kernel or Setup. Unknown. |
+| 7 | `0x80` | force console | Setup, which sets its console-mode global from it. Both versions. The loader sets it when the setup image type is `cmdcons`. |
+| 10 | `0x400` | remote system-preparation setup | Setup, in the remote branch (at `+0x22d` bit 2, Windows 2000 `+0x219` bit 2). Both versions. Both loaders set it when the image type is `SYSPREP` and copy the `SysPrepDevice` value to the image-mirror path at `+0x23c` (Windows 2000 `+0x228`), or zero it. |
+| 12 | `0x1000` | rollback | Setup sets a global from it (at `+0x22d` bit 4) that its start-up bitmap and welcome-screen code tests; the effects were not followed further. XP only. The loader sets it when the image type is `rollback`; that this is the Windows 9x uninstall is inferred from the name and from Setup's other Windows 9x code, not read. |
+| 9 | `0x200` | set by both loaders (a single `or` on `+0x22d` bit 1; Windows 2000 `+0x219` bit 1) in the branch where the image type is absent or is not `SYSPREP` | Read back only by the XP loader itself (a test of `+0x22d` against 6 with `0x400`), not by the kernel or Setup. What the flag means is unknown. |
 
 The public header (see below) defines the text-mode and remote-boot bits the other way round (text mode as 1, remote boot as
-2). The kernel's own tests and the loader's stores above agree with the table, not with the header, so the binaries decide.
+2). The kernel's own tests agree with the table, not with the header: the XP kernel's test of bit 1 sets `ExpInTextModeSetup`
+and its test of bit 0 sets `IoRemoteBootClient` (both names from Microsoft's public symbols), and the loader ORs 2 into the
+flags for text-mode Setup. So the binaries decide.
 
 ## The video and font fields
 
