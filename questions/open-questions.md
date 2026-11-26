@@ -80,15 +80,17 @@ Status: **unknown** for everything below. What is established and what software 
     routine that depends on the blanking.
   - The live-copy delay (the vertical-blank rule is inferred from the O2's display back end) and why the firmware waits for the
     live bits to read set when it stops the display. Settles it: a chip description.
-  - What the hardware does with Linux's linear layout when the width is not a multiple of 512 bytes. Linux lays lines out at the
-    visible width (640 or 800 bytes) while writing a width register of two whole columns; the firmware and the Windows 2000 boot
-    video driver both use a stride of the rounded-up column count times 512 bytes, which is the inferred pitch
-    ([display-engine.md](../devices/cobalt-graphics/display-engine.md#frame-width-line-pitch-and-the-visible-rectangle)).
-    Routes tried: every shipped writer (NT miniport, `sglfb.sys`, `sgibvid.dll`, firmware 1.0006 and 1.1005), the public Linux
-    driver and header, the Library for reports of Linux on the real machine (none). `sglfb.dll`'s surface pitch was not read
-    (the Windows 2000 CD files are not held). Emulator choice: fetch with the rounded-up pitch, show the width given by the
-    `vt_hpixen` window and the height by `vt_vpixen`; a Linux console at 640 or 800 pixels then shears, as a guest writing
-    lines of one length into a surface of another does.
+  - Why the linear form's line pitch follows the width register's remainder. Whole columns apart when the register has a
+    remainder (the firmware, `sglfb.sys` and `sglfb.dll`) and the visible width apart when it has none (`sgibvid.dll`, whose row
+    step is the mode width, and Linux) fits every shipped writer
+    ([display-engine.md](../devices/cobalt-graphics/display-engine.md#frame-width-line-pitch-and-the-visible-rectangle));
+    what is not known is the mechanism, where the hardware takes the visible width from when there is no remainder (the
+    `vt_hpixen` window is the only per-mode width in the block), and whether the shipped Windows 2000 boot video and the Linux
+    console displayed correctly on the machine (no report says so for `sgibvid.dll`). Routes tried: every shipped writer (NT
+    miniport, `sglfb.sys` and `sglfb.dll`, `sgibvid.dll`, firmware 1.1005), the public Linux driver and header, the public mailing
+    list report of Linux X11 modes (ambiguous about the mode). Settles it: a chip description, or a report of `sgibvid.dll`'s
+    boot screens on the machine. Emulator choice: take the pitch from the remainder as above and show the width given by the
+    `vt_hpixen` window and the height by `vt_vpixen`.
   - The write semantics of the register at `0xca000000` (write-0-to-clear is inferred from the complement write) and what its other
     bits are. Settles it: the Cobalt interrupt code in the Windows 2000 HAL for pin 24, or a chip description.
 

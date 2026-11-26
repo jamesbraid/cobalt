@@ -20,8 +20,9 @@ loader and kernel use it in place of the stock VGA `bootvid.dll`. Its own messag
 - It maps `0xd0000000` for `0x80020` bytes ("Failed to map Arsenic Space") and requires the low 16 bits at `+0x14` to read `0x666` ("Failed to find SGI Arsenic chip ID").
   So the vendor's own software calls the chip behind the display back end Arsenic; that agrees with the `as` prefix and the pixel-format table name, and turns
   the earlier inference that the block is Arsenic into the vendor's naming (the chip's name in SGI software; hardware-level identity still comes from no document).
-- It does not use the firmware's frame buffer. It allocates its own 8-bit-per-pixel buffer from contiguous memory (rows rounded up to 512 bytes, 64 KiB aligned,
-  filled with `0xff`), allocates a second small row buffer, and programs the display back end from scratch. It tells a 1600 by 1024 flat panel
+- It does not use the firmware's frame buffer. It allocates its own 8-bit-per-pixel buffer from contiguous memory (sized with rows rounded up to 512 bytes, 64 KiB aligned,
+  filled with `0xff`; it draws with rows the mode width apart, 640 bytes at 640 by 480, not the rounded size, see
+  [the line pitch](../../devices/cobalt-graphics/display-engine.md#frame-width-line-pitch-and-the-visible-rectangle)), allocates a second small row buffer, and programs the display back end from scratch. It tells a 1600 by 1024 flat panel
   apart from a CRT by what the firmware left behind: the flat-panel horizontal drive's low 12 bits equal `0x640` (1600) and the vertical drive's `0x401`. With the
   panel it uses the 1600 by 1024 timing (1670 by 1080 total); otherwise 640 by 480 (800 by 525 total). The text is drawn into a 640 by 480 virtual screen
   and scaled to the mode by an integer factor, centred.
@@ -42,6 +43,7 @@ CPU block revision at `0xc2000000`. The miniport:
 - gets its memory from the registry value pair `GraphicsMemory` (base, must be non-zero) and `GraphicsMemorySize` (at least 4 MiB) under `SGICtrl\Memory`: the two values that the HAL's
   `HalpAddGbeDisplayToRegistry` writes first ([nt-hal.md](https://github.com/jamesbraid/chips/blob/main/software/visws/nt-hal.md)). It does not read the bank list (`NumberOfBanks`, `BankAddrNN`, `BankSizeNN`) that the SGI 5.2.4 miniport demands; a Windows 2000
   HAL that wrote only the first two would satisfy this driver and fail the SGI one.
+- reports every mode's screen stride as whole tile columns times 512 bytes (`ceil(width / 512) * 512` at 8 bits, `ceil(width / 128) * 512` at 32: 1024 at 640 by 480), and `sglfb.dll` passes that stride on as the line delta of the bitmap it creates for the screen. Established (the mode-record builder and `sglfb.dll`'s bitmap creation read in full).
 - offers only 8 and 32 bits per pixel, filtered by how many 64 KiB tiles fit in the graphics memory; the 32-bit mode reports colour masks `0xff000000`, `0xff0000` and
   `0xff00`: **red in the top byte of the pixel**, and the window table value for 32 bpp is `0x17` (RGB8 type, both buffers). This is a second NT driver agreeing with the
   `ArsenicPixelFormats` table's byte order, against Linux's low-byte red ([nt-software.md](../../devices/cobalt-graphics/nt-software.md)). Inferred (driver behaviour).

@@ -128,13 +128,35 @@ ways.
   (`sgcomp.sys@0x1be99` to `0x1bf1c`), the firmware (step 13 of [the PROM's display start-up](prom-init.md)) and `sglfb.sys`
   write the exact line length: whole columns plus `(bytes mod 512) / 32`. Linux (`sgivwfb_set_par`) and the Windows 2000 boot
   video driver (`sgibvid.dll`) write the length rounded up to whole columns with remainder 0. Established for what each writes.
-- *The line pitch* in the linear form. The firmware lays its console frame out with a stride of the rounded-up column count
-  times 512 bytes (1024 bytes at 640 pixels) and writes the exact register; `sgibvid.dll` lays out the same stride and writes
-  the rounded-up register. Both put the same two things in memory at 640 pixels, so the rule "pitch is the rounded-up tile
-  column count times 512 bytes, whichever form the width register takes" fits both. Inferred: no register or document states
-  it. Linux lays its lines out at the visible width in bytes (`xres_virtual * bytes per pixel`, 640 at 640 pixels and 800 at
-  800), which is not that pitch for any width that is not a multiple of 512 bytes. Established for the writers; what the
-  hardware does with Linux's layout is unknown, and no published report of Linux on the real machine at those widths was found.
+- *The line pitch* in the linear form. The shipped writers lay their frames out in two ways, and which one goes with a writer
+  follows the remainder field of the width register it writes.
+  - With a remainder (the exact form), lines are whole tile columns apart. The firmware's console code stores
+    `ceil(W / 512) * 512` as its stride and every drawing routine steps rows by it (1024 bytes at 640 pixels, with register
+    `0x24`; the stride is computed at `1.1005@0x113154e` and used from `1.1005@0x1140296` on). `sglfb.sys` reports the same
+    number as each mode's screen stride (`ceil(W / 512) * 512` at 8 bits and `ceil(W / 128) * 512` at 32: 1024 at 640 and 800,
+    1536 at 1280, 2048 at 1600), and `sglfb.dll` hands that stride unchanged to the engine as the bitmap's line delta. Established
+    for both (the stride computation, the mode record and the bitmap creation read in full).
+  - With no remainder (the rounded form), lines are the visible width in bytes apart. `sgibvid.dll` steps every row by the mode
+    width, 640 at 640 by 480 and 1600 at the flat panel's 1600 by 1024. The four instructions that index or step a row
+    (the pixel read at `sgibvid.dll@0x80010d78`, the pixel write at `0x80010e09`, and the start and the per-row step of the
+    scroll-region move at `0x80011349` and `0x80011385`; the fills and the text drawing go through the pixel write) all
+    multiply or add the one variable that the mode width is stored in (`0x80011fdc`, set at `0x80010707`; its six reads
+    are those four, the allocation size and the centring offsets). Only the allocation is rounded up to whole 512-byte
+    columns (1024 bytes a row at 640, 2048 at 1600), at `0x800107c9` to `0x800107da`. Linux lays its lines out at `xres_virtual * bytes per pixel`
+    (`get_line_length`) and writes a register of whole columns, rounded up from the selected timing's width, with remainder 0.
+    Established for both.
+  - The two layouts are the same whenever the visible width in bytes is a multiple of 512, so only `sgibvid.dll` (at 640 and
+    1600) and Linux (at 640, 800 and 1280 pixels at 8 bits) tell them apart. Every writer fits the rule "remainder set: lines
+    are whole columns apart; remainder clear: lines are the visible width apart", and no writer contradicts it: a single
+    pitch of whole columns for every register value would turn `sgibvid.dll`'s and Linux's frames into noise, and a pitch
+    read from the exact register as bytes (`0x24` is 640 bytes) would do the same to the firmware's and `sglfb`'s.
+    Inferred: it assumes the shipped Windows 2000 boot video and the Linux console displayed correctly on the machine, and no
+    document or register states the rule. A 2005 posting on the public mailing lists reports Linux X11 working at 15 bits on
+    the 1600 SW panel, where the two layouts differ (3200 bytes against 3584), but does not say which mode it meant. Not
+    settled: the mechanism, and where the hardware takes the visible width from on the no-remainder branch (the only
+    per-mode width in the block is the `vt_hpixen` window, which equals the mode width for every writer above). Linux also
+    differs from that window when the requested width is below the selected timing's: its line is the requested width, its
+    window the timing's. No shipped software depends on that case.
 - *The visible rectangle* is not in the tile registers. Every writer programs the internal pixel-enable windows: `vt_hpixen` ON
   is the horizontal blank end less 19 (wrapped by the total) and OFF is ON plus the active width less 2 (wrapped), so the active
   width is `(OFF - ON) mod total + 2`; `vt_vpixen` runs from the vertical blank end to the vertical blank start, the active
@@ -144,10 +166,10 @@ ways.
   1024-byte fetch under a 640-pixel window shows the first 640 pixels of each line), because the PROM's mode 0 writes 640
   active pixels against a 1024-byte stride.
 
-Per mode, as each writer sets the width register (value with depth bits; columns is the rounded-up count; pitch is the inferred
-rule; Linux line is what the Linux driver lays out):
+Per mode, as each writer sets the width register (value with depth bits; columns is the rounded-up count; the exact-register
+pitch is whole columns, and the rounded-register pitch is the visible width, as the rule above has it):
 
-| Mode | Depth | Exact register (NT, firmware, `sglfb`) | Rounded register (Linux, `sgibvid`) | Columns | Pitch bytes | Linux line bytes | `vt_hpixen` window |
+| Mode | Depth | Exact register (NT, firmware, `sglfb`) | Rounded register (Linux, `sgibvid`) | Columns | Pitch with the exact register | Pitch with the rounded register | `vt_hpixen` window |
 |---|---|---|---|---|---|---|---|
 | 640 x 480 | 8 | `0x24` (1 + 4/32) | `0x40` | 2 | 1024 | 640 | 638 |
 | 800 x 600 | 8 | `0x29` (1 + 9/32) | `0x40` | 2 | 1024 | 800 | 798 |
@@ -160,8 +182,9 @@ rule; Linux line is what the Linux driver lays out):
 
 Only the 8 bits per pixel rows are written by the firmware and `sgibvid.dll`; NT and `sglfb` offer 8 and 32; Linux 8, 16 and 32.
 The 32-bit exact values use the NT miniport's per-depth arithmetic (128 pixels per column at 32 bits). All four modes are in the
-Linux timing table, the firmware table and the NT table with these active sizes. The pitch column is inferred; the other columns
-are computed from the formulas the writers use. A run of the SGI Linux kernels under an emulator (model behaviour, not hardware
+Linux timing table, the firmware table and the NT table with these active sizes. The two pitch columns are the established layouts
+of the writers that use each register form (only 8 bits per pixel is written by `sgibvid.dll`; the rest follow the writers'
+formulas); that the hardware reads each as the table says is inferred. The other columns are computed from the formulas the writers use. A run of the SGI Linux kernels under an emulator (model behaviour, not hardware
 evidence) agrees with the arithmetic: at 640 by 480 the three registers read `0x40`, `0x01e00000` and `0x07800003`. The 2.2.10
 kernel's 800 by 600 console showed the same height of 480 in that run, so its console mode and programmed timing disagreed there;
 the 2.2.10 source is not held (the 2.6 file was read), so that case is unverified.

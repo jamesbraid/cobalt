@@ -2,7 +2,7 @@
  * change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 4 */
-/* input sha256 3411604497bffbc7c3d72c4372b429ff18bf72d9de9013f9bf6bc1fc3a0cb6e8 */
+/* input sha256 ff7e34be26f44cbf31bd8c1f631a5270b6d46a3bf8d17244d0bc5bca67f34278 */
 /* Arsenic display back end register block */
 #ifndef ARS_GEN_H
 #define ARS_GEN_H
@@ -613,9 +613,10 @@
  * pixels at 8 bits; 0x60 for 1280). All of these are read from the writers. The
  * register is not the visible width: every writer also programs the
  * pixel-enable windows (`vt_hpixen`, `vt_vpixen`), whose lengths are the
- * visible width less 2 and the visible height. What the fetch does with the
- * bytes past the exact length is inferred (shown pixels come from the windows).
- * The firmware self-test walks bits 15:0.
+ * visible width less 2 and the visible height. The register is also what
+ * selects the linear form's line pitch (see `frm_control`). What the fetch does
+ * with the bytes past the exact length is inferred (shown pixels come from the
+ * windows). The firmware self-test walks bits 15:0.
  */
 /* frm_size_tile: rw32, reset unknown; Linux frame buffer driver for the display
  * back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4
@@ -675,24 +676,27 @@
 /*
  * Normal plane control, the shadow word taken at the start of vertical blank.
  * Bit 0 enables fetch; bit 1 selects the linear form, in which the pointer is
- * the frame buffer's physical address shifted right 9 and the line pitch is the
- * tile-column count rounded up times 512 bytes (Linux, both Windows 2000
+ * the frame buffer's physical address shifted right 9 (Linux, both Windows 2000
  * drivers and the firmware set it, the SGI 5.2.4 miniport does not and gives
- * its tile list instead). The pitch rule is inferred from the two writers whose
- * frames are not Linux: the firmware (exact width register, 1024-byte stride at
- * 640 pixels) and the Windows 2000 boot video driver (rounded-up register,
- * 1024-byte stride at 640). Linux lays its lines out at the visible width in
- * bytes (640 and 800, not 1024), which disagrees with that pitch for any width
- * that is not a multiple of 512; whether the hardware then shears is unknown.
- * In the tile-list form the pointer is the physical address of a 512-byte
- * aligned list of 16-bit entries. Both stop DMA by clearing bit 0 and wait up
- * to 20000 ten-microsecond steps for the live copy to follow. The firmware
- * self-test walks bits 31:9 and 1:0.
+ * its tile list instead). The line pitch follows the width register's remainder
+ * (inferred, from the shipped writers): with a remainder the lines are whole
+ * tile columns apart, 1024 bytes at 640 pixels at 8 bits (the firmware,
+ * `sglfb.sys` and `sglfb.dll` all lay frames out that way); with none they are
+ * the visible width apart, 640 bytes at 640 pixels (the Windows 2000 boot video
+ * driver's row step is the mode width, and Linux lays lines at `xres_virtual`
+ * times the pixel size). The two layouts coincide whenever the visible width in
+ * bytes is a multiple of 512. Nothing documents the rule or its mechanism. In
+ * the tile-list form the pointer is the physical address of a 512-byte aligned
+ * list of 16-bit entries. Both stop DMA by clearing bit 0 and wait up to 20000
+ * ten-microsecond steps for the live copy to follow. The firmware self-test
+ * walks bits 31:9 and 1:0.
  */
 /* frm_control: rw32, reset unknown; Linux frame buffer driver for the display
  * back end, register block header and driver; SGI Cobalt Graphics Driver 5.2.4
  * for Windows NT 4.0, display miniport, start, flip and stop routines; SGI
- * Visual Workstation PROM 1.1005, display start-up code */
+ * Visual Workstation PROM 1.1005, display start-up code and console drawing
+ * routines; Windows 2000 boot video driver and frame buffer miniport and
+ * display driver, row-addressing and stride code */
 #define ARS_FRM_CONTROL_OFFSET                       0x3000cu /* inferred */
 #define ARS_FRM_CONTROL_FRM_TILE_PTR_SHIFT           9 /* inferred */
 #define ARS_FRM_CONTROL_FRM_TILE_PTR_MASK            0x7fffffu

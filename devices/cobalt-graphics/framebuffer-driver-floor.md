@@ -173,8 +173,9 @@ the hardware accepts more than one order.
   Established.
 - Memory layout read by the engine: tile geometry (512 bytes by 128 lines, 64 KB per tile), the 16-bit tile-list entries
   (`PFN >> 4`, from a 512-byte aligned list whose physical address goes in `frm_control` `[31:9]`), the depth field `[14:13]`,
-  and for the linear form (`frm_control` bit 1) a raster whose line pitch is the tile-column count rounded up, times 512 bytes
-  (the firmware and `sgibvid.dll` both lay the frame buffer out that way, `1.1005@0x113154e`, `sgibvid.dll@0x80010b54`).
+  and for the linear form (`frm_control` bit 1) a raster whose line pitch depends on the width register's remainder: whole
+  columns times 512 bytes when the register has a remainder (the firmware at `1.1005@0x113154e`, `sglfb.sys` and `sglfb.dll`), the
+  visible width in bytes when it has none (`sgibvid.dll`, whose row step is the mode width, and Linux).
   Layout established, hardware reading inferred. Per-mode register values and the visible-rectangle rule:
   [display-engine.md](display-engine.md#frame-width-line-pitch-and-the-visible-rectangle).
 - Pixel formats per depth. Three programmers pick the same hardware type for each depth: the window-table word is `3` (buffer
