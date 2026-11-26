@@ -48,6 +48,23 @@ OpenGL/System32/sgcoicd.dll
 
 The 5.2.1, 5.2.3 and 5.2.4 graphics patches for Windows 2000 (`SGICoGraphics521Win2KJPN.exe`, `SGICoGraphics523Win2KJPN.exe`, `SGICoGraphics524w2k.exe`) are read the same way, for the `data1.hdr` of each.
 
+From the Windows 2000 install CD (build 2195), `\I386\`, the setup files the [setup loader block page](../software/windows/xp-setup-loader-block.md) reads (SHA-256 prefixes of the expanded files: `setupdd.sys` `fec141ff6e09`, `ntkrnlmp.exe` `c03ff0de7840`, `setupldr.bin` `93db0eafc5fe`), and from the SGI files added to that CD, `ARCSETUP.EXE` (162,816 bytes, `db3d882a8abb`):
+
+```files
+setupdd.sys
+ntkrnlmp.exe
+setupldr.bin
+ARCSETUP.EXE
+```
+
+From the Windows XP Professional SP3 install CD (5.1.2600.5512), `\I386\` (expanded where stored compressed; prefixes `557d0cc4cb95`, `f086434f85441`, `7d9951a0007f`), with the public symbol files for `ntkrnlmp.exe` and `setupdd.sys` from Microsoft's symbol server:
+
+```files
+setupdd.sys
+ntkrnlmp.exe
+setupldr.bin
+```
+
 From the SGI Visual Workstation 320 and 540 Windows NT 4.0 OEM disc set, disc 1 (identical to the same two files on Silicon Graphics Recovery CD-1 v1.1), `\I386\`, April 1999 builds:
 
 ```files

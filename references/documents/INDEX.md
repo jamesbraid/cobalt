@@ -21,4 +21,5 @@ Public documents this workspace reads, by title and public URL only. Nothing her
 - Linux visws code (history tree): `drivers/video/sgivwfb.c`, `include/video/sgivw.h`, `arch/x86/kernel/visws_quirks.c`, `arch/x86/include/asm/visws/cobalt.h`.
 - Usenet, comp.sys.sgi.admin, 2003 to 2004: history and the absence of Linux 3D support.
 - linux-mips mailing list, 9 December 2005, "SGI O2: working framebuffer/X11 modes?" and its replies (message `4399CD04.2781@c-lab.de`): a user report of which `sgivwfb` modes work under X11 on a real 320.
+- ReactOS source, `sdk/include/reactos/arc/setupblk.h` (public, https://github.com/reactos/reactos): the declaration of the Windows XP setup loader block, used only to compare names and offsets with the binaries.
 - Usenet, comp.sys.sgi.misc, April and October 2001, and comp.sys.sgi.hardware, January 2002: replies from an SGI address and from a reader on whether Windows XP runs on the 320 and 540.
