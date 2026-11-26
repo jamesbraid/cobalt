@@ -36,6 +36,17 @@ and frustum-clips on the host. The mask bit `0x400` is set (with `0x40`, as `mas
 (`__glCoFillStippledTriangle`) and two-sided processing (`__glCoFillFrontBackTriangle`); `__glCoPickPointProcs` sets
 `0xc40` or `0x440` for points the same way. In feedback and selection mode every mask is `0x40`.
 
+**Display lists take the engine transform after a bounding-box test.** Established (`CoExecuteDlist@0x69033758` and `__glCoDlistExecutePackets@0x6906227a` read in full;
+the readings marked inferred are about what the test's inputs are). `__glCoDlistExecutePackets` sends draw flags `0xc0000000` and replays the list's recorded
+object-space packets only when `noNeedToClip` (`gc+0x2d960`, any bit) and `gc+0x2d583` are nonzero, the list has recorded packets and a run of state checks pass; otherwise it
+returns 0 and `CoExecuteDlist` interprets the list on the host (`__glDoInterpret`), which clips. For a list whose flags bit 0 is set (inferred: the list has a bounding box, the eight `corner` entries of its
+info record) and that is the outermost one being executed (`gc+0x2ae0` equal to 1, inferred) or whose bit 3 is already set, `CoExecuteDlist` runs eight rounds of a transform followed by
+`__glCoIsOutsideBigFrustum@0x6902eb3e`, ORs the results and sets bit 3 of `noNeedToClip` only if none is outside. That routine accepts a clip position whose x, y and z lie strictly inside plus and minus a
+viewport factor (`gc+0x2d950`, `+0x2d954`, `+0x2d958`) times its w and whose w is below 2^24 (the overflow the release note names). The bit is cleared when the outermost list ends.
+If the corners are those of the box around the list's vertices (inferred), then because the clip coordinates are linear in the object coordinates every vertex of a list that passes has w above zero
+and lies in the same volume, so the engine is never given geometry that the host would have had to clip. A nonzero `noNeedToClip` from the application hint or `GLCOSIMFORCECHIPXFORM` replays every
+list through the engine without the test.
+
 **Clip.** The host clips. The guard-band factors are computed from the viewport in `UpdateViewport@0x690198ee` (the
 variable `GLCOFORCECLIP` turns the factors off, `GLCOCLIPTOBIGFRUSTUM` copies them to a global table). Whether the engine
 clips when it transforms is not read; the hint above is the application's promise that nothing needs clipping.
