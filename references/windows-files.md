@@ -72,3 +72,32 @@ sgilivid.sys
 ```
 
 `sgilivid.sys` is 17,648 bytes, built 2001-10-29. Its installed path is `Livid_Driver\System32\Drivers\`. The 2D, blit and video page reads its mappings and entry points only.
+
+## Image identity: the NT 4.0 5.2.4 miniport
+
+The pages cite the miniport as `sgcomp.sys@ADDRESS`. The image behind those addresses is the NT 4.0 file of the 5.2.4 pack:
+
+| | |
+|---|---|
+| File | `sgcomp.sys` from the NT 4.0 pack (patch SG0020054), 62,992 bytes |
+| SHA-256 | `872607c081b0d1cab9cdaead053c90f7d6b25b62d83345e74b5fcbfe123d1e84` |
+| PE header | time stamp 2001-12-13 03:12:07 UTC, linker 6.0, image base `0x10000`, size of image `0xf500`, entry `0x10b18`, checksum field `0x197e1` |
+| Sections (virtual address, size) | `.text` `0x10360`, `0xd12c`; `.data` `0x1d4a0`, `0xfb4`; `INIT` `0x1e460`, `0x6ec`; `.rsrc` `0x1eb60`; `.reloc` `0x1ef00` |
+| Symbols | `sgcomp.pdb` from the same pack, 410,624 bytes, SHA-256 `982839e30ea220c5c0e91ef55508f3509bf21f60a05eaa84bc7dd4e4764b925b`; the routine names below are its |
+| Address form | the virtual address at the preferred base; for every section of this file it is the file offset plus `0x10000` |
+
+Routines the retrace and scan-line reading uses, with the vendor's names:
+
+| Address | Name | Role |
+|---|---|---|
+| `0x11e24`, `0x11e59` | `CobaltInitialize` (`0x11828`), the two `IoConnectInterrupt` calls | connects `CoInterruptHandler` (`0x17be8`) to bus interrupt level `0x19` and the retrace handler to level `0x18` |
+| `0x191ab` | `CoVRetraceHandler` | the retrace interrupt service routine |
+| `0x18314` | `CoDPC` | the deferred routine; dispatches the queued records |
+| `0x17dae` | `CoProcessRetraceEvent` | the deferred routine's handler for a retrace record |
+| `0x17d12` | `CoMoveChunksFromRetraceToSerializedQueue` | releases the held chunks |
+| `0x17ce1` | `CoAllocIdleEvent` | takes a record from the free list |
+| `0x1a293` | `CoSetMode` | arms the scan-line interrupts (the line is stored at `0x1a312`; the two `asSetInterrupt` calls are at `0x1a318` and `0x1a338`) |
+| `0x1c378`, `0x1c3f8` | `asSetInterrupt`, `asGetScanline` | the writer of `vt_intr01` and `vt_intr23`, and the reader of the live line |
+| `0x1d4a0` | the built-in mode table | 27 consecutive records of `0x30` bytes (`cobalt_timing_info`) up to `0x1d9b0`, the first 640 by 480 at 59.94 Hz |
+| `0x1de84` | `cmcfrtsqOverhead` | the constant 3; only read |
+| `0x14715` | `CoSetupGlobalData` (`0x146c4`) | the only write of `asPreblankInterval`, 300 |
