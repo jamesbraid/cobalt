@@ -1,7 +1,7 @@
 // @generated from devices/arsenic/registers.toml by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 4
-// input sha256 11821b07c56ea6f9e2d527b6b66727b0adb39dc6e03f4030967928f1f776607b
+// input sha256 7af1e2c234fa5437a7357c991d8a1158ad7c0f3aa54c6d8f579a3017611e8ff6
 // Arsenic display back end register block
 #![allow(dead_code)]
 #![allow(clippy::doc_markdown)]
@@ -616,7 +616,7 @@ pub mod vt_f2rf_lock {
         }
     }
 }
-/// Scan-line interrupt lines 1 (11:0) and 0 (23:12). The NT miniport parks both at 0xfff and then arms line 0 at the screen height less an allowance, and (inferred)
+/// Scan-line interrupt lines 1 (11:0) and 0 (23:12). The NT miniport parks both at 0xfff, then `CoSetMode` arms line 0 at the screen height less an allow (inferred)
 pub mod vt_intr01 {
     pub const WIDTH: u32 = 32;
     pub const OFFSET: u64 = 0x10020;
@@ -1606,6 +1606,16 @@ pub mod retrace_status {
     pub const OFFSET: u64 = 0x0;
     pub mod frame_end { // bits 1:1, inferred
         pub const SHIFT: u32 = 1;
+        pub const MASK: u32 = 0x1;
+        pub const fn get(v: u32) -> u32 {
+            (v >> SHIFT) & MASK
+        }
+        pub const fn set(v: u32, x: u32) -> u32 {
+            (v & !(MASK << SHIFT)) | ((x & MASK) << SHIFT)
+        }
+    }
+    pub mod release_copies { // bits 0:0, inferred
+        pub const SHIFT: u32 = 0;
         pub const MASK: u32 = 0x1;
         pub const fn get(v: u32) -> u32 {
             (v >> SHIFT) & MASK

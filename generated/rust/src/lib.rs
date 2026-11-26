@@ -1,7 +1,7 @@
 // @generated from devices/ and formats/ by defs-gen - do not edit, change the source
 // SPDX-License-Identifier: BSD-3-Clause
 // defs-gen 4
-// input sha256 e1de38ab3003a2818e2cdd84bff81a770f0a00b1cfa340e31b050112073ecd69
+// input sha256 2635e945f70126ddc260e037809dcf0ce5ff69b2b278928c6c2e3244359bdb1f
 #![no_std]
 #![cfg_attr(rustfmt, rustfmt_skip)]
 pub mod arsenic;

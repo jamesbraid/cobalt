@@ -2,7 +2,7 @@
  * change the source */
 /* SPDX-License-Identifier: BSD-3-Clause */
 /* defs-gen 4 */
-/* input sha256 11821b07c56ea6f9e2d527b6b66727b0adb39dc6e03f4030967928f1f776607b */
+/* input sha256 7af1e2c234fa5437a7357c991d8a1158ad7c0f3aa54c6d8f579a3017611e8ff6 */
 /* Arsenic display back end register block */
 #ifndef ARS_GEN_H
 #define ARS_GEN_H
@@ -347,10 +347,17 @@
 
 /*
  * Scan-line interrupt lines 1 (11:0) and 0 (23:12). The NT miniport parks both
- * at 0xfff and then arms line 0 at the screen height less an allowance, and
- * line 1 at the height plus one (plus two with flat-panel timing). The
- * firmware's hand-over routine parks both and writes 0x1fff. No shipped handler
- * for these interrupts was found.
+ * at 0xfff, then `CoSetMode` arms line 0 at the screen height less an allowance
+ * less one, and line 1 at the height plus one (plus two with the flat-panel
+ * timing flag of the mode record). The allowance is (field rate / 1000) *
+ * vertical total * 300 / 1,000,000, in integers: 9 lines for the built-in 640
+ * by 480 mode at 59.94 Hz, so line 0 is 470 and line 1 is 481 (established).
+ * The firmware's hand-over routine parks both and writes 0x1fff. The only
+ * shipped consumer is the miniport's retrace handler, which sees the interrupts
+ * through retrace_status; no routine reads these lines back except the writer's
+ * own read-modify-write. That scan-line interrupt 0 and 1 are what set bits 0
+ * and 1 of retrace_status is inferred from the order and position of the two
+ * lines.
  */
 /* vt_intr01: rw32, reset unknown; SGI Cobalt Graphics Driver 5.2.4 for Windows
  * NT 4.0, display miniport, interrupt routines; SGI Visual Workstation PROM
@@ -1070,12 +1077,17 @@
 /*
  * Retrace latch in its own 32-bit window, wired to line 24 of the system
  * interrupt controller (latched). The retrace handler reads it, writes back the
- * bitwise complement of what it read and does not read it again; bit 1 set
- * means a frame has ended and is counted. The firmware's hand-over routine
- * writes the complement of the word the same way. That only clears the bits if
- * a written 0 clears a bit and a written 1 leaves it, so the register is
- * write-0-to-clear (inferred). What the other bits are is unknown. The name is
- * ours: the register has no public name.
+ * bitwise complement of what it read and does not read it again. That only
+ * clears the bits if a written 0 clears a bit and a written 1 leaves it, so the
+ * register is write-0-to-clear (inferred). The handler counts a frame when bit
+ * 1 was set (mono modes) and queues the whole word, not only the bits it
+ * counted: it takes a record from the free list, stores the word in it and
+ * links it behind the pending ones, and queues the deferred routine; if a
+ * record is already pending, the word is dropped and only a counter grows
+ * (established). The deferred routine tests bit 0 and bit 1 and no other bit;
+ * what the other bits are is unknown. The firmware's hand-over routine writes
+ * the complement of the word the same way. The name is ours: the register has
+ * no public name.
  */
 /* retrace_status: rw32, space retrace, reset unknown; SGI Cobalt Graphics
  * Driver 5.2.4 for Windows NT 4.0, display miniport, retrace interrupt routine;
@@ -1084,6 +1096,9 @@
 #define ARS_RETRACE_STATUS_FRAME_END_SHIFT           1 /* inferred */
 #define ARS_RETRACE_STATUS_FRAME_END_MASK            0x1u
 #define ARS_RETRACE_STATUS_FRAME_END_INPLACE (ARS_RETRACE_STATUS_FRAME_END_MASK << ARS_RETRACE_STATUS_FRAME_END_SHIFT)
+#define ARS_RETRACE_STATUS_RELEASE_COPIES_SHIFT      0 /* inferred */
+#define ARS_RETRACE_STATUS_RELEASE_COPIES_MASK       0x1u
+#define ARS_RETRACE_STATUS_RELEASE_COPIES_INPLACE (ARS_RETRACE_STATUS_RELEASE_COPIES_MASK << ARS_RETRACE_STATUS_RELEASE_COPIES_SHIFT)
 
 /*
  * A 32-bit frame buffer pixel of the RGB8 type. The miniport's pixel format

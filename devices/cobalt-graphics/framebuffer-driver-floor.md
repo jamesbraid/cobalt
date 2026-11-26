@@ -225,12 +225,27 @@ the hardware accepts more than one order.
   writes the position then control 1 (`0x28f6b`). A model that stores words and honours control bit 0 satisfies all of them;
   scanning the 32 by 32 two-bit glyph is from the O2's layout.
 - The scanline interrupt registers (`+0x10020`, `+0x10024`): the drivers park them at `0xffffff` (`asStopIntr`,
-  `sgibvid.dll@0x80010922`), but the SGI miniport then arms them: `asSetInterrupt` (`0x1c378`) is called from `CoSetMode`
-  at `0x1a318` (interrupt 0, line = screen height less a computed allowance, less one) and `0x1a338` (interrupt 1,
-  line = height plus one, plus two when mode flag `0x1000`, the flat-panel timing, is set). The firmware's later hand-over routine parks both
-  (`1.1005@0x1108040`) and then writes `0x1fff` to `+0x10020` (`0x11083d8`). No shipped handler for those two scanline interrupts was found; the
-  retrace handler (`CoVRetraceHandler`) acts on pin 24 only, so a model that raises just the once-per-frame retrace interrupt
-  satisfies the readers read here (inferred).
+  `sgibvid.dll@0x80010922`), but the SGI miniport then arms them in `CoSetMode@0x1a293` through `asSetInterrupt@0x1c378`:
+  interrupt 0 at the screen height less an allowance less one (the store is at `0x1a312`, the call at `0x1a318`) and interrupt 1 at the
+  height plus one, plus two when mode flag `0x1000` (the flat-panel timing) is set (call `0x1a338`). The allowance is
+  `(fields_sec / 1000) * vtotal * asPreblankInterval / 1,000,000` in integers, with `asPreblankInterval` the constant 300
+  (`0x14715`, never written again): 9 lines for the built-in 640 by 480 record at 59.94 Hz, so the lines are 470 and 481; the other
+  records of the built-in table (`0x1d4a0`) give, for example, 588 and 601 for 800 by 600 at 60.3 Hz, 753 and 769 for 1024 by 768 at 60 Hz and
+  1004 and 1025 for 1280 by 1024 at 60 Hz. Established (the whole of both routines and the table were read).
+  The two interrupts are not handled by a routine of their own. Both arrive through the retrace latch on pin 24, and
+  `CoVRetraceHandler@0x191ab` queues the whole latch word, not only the frame-end bit it counts: it takes a record from the free list
+  (`CoAllocIdleEvent@0x17ce1`), stores the word in it, links it behind the pending records and queues the deferred routine
+  (`CoDPC@0x18314`, which calls `CoProcessRetraceEvent@0x17dae` for a retrace record). If a record is already pending when
+  another interrupt arrives, only a counter grows and the new word is dropped. The deferred routine tests bit 0 and bit 1 of the word:
+  - Bit 0: nothing happens while the byte `SwapbufCopyPending` (`+0x100` of the device extension) is nonzero. Otherwise read the live line (`asGetScanline@0x1c3f8`, bits 23:12 of
+    `+0x10000`) and release the held chunks (`CoMoveChunksFromRetraceToSerializedQueue@0x17d12`) only when the line is at or above
+    interrupt 0's line (`asPreblankScanline`) and below the height less `cmcfrtsqOverhead` (the constant 3, `0x1de84`), which is 477 at
+    640 by 480; with stereo on the line is not tested. Established.
+  - Bit 1: the frame-end work (flip the display tile list and finish the swap that bit 0 started; the Windows swap pages cover it).
+  So a model that raises only a once-per-frame interrupt with bit 1 never releases a held swap copy, and one that raises bit 0 while the
+  line is outside the window, or before the previous release has run, releases nothing. That the two bits are the latches of scan-line
+  interrupts 0 and 1 is inferred from the order and positions of the two lines: no shipped code names the source of a bit. The firmware's later hand-over routine parks both
+  (`1.1005@0x1108040`) and then writes `0x1fff` to `+0x10020` (`0x11083d8`).
 - The self-test masks of the firmware (`prom-init.md`) matter only for a model that is to pass the firmware's register
   walk; a failed display test does not stop the boot.
 - Reset values: unknown for every register, and nothing reads a register before writing it except `id`, the low nibble of
