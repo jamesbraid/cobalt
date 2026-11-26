@@ -39,6 +39,15 @@ sgcodd.dll
 sgcoicd.dll
 ```
 
+From the SGI 320/540 Supplemental Software Kit v5.1 for Windows 2000 (`sgi_ssk.exe`, English; `sgi_ssk-sgi-jp.exe` is the Japanese build): the self-extractor holds a `Launcher`, `SGIFw` and `SGISw` set of InstallShield 5 cabinets, and the [swap path page](../software/windows/w2k-swap-path.md) reads the header and cabinet of `SGISw` (`data1.hdr`, whose string table and registry records carry the OpenGL driver's registration, and `data1.cab`):
+
+```files
+SGISw/data1.hdr
+OpenGL/System32/sgcoicd.dll
+```
+
+The 5.2.1, 5.2.3 and 5.2.4 graphics patches for Windows 2000 (`SGICoGraphics521Win2KJPN.exe`, `SGICoGraphics523Win2KJPN.exe`, `SGICoGraphics524w2k.exe`) are read the same way, for the `data1.hdr` of each.
+
 From the SGI Visual Workstation 320 and 540 Windows NT 4.0 OEM disc set, disc 1 (identical to the same two files on Silicon Graphics Recovery CD-1 v1.1), `\I386\`, April 1999 builds:
 
 ```files

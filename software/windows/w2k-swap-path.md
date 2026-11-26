@@ -20,7 +20,7 @@ A reading marked established covers every instruction of the named routine.
 |---|---|---|
 | Which routine is the OpenGL driver's per-window swap procedure (window record `+0x64`)? | `__glCoIcdSwapBuffers@8` (`0x69019b62`), stored in `+0x64` (at `0x69019266`) and `+0x68` (at `0x69019263`) by `__wglCoInitDrawable@8`, which clears `+0x6c` at `0x6901925f`. None of the four candidate stores `0x69016f7b`, `0x69017902`, `0x6901fe3c`, `0x6901fe86` is it. | established |
 | Key of the record lookup (`0x6901638e`) | the window handle from `WindowFromDC(hdc)`; records of memory and pixel-buffer drawables key on the DC and cannot be found by a swap | established |
-| Does `opengl32` call the OpenGL driver's `DrvSwapBuffers`? | Only when bit 0 of the driver's registry "Flags" is set. The installed pack leaves it clear, so `SwapBuffers` goes to `GdiSwapBuffers` alone and the driver sends nothing | established for the code, inferred for the registry |
+| Does `opengl32` call the OpenGL driver's `DrvSwapBuffers`? | Only when bit 0 of the driver's registry "Flags" is set. The Supplemental Software Kit (SSK) v5.1 installer writes a subkey with `Flags` = 1, so on a machine set up the way SGI shipped it, `SwapBuffers` reaches the driver. The 5.2.x graphics patches write only the plain value, and a guest given a patch alone has no `Flags` | established for the code and for what the SSK installer's tables carry; inferred that the installer ran as written (not run) |
 | Does `wglSwapLayerBuffers` reach the driver? | Always, through `DrvSwapLayerBuffers`, for every driver-owned pixel format | established |
 | What does the display driver's `DrvSwapBuffers` do for a window with a current context? | Returns TRUE and does nothing; it copies only for a window with no context current | established |
 
@@ -56,18 +56,30 @@ release context, copy context, create layer context, share lists, get proc addre
 realize layer palette, swap layer buffers (`+0x38`), three DirectDraw entries, swap multiple buffers, describe pixel format (`+0x4c`), set pixel
 format (`+0x50`), swap buffers (`+0x54`). When bit 0 of the flags is set the three last ones must all be present, or the driver is rejected.
 
-**What the pack gives it. Established for the display driver, inferred for the installer.** The display driver's escape handler (`DrvOpenGLEscape@24`,
-`0x18520`, the escape slot of its table) answers `OPENGL_GETINFO` with `Version` 2, `DriverVersion` 2 and the name `sgi` (the wide string at
-`0x32934`). The installer's string table carries the key `...\OpenGLDrivers`, the name `SGI` and `sgcoicd.dll`, and none of the value names
-`DLL`, `Version`, `DriverVersion` or `Flags`. A Windows 2000 guest installed from the pack holds exactly one value, `SGI`, with the data
-`sgcoicd.dll`, and no subkey. That is the value layout, so the flags word is 0.
+**What the installs give it.** The display driver's escape handler (`DrvOpenGLEscape@24`, `0x18520`, the escape slot of its table) answers
+`OPENGL_GETINFO` with `Version` 2, `DriverVersion` 2 and the name `sgi` (the wide string at `0x32934`). Established (read in full). Two kinds of
+SGI installer then register the driver, and they differ:
 
-**Consequence. Established for the code, inferred for the install.** With this registry content the OpenGL driver's `DrvSwapBuffers`,
-`DrvSetPixelFormat` and `DrvDescribePixelFormat` exports are never called by `opengl32` (`wglSetPixelFormat`'s helper at `0x6952a053` takes
-the `GdiSetPixelFormat` route for a clear bit 0 as well). A plain `SwapBuffers` of a double-buffered window reaches only the display driver
-through `GdiSwapBuffers`, which does nothing while a context is current (below). **No swap escape is sent.** SP4's `opengl32` has the same
-logic. Whether SGI's hardware ever ran Windows 2000 this way is unknown: no other file in the pack writes these values, but nothing here shows
-what a field machine held.
+- **The 5.2.1, 5.2.3 and 5.2.4 graphics patches** (`SGICoGraphics521Win2KJPN.exe`, `SGICoGraphics523Win2KJPN.exe`, `SGICoGraphics524w2k.exe`;
+  their release notes say they update a system that already has the SSK v5.1) register the key `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers` with
+  **one value**, name `SGI`, data `sgcoicd.dll`, and no `DLL`, `Version`, `DriverVersion` or `Flags` name anywhere in the header (all three read: the string tables hold the
+  name once, in the key's record). A guest given a patch alone ends up in the value layout and `Flags` is 0. Established for the header's
+  records (the record layout was checked against the same table's service keys); inferred that the installer writes them as the records say (never run here).
+- **The SSK v5.1 installer** (`sgi_ssk.exe`, English, and `sgi_ssk-sgi-jp.exe`; the release notes are `ssk_relnotes.rtf` in the same pack: it is the SGI
+  upgrade kit for a 320 or 540 moving to Windows 2000, installed after Windows 2000 itself) carries the OpenGL driver as the component `Sgcoicd`
+  (build date 9 December 1999, 1,119,808 bytes) with registry entries under **`...\OpenGLDrivers\SGI`**: `DLL` = `sgcoicd.dll`, `Flags` = 1, `DriverVersion` = 2,
+  `Version` = 2. In that table's record format the string type code is 2 and the number type code is 3, the codes the same table gives
+  `Group` = `Base` (string) and `Start`, `Type`, `ErrorControl`, `Interrupt` (numbers, decimal text) of its service keys, so `DLL` is a string and the other three are numbers
+  (inferred from the codes; the type constant itself is not documented). Both kits' tables carry the same four entries.
+  This is the layout the exports exist for: `opengl32` reads the subkey first and its type test wants a string for `DLL` and a 32-bit number for the three others.
+
+**Consequence.** A Windows 2000 machine installed the way SGI's notes describe (Windows 2000, then the SSK, then the 5.2.x patch) has both the subkey
+and the value, and `opengl32` takes the subkey: bit 0 of `Flags` is set, `SwapBuffers` runs the OpenGL driver's `DrvSwapBuffers`, the swap escape is sent, and the
+display driver's `DrvSwapBuffers` runs afterwards through `GdiSwapBuffers` and does nothing while a context is current. So **the field behaviour is the
+escape-`0x48` path of the layer swap below**, not a swap that does nothing. A machine with a graphics patch and no SSK (the Windows 2000 drivers on a
+guest, say) has `Flags` 0: `opengl32` never calls the OpenGL driver's `DrvSwapBuffers`, `DrvSetPixelFormat` or `DrvDescribePixelFormat`, `wglSetPixelFormat`'s helper at
+`0x6952a053` takes the `GdiSetPixelFormat` route, and a plain `SwapBuffers` of a double-buffered window reaches only the display driver, which does nothing while a
+context is current. SP4's `opengl32` has the same logic. Established for the code; inferred for what an installed SSK writes (the installer was read, not run).
 
 **`opengl32!wglSwapLayerBuffers`. Established** (RTM `0x69527125`). After a `glFinish` when a context is current, it asks GDI for the format index. For a
 driver-owned format it finds the same driver table and calls slot `+0x38`, the driver's `DrvSwapLayerBuffers`, **without testing bit 0**. When the
@@ -150,14 +162,14 @@ It is **never used for a window that has a current context**, and so for no Open
 
 ## What an emulator must do
 
-- Nothing for the plain `SwapBuffers` of a double-buffered window with the pack as installed: the guest sends no swap drop and the window keeps what it
-  had. The engine's copy and flip are reached only by escape `0x48`, which the OpenGL driver sends from its swap procedure. A black or unchanged window after
-  `SwapBuffers` on Windows 2000 is what the shipped software asks for, not an engine fault. Inferred (the install's registry decides).
+- Give the guest the registry SGI's installer writes (below), then a plain `SwapBuffers` sends the same swap escape `0x48` the layer swap does and must work as the NT 4.0 swap does.
+  A guest with a graphics patch but no SSK has a plain `SwapBuffers` that sends no swap drop: the window keeps what it had, which is what that registry asks for, not an engine fault.
+  Established for both registry states (code and installer tables); the SSK has not been run here.
 - `wglSwapLayerBuffers(hdc, 1)` is the path that sends the escape. It must work as the NT 4.0 swap does.
-- To exercise the OpenGL driver's `DrvSwapBuffers`, give the guest the subkey layout: under `OpenGLDrivers`, a key `sgi` with `DLL` = `sgcoicd.dll` (a string),
+- The subkey to give the guest, the one the SSK installer writes: under `OpenGLDrivers`, a key `SGI` with `DLL` = `sgcoicd.dll` (a string),
   and `Version`, `DriverVersion` and `Flags` as 32-bit values 2, 2 and 1. `opengl32` tries the subkey first, so an `SGI` value beside it is ignored, and a
-  subkey with any of the four missing or mistyped makes the lookup fail instead of reading the flags as 0. That is the configuration the exports exist for.
-  Inferred; not tried.
+  subkey with any of the four missing or mistyped makes the lookup fail instead of reading the flags as 0. An emulator run with exactly this subkey made
+  plain `SwapBuffers` work for the five GL tests (model output, not hardware), and `DriverVersion` 1 made context creation fail, as the code says.
 - The display driver's escape for `OPENGL_GETINFO` must keep answering 2 and 2. `opengl32` rejects a driver whose `Version` is not 2, passes `DriverVersion`
   to the OpenGL driver's `DrvValidateVersion` (`0x69017598`, true only for 2), and in the subkey layout also compares both with the registry values.
 
