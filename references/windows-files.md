@@ -21,6 +21,16 @@ sglfb.sys
 sglfb.dll
 ```
 
+From the same Windows 2000 install CD, `\I386\`, the Microsoft files the [swap path page](../software/windows/w2k-swap-path.md) reads (exports only, no symbols):
+
+```files
+opengl32.dll
+gdi32.dll
+win32k.sys
+```
+
+The same page also reads the Windows 2000 Service Pack 4 (build 2195.6717) `opengl32.dll` (692,496 bytes) and `gdi32.dll` (233,744 bytes); they share the RTM files' names, so keep them in a separate directory.
+
 From the SGI Cobalt Graphics 5.2.4 driver pack for Windows 2000 (`SGICoGraphics524w2k.exe`, the same InstallShield layout; its `.dbg` files hold no symbol table):
 
 ```files
@@ -58,6 +68,10 @@ Loose on the same disc, the matching symbol files (`Symbols\cpl\sgcoicd.dbg`, `S
 | 5.2.4 Windows 2000 `sgcoicd.dll` (file version 1.1.5.24) | 1,120,336 | `ee1b8202d9399af2` |
 | 5.2.4 Windows 2000 `sgcodd.dll`, `sgcomp.sys` | 339,040, 65,808 | `24b07c7e6a69e7ac`, `d472cb91bae2ecdf` |
 | 5.2.4 Windows 2000 `sgcoicd.pdb` (PDB 2.00) | 4,400,128 | `268d1132ef9df236` |
+| 5.2.4 Windows 2000 `sgcodd.pdb`, `sgcomp.pdb` (PDB 2.00) | 1,033,216, 492,544 | `5a5c3803f411b88d`, `ca316cf989c80cae` |
+| Windows 2000 RTM (build 2195) `opengl32.dll` | 691,984 | `38671d6ee82e68ff` |
+| Windows 2000 RTM `gdi32.dll` | 234,256 | `c82bf3ca428b7858` |
+| Windows 2000 RTM `win32k.sys` | 1,726,256 | `cf96bd76273e29d6` |
 | April 1999 `sgcoicd.dll` (file version 1.1.4.0, built 1999-04-27) | 1,245,456 | `8fc6a926fb699014` |
 | April 1999 `sgcodd.dll` (file version 4.1.1) | 334,704 | `0a6be6e30120dc74` |
 | April 1999 `sgcomp.sys` | 65,296 | `77ca10cf9b13b93a` |
