@@ -65,8 +65,9 @@ SGI installer then register the driver, and they differ:
   **one value**, name `SGI`, data `sgcoicd.dll`, and no `DLL`, `Version`, `DriverVersion` or `Flags` name anywhere in the header (all three read: the string tables hold the
   name once, in the key's record). A guest given a patch alone ends up in the value layout and `Flags` is 0. Established for the header's
   records (the record layout was checked against the same table's service keys); inferred that the installer writes them as the records say (never run here).
-- **The SSK v5.1 installer** (`sgi_ssk.exe`, English, and `sgi_ssk-sgi-jp.exe`; the release notes are `ssk_relnotes.rtf` in the same pack: it is the SGI
-  upgrade kit for a 320 or 540 moving to Windows 2000, installed after Windows 2000 itself) carries the OpenGL driver as the component `Sgcoicd`
+- **The SSK installer** (`sgi_ssk.exe`, English, and `sgi_ssk-sgi-jp.exe`; the release notes are `ssk_relnotes.rtf` in the same pack: it is the SGI
+  upgrade kit for a 320 or 540 moving to Windows 2000, installed after Windows 2000 itself. The files carry no version number; the patch notes call the base kit v5.1, and this
+  build's driver is dated December 1999, so this is inferred to be that kit) carries the OpenGL driver as the component `Sgcoicd`
   (build date 9 December 1999, 1,119,808 bytes) with registry entries under **`...\OpenGLDrivers\SGI`**: `DLL` = `sgcoicd.dll`, `Flags` = 1, `DriverVersion` = 2,
   `Version` = 2. In that table's record format the string type code is 2 and the number type code is 3, the codes the same table gives
   `Group` = `Base` (string) and `Start`, `Type`, `ErrorControl`, `Interrupt` (numbers, decimal text) of its service keys, so `DLL` is a string and the other three are numbers
