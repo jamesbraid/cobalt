@@ -88,7 +88,8 @@ Status: **unknown** for everything below. What is established and what software 
     `vt_hpixen` window is the only per-mode width in the block), and whether the shipped Windows 2000 boot video and the Linux
     console displayed correctly on the machine (no report says so for `sgibvid.dll`). Routes tried: every shipped writer (NT
     miniport, `sglfb.sys` and `sglfb.dll`, `sgibvid.dll`, firmware 1.1005), the public Linux driver and header, the public mailing
-    list report of Linux X11 modes (ambiguous about the mode). Settles it: a chip description, or a report of `sgibvid.dll`'s
+    list report of Linux X11 modes (ambiguous about the mode). One firmware path (`1.1005@0x1140542`, the region copy in the console table) indexes destination rows by the visible width
+    and mixes the two layouts (source rows by the stride); whether the console reaches it is the next route (find the callers of table slot `0x11ddf8c`). Settles it: a chip description, or a report of `sgibvid.dll`'s
     boot screens on the machine. Emulator choice: take the pitch from the remainder as above and show the width given by the
     `vt_hpixen` window and the height by `vt_vpixen`.
   - The write semantics of the register at `0xca000000` (write-0-to-clear is inferred from the complement write) and what its other

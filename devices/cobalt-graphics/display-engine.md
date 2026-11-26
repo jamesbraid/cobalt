@@ -131,25 +131,34 @@ ways.
 - *The line pitch* in the linear form. The shipped writers lay their frames out in two ways, and which one goes with a writer
   follows the remainder field of the width register it writes.
   - With a remainder (the exact form), lines are whole tile columns apart. The firmware's console code stores
-    `ceil(W / 512) * 512` as its stride and every drawing routine steps rows by it (1024 bytes at 640 pixels, with register
-    `0x24`; the stride is computed at `1.1005@0x113154e` and used from `1.1005@0x1140296` on). `sglfb.sys` reports the same
+    `ceil(W / 512) * 512` as its stride (kept at `0x116dbb0`) and its fill, pixel, text and forward-copy routines step rows by
+    it (1024 bytes at 640 pixels, with register `0x24`; the stride is computed at `1.1005@0x113154e` and first used at
+    `1.1005@0x1140295`). The register is built at `1.1005@0x11317f6` from the whole columns and the remainder floored to
+    32-byte units. One copy path breaks the pattern (see the counter-witness below). `sglfb.sys` reports the same
     number as each mode's screen stride (`ceil(W / 512) * 512` at 8 bits and `ceil(W / 128) * 512` at 32: 1024 at 640 and 800,
     1536 at 1280, 2048 at 1600), and `sglfb.dll` hands that stride unchanged to the engine as the bitmap's line delta. Established
     for both (the stride computation, the mode record and the bitmap creation read in full).
   - With no remainder (the rounded form), lines are the visible width in bytes apart. `sgibvid.dll` steps every row by the mode
-    width, 640 at 640 by 480 and 1600 at the flat panel's 1600 by 1024. The four instructions that index or step a row
-    (the pixel read at `sgibvid.dll@0x80010d78`, the pixel write at `0x80010e09`, and the start and the per-row step of the
-    scroll-region move at `0x80011349` and `0x80011385`; the fills and the text drawing go through the pixel write) all
-    multiply or add the one variable that the mode width is stored in (`0x80011fdc`, set at `0x80010707`; its six reads
-    are those four, the allocation size and the centring offsets). Only the allocation is rounded up to whole 512-byte
+    width, 640 at 640 by 480 and 1600 at the flat panel's 1600 by 1024. The two instructions that index a row in memory are
+    the pixel read at `sgibvid.dll@0x80010d78` and the pixel write at `0x80010e09`; the fills, the text drawing, the
+    scroll-region move and the screen save and restore all go through them. The move also computes a start and a per-row step
+    from the same variable (`0x80011349`, `0x80011385`) but never dereferences them. All four multiply or add the one variable that
+    the mode width is stored in (`0x80011fdc`, set at `0x80010707`; its six reads are those four, the allocation size and
+    the centring offsets). Only the allocation is rounded up to whole 512-byte
     columns (1024 bytes a row at 640, 2048 at 1600), at `0x800107c9` to `0x800107da`. Linux lays its lines out at `xres_virtual * bytes per pixel`
     (`get_line_length`) and writes a register of whole columns, rounded up from the selected timing's width, with remainder 0.
     Established for both.
   - The two layouts are the same whenever the visible width in bytes is a multiple of 512, so only `sgibvid.dll` (at 640 and
-    1600) and Linux (at 640, 800 and 1280 pixels at 8 bits) tell them apart. Every writer fits the rule "remainder set: lines
-    are whole columns apart; remainder clear: lines are the visible width apart", and no writer contradicts it: a single
+    1600) and Linux (at 640, 800 and 1280 pixels at 8 bits) tell them apart. Every writer's frame fits the rule "remainder set: lines
+    are whole columns apart; remainder clear: lines are the visible width apart": a single
     pitch of whole columns for every register value would turn `sgibvid.dll`'s and Linux's frames into noise, and a pitch
     read from the exact register as bytes (`0x24` is 640 bytes) would do the same to the firmware's and `sglfb`'s.
+    One firmware code path does not fit. The region-copy entry of the console table (`1.1005@0x1140492`, listed in the
+    second data module at `0x11ddf8c`) indexes the source rows by the stride but, in the branch whose row loop counts
+    down from the last row and whose horizontal shift is not positive, the destination rows by the visible width (`1.1005@0x1140542` to `0x1140577`: width times row, against
+    stride times row in the other three paths). At 640 pixels that copy would shear against every other firmware path, so it
+    reads as a firmware defect, not as the hardware pitch (inferred; whether the console ever calls it in that branch was
+    not traced).
     Inferred: it assumes the shipped Windows 2000 boot video and the Linux console displayed correctly on the machine, and no
     document or register states the rule. A 2005 posting on the public mailing lists reports Linux X11 working at 15 bits on
     the 1600 SW panel, where the two layouts differ (3200 bytes against 3584), but does not say which mode it meant. Not
