@@ -35,7 +35,8 @@ used to navigate; the field names, offsets and sizes below are SGI's own type de
   memory.
 - **Established, ICD side.** The wrapper writes the code and the context handle into the header and refuses codes outside `0x40`
   to `0x64`. For the queued codes it counts escapes per packet node (`+0x1c` of the node record); past `droplimit` (10 by
-  default, `CO_GL_DROPLIMIT` from 5 to 100) it forces a scheduler kick (`0x4d`) itself and resets the count. After a
+  default, `CO_GL_DROPLIMIT` from 5 to 100) it sends a finish (`0x4c`, through `__glCoIcdFinish` at `0x6901849c`) and waits on the finish
+  event, and resets the count; this is back-pressure, not a kick (the earlier text said kick). After a
   successful call it clears bit 0 of the node record's flag word at `+0x18` (bits 0 and 1 for `0x4d`, `0x4f`, `0x52` and
   `0x55`); the kick path sets bit 0 first. What the bits mean to the packet writer was not traced.
 - **Established.** The escapes that queue work (`0x48` swap, `0x4c` finish, `0x4d` kick, `0x4e` clear, `0x4f` pixel DMA,
@@ -109,7 +110,8 @@ line by line).
 
 - `QUERYESCSUPPORT` (8) answers 1 for `0x1100` and `0x1101` and 0 otherwise.
 - `OPENGL_GETINFO` (`0x1101`) with a zero input checks the output is `0x214` bytes, writes the version words `2`, `2` and
-  the driver's file name as a wide string at `+8`. This is how `opengl32` finds the ICD's driver name.
+  the wide string `sgi` at `+8`. This is how `opengl32` finds the ICD's registry name (not a file name: the file name `sgcoicd.dll` is the registry value's
+  data); both builds answer 2, 2 and `sgi` ([registration](nt-opengl-icd.md#registration-and-the-version-handshake)).
 - `0x232088`, `0x23208c`, `0x232090`, `0x232094`, `0x232098`, `0x23209c`, `0x2320a0`, `0x2320a4`, `0x2320ac`, `0x2320b0` and
   `0x2320c8` are passed unchanged to the miniport through `EngDeviceIoControl`, so the control-panel applet can reach its
   video requests. The OpenGL driver never sends them. `0x2320ac` returns the number of tile banks less one, `0x2320b0` a
