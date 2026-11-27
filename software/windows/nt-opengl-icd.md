@@ -83,10 +83,10 @@ among the files this repository reads. The escape table is in [the escapes page]
 
 | Piece | Runs | What it does for OpenGL |
 |---|---|---|
-| Microsoft `opengl32.dll` | user mode, in the application's process | Loads the driver named in the registry and calls it through the table of `Drv*` entry points; decides from the registry `Flags` whether `SwapBuffers` reaches the driver ([swap path](w2k-swap-path.md)). |
+| Microsoft `opengl32.dll` | user mode, in the application's process | Loads the driver named in the registry and calls it through the table of `Drv*` entry points; decides from the registry `Flags` whether `SwapBuffers` reaches the driver ([swap path](w2k-swap-path.md)). Read for Windows 2000 only; NT 4.0's is inferred to do the same. |
 | `sgcoicd.dll` (the ICD) | user mode, same process | All of OpenGL: state, transform, clipping, lighting where the host does it, texture and pixel conversion, and the writing of engine packets into memory the kernel side mapped for it. Imports GDI `ExtEscape` and no `DeviceIoControl`, so every request to the kernel is an escape to the display driver. It touches no engine register. |
-| `sgcodd.dll` (display driver) | kernel mode, inside `win32k` (it imports the GDI engine, window objects and `EngDeviceIoControl`) | The escape server for OpenGL, and the 2D driver. For OpenGL: checks each escape's sizes and the packet position, keeps the per-context and per-window records, tracks buffer descriptor ids, receives clip changes from GDI window objects, and queues engine jobs ("drops") for the miniport. It reaches the miniport with video IOCTLs. |
-| `sgcomp.sys` (miniport) | kernel mode, under the video port | The only code that maps and writes the engine and display back end registers: packet-pool and tile allocation, the translation table, the scheduler that runs one rendering node on the engine at a time, the context switch, both interrupts, window-parameter packets, the hardware clear, copy and swap packets. |
+| `sgcodd.dll` (display driver) | kernel mode, inside `win32k` (it imports the GDI engine, window objects and `EngDeviceIoControl`) | The escape server for OpenGL, and the 2D driver. It writes the display back end's colour map itself (`DrvSetPalette@0x27dda` stores the entries through a mapped base and polls the FIFO status at `+0x58000`), so the miniport is not the only code that writes a display register. For OpenGL: checks each escape's sizes and the packet position, keeps the per-context and per-window records, tracks buffer descriptor ids, receives clip changes from GDI window objects, and queues engine jobs ("drops") for the miniport. It reaches the miniport with video IOCTLs. |
+| `sgcomp.sys` (miniport) | kernel mode, under the video port | The only code read that maps and writes the rendering engine's registers (the display driver also writes display back end registers, above): packet-pool and tile allocation, the translation table, the scheduler that runs one rendering node on the engine at a time, the context switch, both interrupts, window-parameter packets, the hardware clear, copy and swap packets. |
 
 The split, in one line: the ICD builds packets in memory, the display driver admits and queues them under GDI's window and clip
 model, and the miniport starts the engine on them. Established for the files' roles by their imports and the routines named in
@@ -104,13 +104,16 @@ the other pages; "one rendering node on the engine at a time" is [the scheduler 
   `DriverVersion` and `Flags` when one exists ([swap path](w2k-swap-path.md#microsofts-side-swapbuffers-and-wglswaplayerbuffers)).
 - **The name Microsoft's code asks for. Established, both builds.** `OPENGL_GETINFO` (`0x1101`) to the display driver returns the
   version words 2 and 2 and the wide string `sgi`: the NT 4.0 driver copies it from a pointer in its data that points at that
-  string (`DrvOpenGLEscape@0x18630`, string at image address `0x103a4`), the Windows 2000 driver has the string inline. It is the
+  string (`DrvOpenGLEscape@0x18630`, pointer at `0x30b14`, string at image address `0x103a4`); the Windows 2000 driver does the same through a pointer at `0x32bd4` to a string in its read-only data at `0x32934`. It is the
   driver's registry name, not its file name; the registry compares names without regard to case (Windows behaviour, not read here),
   so `sgi` finds the `SGI` entry. An earlier line of [the escapes page](opengl-escapes.md#private-escapes-and-the-other-entry-points)
   called it the file name.
 - **`DrvValidateVersion`. Established, both builds** (`0x69015826` in NT 4.0, `0x69017598` in Windows 2000). Takes one
-  version number and returns 1 only when it is 2. `opengl32` passes it the display driver's `DriverVersion`, so a driver version
-  other than 2 makes the ICD refuse to load.
+  version number and returns 1 only when it is 2. The Windows 2000 `opengl32` (`0x69528da4`) refuses a driver whose answer to
+  `OPENGL_GETINFO` has a first word other than 2 (`0x69528f42`) and passes the second word, the `DriverVersion`, to
+  `DrvValidateVersion` (`0x69528f4b`), so a driver version other than 2 makes the ICD refuse to load. When a subkey supplies
+  `Version` and `DriverVersion` (`0x69528cb8`), both must also equal the display driver's two words. Established for Windows 2000's
+  `opengl32`; NT 4.0's is not read.
 
 ### Entry points
 
@@ -128,13 +131,17 @@ constants):
   (`freeHandle`), not a pointer**, and the same number is the `dhrc` that escape carries.
 - **`DrvSetContext(hdc, hglrc, setProcTable)`** (`0x69014f68`) returns the context's dispatch table, or 0 on failure. Under the
   driver's lock it accepts a window DC (taking the window from `WindowFromDC`) or a memory DC (taking the selected bitmap); an
-  `hglrc` of 0 takes a separate path that installs the do-nothing dispatch (`__glCoreNopDispatch`). It fails with last error 6 for
+  `hglrc` of 0 would take a path that installs the do-nothing dispatch (`__glCoreNopDispatch`), but the record lookup by handle
+  returns 0 for it (handles start at 1) and the store of the callback at `0x6901509b` comes first, so that path would write
+  through a null record; whether `opengl32` ever sends 0 here (it has `DrvReleaseContext`) is not read. It fails with last error 6 for
   an unknown context or a DC that has neither, and with 0x57 when another thread has the context current. It then finds or creates
   the drawable record, requires the drawable's pixel format to equal the context's, stores Microsoft's `setProcTable` callback in
   the context, and calls the context's make-current hook. That hook (`__glCoIcdMakeCurrent`) sends `FIRSTSETCONTEXT` (`0x41`) when
   a byte of the driver's context record (`+0x1c`) is clear, then `SETCONTEXT` (`0x40`); if either fails the record is undone
-  and the call returns 0. Established for the sequence; inferred for the meaning of the two error constants; not traced: what sets
-  the `+0x1c` byte, and the `hglrc` 0 path past the dispatch swap (the decompile of it is unreliable).
+  and the call returns 0. Established for the sequence; inferred for the meaning of the two error constants. The `+0x1c` byte is zeroed when the record is
+  created (`0x690155b5`) and set to 1 by `DrvSetContext` after the make-current hook succeeds (`0x690150f8`; `wglMakeCurrentReadSGI`
+  sets it too, `0x69015d91`); `DrvReleaseContext` leaves it alone. So `FIRSTSETCONTEXT` goes out once per context, on the first
+  make-current that completes, and again only if the hook failed after it. Established.
 - **`DrvGetProcAddress(name)`** forwards to the ICD's own extension lookup. The extensions it can hand out (the WGL `make_current_read`,
   `pbuffer`, `pixel_format` and `swap_interval` group and the instruments calls) are listed in
   [the expectations page](opengl-expectations.md) and [the software overview](../../devices/cobalt-graphics/nt-software.md).
@@ -164,15 +171,17 @@ step cites the page that holds the evidence.
    (`0x4d`) with the node's position, or one of the job escapes (`0x48` swap, `0x4e` clear, `0x4f` pixel transfer, `0x52` copy), which
    all carry the position of a closed node. The display driver rejects a position outside that context's own pool and queues a drop;
    the miniport's scheduler runs the drops in order. No escape writes an engine register. Established.
-4. **Starting the engine.** Only the miniport starts it: the context switch writes the start word (`0x10000`) with the node's
-   position. A kick merely clears a pending flag that lets the scheduler run the node.
+4. **Starting the engine.** Only the miniport starts it: the context switch writes the node's position to the start register
+   (offset `0x10000`). A kick merely clears a pending flag that lets the scheduler run the node.
    See [the switch](../../devices/cobalt-graphics/graphics-engine.md#command-interface-in-main-memory). Established for the driver, inferred for the engine.
 5. **Fences.** Three, all the ICD's: polling bit 0 of a node's first dword (the engine clears it; an 18-step busy-wait ladder, then
    `WAIT_FOR_HARDWARE` and a sleep on an event the miniport signals when it next loads the node); `FINISH` (`0x4c`) followed by a
    wait on the event the ICD handed over in the first-context escape; and the **back-pressure rule** in the escape wrapper, which
-   counts queued escapes per node and, once more than `droplimit` have gone by without a kick, sends `FINISH` itself and waits. The
-   earlier note that this forced a kick was wrong: the wrapper calls the finish routine (`__glCoIcdFinish`, escape `0x4c` with a wait) at
-   `0x6901849c`. Established.
+   counts swap (`0x48`), clear (`0x4e`) and unbind (`0x56`) escapes per node (the kick, pixel transfer, screen copy and bind
+   escapes are not counted, and a kick does not reset the count; no other reset was found) and, once more than `droplimit` have been counted, sends `FINISH`
+   itself and waits. The earlier note that this forced a kick was wrong: after the escape returns, the wrapper calls the finish
+   routine (`__glCoIcdFinish@0x6901852c` from the call at `0x6901849c`: escape `0x4c`, then a wait on the event of the first-context
+   escape). Established.
 6. **Pixel transfers** bypass the pool: the display driver locks the user's buffer, maps its pages into the translation table and
    queues a transfer; cache maintenance is the separate `CACHEOP` escape ([escapes](opengl-escapes.md#the-table)). Established.
 
@@ -182,8 +191,9 @@ Everything in the first three bullets is Microsoft's contract, not the board's; 
 of what is board-specific, not evidence about any other board):
 
 - **From the operating system, same for any head on NT.** The registry registration and the `DLL`, `Version`, `DriverVersion`,
-  `Flags` subkey, the `Drv*` table, `DrvValidateVersion` returning 1 only for 2, the display driver answering `OPENGL_GETINFO` with
-  versions 2 and 2 and a name, `OPENGL_CMD` as `ExtEscape` with the 20-byte header whose window and translation objects GDI fills in,
+  `Flags` subkey, the `Drv*` table, a `DrvValidateVersion` that accepts the display driver's `DriverVersion` (SGI's is 2: the value is SGI's
+  choice, the existence of the call is Microsoft's), the display driver answering `OPENGL_GETINFO` with
+  versions 2 and 2 and a name (`opengl32` requires the first word to be 2), `OPENGL_CMD` as `ExtEscape` with the 20-byte header (that GDI fills in its window and translation objects is inferred from their types; `win32k` was not read for it),
   and the Windows 2000 requirement that a driver with `Flags` bit 0 export `DrvSwapBuffers`, `DrvSetPixelFormat` and
   `DrvDescribePixelFormat`. Established for Windows 2000's `opengl32`, inferred for NT 4.0's.
 - **Jobs the kernel half has whatever the engine.** Learn each window's clip and origin from GDI window objects and re-sync a

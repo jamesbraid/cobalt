@@ -34,11 +34,12 @@ used to navigate; the field names, offsets and sizes below are SGI's own type de
   Output structures carry an NT status in a `status` field: `0` success, `0xc000000d` invalid parameter, `0xc0000017` no
   memory.
 - **Established, ICD side.** The wrapper writes the code and the context handle into the header and refuses codes outside `0x40`
-  to `0x64`. For the queued codes it counts escapes per packet node (`+0x1c` of the node record); past `droplimit` (10 by
-  default, `CO_GL_DROPLIMIT` from 5 to 100) it sends a finish (`0x4c`, through `__glCoIcdFinish` at `0x6901849c`) and waits on the finish
-  event, and resets the count; this is back-pressure, not a kick (the earlier text said kick). After a
+  to `0x64`. It counts swap (`0x48`), clear (`0x4e`) and unbind (`0x56`) escapes per packet node (`+0x1c` of the node record);
+  the kick, pixel transfer, screen copy and bind escapes are not counted, and no other reset of the count was found. Once the count is past `droplimit` (10 by
+  default, `CO_GL_DROPLIMIT` from 5 to 100) the wrapper, after its own escape returns, sets bit 0 of the flag word at `+0x18`, resets the count and sends a finish (`__glCoIcdFinish@0x6901852c`, called from `0x6901849c`: escape `0x4c`, then a wait on the finish
+  event); this is back-pressure, not a kick (the earlier text said kick). After a
   successful call it clears bit 0 of the node record's flag word at `+0x18` (bits 0 and 1 for `0x4d`, `0x4f`, `0x52` and
-  `0x55`); the kick path sets bit 0 first. What the bits mean to the packet writer was not traced.
+  `0x55`). What the bits mean to the packet writer was not traced.
 - **Established.** The escapes that queue work (`0x48` swap, `0x4c` finish, `0x4d` kick, `0x4e` clear, `0x4f` pixel DMA,
   `0x51` pixel DMA clean-up, `0x52` screen copy, `0x55` bind, `0x56` unbind) all carry the position of a closed packet node
   at `+0x14` (`pktOffset`). The display driver refuses it unless it lies inside that context's own packet buffer

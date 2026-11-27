@@ -211,8 +211,7 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
   here, so what NT 4.0's does with that layout (and whether it has any `Flags` notion) is inferred
   ([registration](../software/windows/nt-opengl-icd.md#registration-and-the-version-handshake)). The Windows 2000 miniport holds
   the `\Device\PhysicalMemory` name the NT 4.0 packet-pool mapping uses, but its allocator was not read, so the two-view mapping
-  of the pool is established for NT 4.0 only. Also unread: what sets the context record's first-set byte (`+0x1c`) that decides
-  whether `FIRSTSETCONTEXT` is sent. Routes tried: the NT 4.0 files with the vendor's names, the installers' tables, the Windows
+  of the pool is established for NT 4.0 only. Routes tried: the NT 4.0 files with the vendor's names, the installers' tables, the Windows
   2000 `opengl32.dll` and the Windows 2000 SGI files by constants. Next: the Windows 2000 program-database reader (see the entry
   on Windows 2000 builds) to name `sgcomp.sys`, then read its pool allocator; an NT 4.0 `opengl32.dll` or a setup log from an
   NT 4.0 machine would settle the first, and none is held.
