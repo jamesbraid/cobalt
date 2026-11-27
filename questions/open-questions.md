@@ -206,6 +206,16 @@ and [opengl-expectations.md](../software/windows/opengl-expectations.md). A mode
 - **What `SET_READY_TEXTLBPKT` (escape `0x59`) arms.** The display driver copies a stored link field in its own record of the
   texture packet; the miniport is not called and no packet word is written. Unknown: no shipped path shows what reads the
   field afterwards. An emulator author keeps the bookkeeping or drops the escape.
+- **How NT 4.0's `opengl32.dll` reads the driver registration, and the command-memory mapping on Windows 2000.** The NT 4.0 and
+  Windows 2000 patches both write one `OpenGLDrivers` value (`SGI` = `sgcoicd.dll`); only the Windows 2000 `opengl32.dll` is read
+  here, so what NT 4.0's does with that layout (and whether it has any `Flags` notion) is inferred
+  ([registration](../software/windows/nt-opengl-icd.md#registration-and-the-version-handshake)). The Windows 2000 miniport holds
+  the `\Device\PhysicalMemory` name the NT 4.0 packet-pool mapping uses, but its allocator was not read, so the two-view mapping
+  of the pool is established for NT 4.0 only. Also unread: what sets the context record's first-set byte (`+0x1c`) that decides
+  whether `FIRSTSETCONTEXT` is sent. Routes tried: the NT 4.0 files with the vendor's names, the installers' tables, the Windows
+  2000 `opengl32.dll` and the Windows 2000 SGI files by constants. Next: the Windows 2000 program-database reader (see the entry
+  on Windows 2000 builds) to name `sgcomp.sys`, then read its pool allocator; an NT 4.0 `opengl32.dll` or a setup log from an
+  NT 4.0 machine would settle the first, and none is held.
 - **Escapes `0xcace`, `0xcaca` and the `0x11` group of the display driver.** Reachable only by a caller that is not the OpenGL
   driver; the OpenGL driver sends none, so no OpenGL path depends on them. The control-panel applet was not read for them.
 - **Whether Windows XP's graphics stack accepts the Windows 2000 pack.** Settled only as far as the imports and headers

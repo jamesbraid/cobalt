@@ -93,7 +93,7 @@ driver: its import list has `ExtEscape` from GDI and no `DeviceIoControl`, so it
 
 Reading the names together, the OpenGL driver asks for a packet buffer mapped into its process
 (`ALLOC_PACKET_BUFFER`), fills it with packets itself, and then asks the kernel to run it (`KICKSCHEDULER`,
-`FINISH`, `WAIT_FOR_HARDWARE`). That is inferred from names, not from a read of the call sites.
+`FINISH`, `WAIT_FOR_HARDWARE`). The call sites and the miniport's pool mapping are read since: see [the command path](../../software/windows/nt-opengl-icd.md#command-dma-in-one-place). Established there; this paragraph was written from names.
 
 ### The OpenGL driver
 

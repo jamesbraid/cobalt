@@ -70,6 +70,134 @@ scan of both drivers' immediates for every header form outside the list found no
 builds the chain and window-parameter packets, the texture table loads and the hardware clear, copy and
 context-switch packets ([packet-set.md](../../devices/cobalt-graphics/packet-set.md)).
 
+## Where the driver sits: registration, entry points and the split with the kernel side
+
+How Microsoft's OpenGL front end finds and calls `sgcoicd.dll`, what the three SGI files each do, and which parts of that split
+belong to the operating system rather than to the Cobalt board. Sources: the 5.2.4 packs for Windows NT 4.0 and Windows 2000
+(NT 4.0 files read with the vendor's names and types, the Windows 2000 files by comparison), the installers' header tables, and,
+for Microsoft's side, the Windows 2000 `opengl32.dll` read in [the swap path](w2k-swap-path.md). The NT 4.0 `opengl32.dll` is not
+among the files this repository reads. The escape table is in [the escapes page](opengl-escapes.md), the packet memory in
+[the engine page](../../devices/cobalt-graphics/graphics-engine.md#how-the-opengl-driver-builds-and-submits-packets-sgcoicddll-524).
+
+### The pieces. Established (imports and routines read)
+
+| Piece | Runs | What it does for OpenGL |
+|---|---|---|
+| Microsoft `opengl32.dll` | user mode, in the application's process | Loads the driver named in the registry and calls it through the table of `Drv*` entry points; decides from the registry `Flags` whether `SwapBuffers` reaches the driver ([swap path](w2k-swap-path.md)). |
+| `sgcoicd.dll` (the ICD) | user mode, same process | All of OpenGL: state, transform, clipping, lighting where the host does it, texture and pixel conversion, and the writing of engine packets into memory the kernel side mapped for it. Imports GDI `ExtEscape` and no `DeviceIoControl`, so every request to the kernel is an escape to the display driver. It touches no engine register. |
+| `sgcodd.dll` (display driver) | kernel mode, inside `win32k` (it imports the GDI engine, window objects and `EngDeviceIoControl`) | The escape server for OpenGL, and the 2D driver. For OpenGL: checks each escape's sizes and the packet position, keeps the per-context and per-window records, tracks buffer descriptor ids, receives clip changes from GDI window objects, and queues engine jobs ("drops") for the miniport. It reaches the miniport with video IOCTLs. |
+| `sgcomp.sys` (miniport) | kernel mode, under the video port | The only code that maps and writes the engine and display back end registers: packet-pool and tile allocation, the translation table, the scheduler that runs one rendering node on the engine at a time, the context switch, both interrupts, window-parameter packets, the hardware clear, copy and swap packets. |
+
+The split, in one line: the ICD builds packets in memory, the display driver admits and queues them under GDI's window and clip
+model, and the miniport starts the engine on them. Established for the files' roles by their imports and the routines named in
+the other pages; "one rendering node on the engine at a time" is [the scheduler reading](../../devices/cobalt-graphics/graphics-engine.md#command-interface-in-main-memory).
+
+### Registration and the version handshake
+
+- **Registry. Established for the installers, inferred for the NT 4.0 reader.** The NT 4.0 and Windows 2000 graphics patches
+  each write, under `HKLM\SOFTWARE\Microsoft\Windows NT\CurrentVersion\OpenGLDrivers`, one entry named `SGI` whose data is
+  `sgcoicd.dll`. Their `data1.hdr` tables hold the key path, the name `SGI` and the file name once each, and no `DLL`, `Flags`,
+  `Version` or `DriverVersion` string (checked on the NT 4.0 patch, the Windows 2000 patch and the 5.2.1 Windows 2000 patch). The
+  patches also register the `Sgcomp` service key (`Group` `Video`, with `Type`, `ErrorControl` and `Start`). That entry is the
+  value layout of the NT 4.0 era, whose reading by NT 4.0's own `opengl32.dll` is inferred, because only the Windows 2000 file is
+  read here; the Windows 2000 file takes it as `Flags` 0 and prefers a subkey of the same name holding `DLL`, `Version`,
+  `DriverVersion` and `Flags` when one exists ([swap path](w2k-swap-path.md#microsofts-side-swapbuffers-and-wglswaplayerbuffers)).
+- **The name Microsoft's code asks for. Established, both builds.** `OPENGL_GETINFO` (`0x1101`) to the display driver returns the
+  version words 2 and 2 and the wide string `sgi`: the NT 4.0 driver copies it from a pointer in its data that points at that
+  string (`DrvOpenGLEscape@0x18630`, string at image address `0x103a4`), the Windows 2000 driver has the string inline. It is the
+  driver's registry name, not its file name; the registry compares names without regard to case (Windows behaviour, not read here),
+  so `sgi` finds the `SGI` entry. An earlier line of [the escapes page](opengl-escapes.md#private-escapes-and-the-other-entry-points)
+  called it the file name.
+- **`DrvValidateVersion`. Established, both builds** (`0x69015826` in NT 4.0, `0x69017598` in Windows 2000). Takes one
+  version number and returns 1 only when it is 2. `opengl32` passes it the display driver's `DriverVersion`, so a driver version
+  other than 2 makes the ICD refuse to load.
+
+### Entry points
+
+The NT 4.0 ICD exports fifteen: `DllMain`, `DrvCreateContext`, `DrvCreateLayerContext`, `DrvDeleteContext`, `DrvSetContext`,
+`DrvReleaseContext`, `DrvCopyContext`, `DrvShareLists`, `DrvGetProcAddress`, `DrvDescribeLayerPlane`, the layer palette pair and
+`DrvRealizeLayerPalette`, `DrvSwapLayerBuffers` and `DrvValidateVersion`; Windows 2000 adds `DrvDescribePixelFormat`,
+`DrvSetPixelFormat` and `DrvSwapBuffers` ([comparison](w2k-opengl-driver-comparison.md#exported-entry-points-established)).
+What the context calls do, read in the NT 4.0 build (typed decompile of each routine read in full; the error codes are named from the
+constants):
+
+- **`DrvCreateContext(hdc)`** is `DrvCreateLayerContext(hdc, 0)` (`0x6901567c` calls `0x69015453`). It needs a pixel format
+  already set on the DC, allocates the driver's context record (`__WGLcontextRec`, 0x70 bytes), describes the format into it, takes
+  a DC of its own for the escapes (the window's DC, or a compatible DC for a memory DC), and builds the OpenGL context through the
+  generic device hook, which ends in the `CREATECONTEXT` escape (`0x42`). **The handle it returns is a counter value the driver keeps
+  (`freeHandle`), not a pointer**, and the same number is the `dhrc` that escape carries.
+- **`DrvSetContext(hdc, hglrc, setProcTable)`** (`0x69014f68`) returns the context's dispatch table, or 0 on failure. Under the
+  driver's lock it accepts a window DC (taking the window from `WindowFromDC`) or a memory DC (taking the selected bitmap); an
+  `hglrc` of 0 takes a separate path that installs the do-nothing dispatch (`__glCoreNopDispatch`). It fails with last error 6 for
+  an unknown context or a DC that has neither, and with 0x57 when another thread has the context current. It then finds or creates
+  the drawable record, requires the drawable's pixel format to equal the context's, stores Microsoft's `setProcTable` callback in
+  the context, and calls the context's make-current hook. That hook (`__glCoIcdMakeCurrent`) sends `FIRSTSETCONTEXT` (`0x41`) when
+  a byte of the driver's context record (`+0x1c`) is clear, then `SETCONTEXT` (`0x40`); if either fails the record is undone
+  and the call returns 0. Established for the sequence; inferred for the meaning of the two error constants; not traced: what sets
+  the `+0x1c` byte, and the `hglrc` 0 path past the dispatch swap (the decompile of it is unreliable).
+- **`DrvGetProcAddress(name)`** forwards to the ICD's own extension lookup. The extensions it can hand out (the WGL `make_current_read`,
+  `pbuffer`, `pixel_format` and `swap_interval` group and the instruments calls) are listed in
+  [the expectations page](opengl-expectations.md) and [the software overview](../../devices/cobalt-graphics/nt-software.md).
+- The environment is read at context creation: `CO_OPENGL_CMD` switches the escape code (`0x1100`) to `0x3f`, and `CO_GL_DROPLIMIT`
+  (5 to 100, otherwise 10) sets the back-pressure limit below. Established.
+
+### Command DMA in one place
+
+No new register or packet fact, only the path from the pieces above, with the points the other pages leave scattered. Each
+step cites the page that holds the evidence.
+
+1. **Who owns the memory.** The miniport, not the process. It carves the packet pools out of the graphics memory the HAL set aside
+   (bank 0, positions counted in 32-byte units from the pool's window) and hands them out per rendering node. A node can hold at
+   most 24 pools of at most 16 MiB each (`pCoAllocateRnPackets@0x1514c`, limits read in the routine). The ICD asks for four buffers
+   of `0x4000` bytes in the first-context escape (`GLCOSIMPKTCOUNT` and `GLCOSIMPKTSIZE` override), and the display driver forwards
+   it as miniport request `0x23204c` with a type of `0x20` (the display driver's own GDI node asks with `0x10`). Established.
+2. **How the ICD gets a pointer.** For type `0x20` the miniport opens `\Device\PhysicalMemory` and maps the pool into the calling
+   process twice with `ZwMapViewOfSection` (read-write, inherit disposition 2): a **node view** of the pool's window at
+   physical `0x80000000` plus the pool's offset and a **flush view** at `0xc0000000` plus the same offset. For type `0x10` it uses
+   `MmMapIoSpace` of the flush view and reuses its permanent mapping of the first window. The dword distance between the two views
+   goes back in the reply, so the ICD writes a packet through one view and stores the link word with its owner bit through the
+   other. This settles what [the engine page](../../devices/cobalt-graphics/graphics-engine.md#command-interface-in-main-memory)
+   left unverified: the first-context reply's flush offset is that distance. The Windows 2000 miniport holds the same section
+   name twice, as the NT 4.0 file does; its allocator was not read. Established for NT 4.0, inferred for Windows 2000. Why there
+   are two views, and whether either bypasses a cache, is unknown.
+3. **Submission.** The ICD closes a node with a chain packet and a link word with the owner bit set, then sends `KICKSCHEDULER`
+   (`0x4d`) with the node's position, or one of the job escapes (`0x48` swap, `0x4e` clear, `0x4f` pixel transfer, `0x52` copy), which
+   all carry the position of a closed node. The display driver rejects a position outside that context's own pool and queues a drop;
+   the miniport's scheduler runs the drops in order. No escape writes an engine register. Established.
+4. **Starting the engine.** Only the miniport starts it: the context switch writes the start word (`0x10000`) with the node's
+   position. A kick merely clears a pending flag that lets the scheduler run the node.
+   See [the switch](../../devices/cobalt-graphics/graphics-engine.md#command-interface-in-main-memory). Established for the driver, inferred for the engine.
+5. **Fences.** Three, all the ICD's: polling bit 0 of a node's first dword (the engine clears it; an 18-step busy-wait ladder, then
+   `WAIT_FOR_HARDWARE` and a sleep on an event the miniport signals when it next loads the node); `FINISH` (`0x4c`) followed by a
+   wait on the event the ICD handed over in the first-context escape; and the **back-pressure rule** in the escape wrapper, which
+   counts queued escapes per node and, once more than `droplimit` have gone by without a kick, sends `FINISH` itself and waits. The
+   earlier note that this forced a kick was wrong: the wrapper calls the finish routine (`__glCoIcdFinish`, escape `0x4c` with a wait) at
+   `0x6901849c`. Established.
+6. **Pixel transfers** bypass the pool: the display driver locks the user's buffer, maps its pages into the translation table and
+   queues a transfer; cache maintenance is the separate `CACHEOP` escape ([escapes](opengl-escapes.md#the-table)). Established.
+
+### What carries over to other heads
+
+Everything in the first three bullets is Microsoft's contract, not the board's; the rest is Cobalt's. Inferred (a design reading
+of what is board-specific, not evidence about any other board):
+
+- **From the operating system, same for any head on NT.** The registry registration and the `DLL`, `Version`, `DriverVersion`,
+  `Flags` subkey, the `Drv*` table, `DrvValidateVersion` returning 1 only for 2, the display driver answering `OPENGL_GETINFO` with
+  versions 2 and 2 and a name, `OPENGL_CMD` as `ExtEscape` with the 20-byte header whose window and translation objects GDI fills in,
+  and the Windows 2000 requirement that a driver with `Flags` bit 0 export `DrvSwapBuffers`, `DrvSetPixelFormat` and
+  `DrvDescribePixelFormat`. Established for Windows 2000's `opengl32`, inferred for NT 4.0's.
+- **Jobs the kernel half has whatever the engine.** Learn each window's clip and origin from GDI window objects and re-sync a
+  running context when they change; release a process's contexts when it dies (the display driver registers a driver object per
+  context for this); give the ICD its command memory mapped into the process; pin and map user buffers for transfers; do swaps in step
+  with the display; and signal completion to the ICD through events it supplies. A head with a different engine still needs each.
+- **What is specific to a packet-fetching engine.** The chained ring in shared memory, the owner bit, the per-node scheduler and
+  the engine-saved context. A head whose engine takes commands through a mapped register or FIFO window has none of that; its
+  escape set shrinks to context make-current and release (clip and buffer binding), buffer allocation and binding, swap, clear if the
+  FIFO does not, finish, pixel-transfer set-up, cache maintenance and the pixel-format and overlay queries. The other families'
+  driver structure is compared in [the family comparison](../../devices/cobalt-graphics/family-comparison.md#5-driver-structure).
+- **Not a design to copy on faith.** Cobalt's ICD never reaches the miniport directly and sends one escape per submission.
+  Nothing shipped here shows whether another NT ICD could have opened the video device itself.
+
 ## How a header scan was done
 
 Two passes, both over the whole of `.text` and `.data`. First, a linear disassembly sweep collected every 32-bit
