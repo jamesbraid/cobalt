@@ -130,8 +130,9 @@ driver. Written up in [2d-blit-video.md](../devices/cobalt-graphics/2d-blit-vide
 - **Video input and output.** Four windows (`0xf8000000` to `0xfb000000`, `0x80` bytes mapped each, plus an 8-byte pair each and
   the 8-byte system time counter at `0xff001200`, both in the Lithium audio page) are driven by `sgilivid.sys` (digital media pack 5.2.2, NT 4.0 and Windows 2000 builds). The register
   layout, the DMA descriptor format, the 10-bit field table at `.data` `0x135e0`, the interrupt pins and the video formats were not
-  decoded; `viddiag.exe` and `sgivcp.cpl` reach the hardware through `sgidmedia.dll` or `sgival.dll`, not directly. Settles it: reading `sgilivid.sys` entry points and
-  its IOCTL table in Ghidra.
+  decoded here; `viddiag.exe` and `sgivcp.cpl` reach the hardware through `sgidmedia.dll` or `sgival.dll`, not directly. The sibling chips repository has since read
+  the driver's registers, DMA and interrupts (its `software/visws/video-io.md`) and records the 540's SD1100 serial digital card and the DA1100 audio card (its
+  `software/visws/option-cards.md`); those pages own the video input and output facts, so this item stays only for what the graphics engine side adds.
 - **Texture type codes.** Answered for what the drivers write: the full table of GL formats to type codes, the filter, wrap
   and level-of-detail codes and the environment word are in [textures.md](../devices/cobalt-graphics/textures.md); what is left
   is under [the texture and pixel pipeline](#texture-and-pixel-pipeline-what-the-shipped-software-does-not-settle).
